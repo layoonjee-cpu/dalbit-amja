@@ -841,7 +841,8 @@ const TIMES={
  night:{ic:'🌙',tx:'밤',night:true,exp:1.55,sunC:0xa9bcff,sunI:1.1,hemiS:0x2c3550,hemiG:0x12121c,hemiI:.5,fog:0x0e1632,fogD:.0105,pano:'night',tint:[1,1,1],lan:1,birds:0,crk:.7,door:1}};
 let timeKey=(()=>{const h=new Date().getHours();return h>=4&&h<7?'dawn':h<17?'day':h<19?'sunset':'night'})();
 if(new Date().getHours()<4)timeKey='night';
-function setTime(k){timeKey=k;const s=TIMES[k];$('#timeIc').textContent=s.ic;$('#timeTx').textContent=s.tx;
+let lastRitual='';function ritualBell(k){if(!started||!AU.ctx||lastRitual===k||P.mode==='sleep')return;lastRitual=k;[0,9,18].forEach((d,i)=>setTimeout(()=>{strikeBell(.38);bellSwing=1},d*1000));setTimeout(()=>status(k==='sunset'?'저녁 예불 종소리가 산을 건너가요 🔔':'새벽 종소리가 하루를 열어요 🔔',4200),900)}
+function setTime(k){timeKey=k;if(k==='sunset'||k==='dawn')setTimeout(()=>ritualBell(k),1500);const s=TIMES[k];$('#timeIc').textContent=s.ic;$('#timeTx').textContent=s.tx;
   renderer.toneMappingExposure=s.exp;sun.color.set(s.sunC);sun.intensity=s.sunI;hemi.color.set(s.hemiS);hemi.groundColor.set(s.hemiG);hemi.intensity=s.hemiI;scene.fog.color.set(s.fog);scene.fog.density=s.fogD;
   panoMat.uniforms.map.value=s.pano==='night'?panoNight:panoDawn;panoMat.uniforms.tint.value.setRGB(...s.tint);
   const sunPos=new THREE.Vector3();
@@ -1154,8 +1155,12 @@ $('#fEat').onclick=()=>{closeM('#mFood');picked.forEach((di,i)=>{BOWLS[i].visibl
 
 /* 차담 */
 const teaLines=['먼 길 오셨어요. 따뜻한 차 한 잔 내어드릴게요. 🍵','요즘 마음이 자꾸 무거우셨죠? 왜 나만 안 풀리나, 지금 움직여도 될까… 그런 생각이 많으셨을 거예요.','운에도 계절이 있어요. 씨를 뿌릴 때, 기다릴 때, 거둘 때가 따로 있지요.','내 사주에 흐르는 계절을 알면, 지금 무엇을 해야 할지 보여요. 차담에서 찬찬히 풀어드릴게요.'];
-let teaI=0;function openTea(){teaI=0;showTea();openM('#mTea');monk.userData.greet=1.2}
-function showTea(){$('#teaT').textContent=teaLines[teaI];const w=$('#teaBtns');w.innerHTML='';
+const calmTea=['오늘 차는 산에서 딴 국화차예요. 먼저 향을 맡아보세요 🌼','뜨거우니 천천히, 한 모금씩이요. 서두를 것 하나 없어요.','찻물이 알맞게 식기를 기다리듯, 마음도 기다려주면 스스로 가라앉아요.','언제든 또 오세요. 차는 늘 따뜻하게 데워둘게요.'];
+let teaI=0,teaMode='ask';function openTea(){teaI=0;teaMode='ask';showTea();openM('#mTea');monk.userData.greet=1.2}
+function showTea(){const w=$('#teaBtns');w.innerHTML='';const mk=(t,c,fn)=>{const b=document.createElement('button');b.className='btn '+c;b.textContent=t;b.onclick=fn;w.appendChild(b);return b};
+  if(teaMode==='ask'){$('#teaT').textContent='먼 길 오셨어요. 따뜻한 차 한 잔 내어드릴게요. 🍵';mk('🍵 차 한 잔 마실게요','pink',()=>{teaMode='calm';teaI=0;P.yaw=-Math.PI/2;player.userData.sit=1;if(P.mode==='walk')P.mode='sit';mediStart=performance.now();setTimeout(()=>{monk.userData.greet=1.4;spoonClink()},400);showTea()});mk('요즘 운의 흐름이 궁금해요','ghost',()=>{teaMode='sales';teaI=1;showTea()});return}
+  if(teaMode==='calm'){$('#teaT').textContent=calmTea[teaI];if(teaI<calmTea.length-1){mk('네 ▸','ghost',()=>{teaI++;if(teaI===2)spoonClink();showTea()})}else{mk('잘 마셨습니다 🙏','pink',()=>{closeM('#mTea');if(P.mode==='sit')standUp();status('따뜻한 차 한 잔에 몸과 마음이 풀렸어요',3600)});mk('운의 흐름도 궁금해요 ▸','ghost',()=>{teaMode='sales';teaI=1;showTea()})}return}
+  $('#teaT').textContent=teaLines[teaI];
   if(teaI<teaLines.length-1){const b=document.createElement('button');b.className='btn ghost';b.textContent='네 ▸';b.onclick=()=>{teaI++;showTea()};w.appendChild(b)}
   else{const a=document.createElement('a');a.href='landing.html';a.style.textDecoration='none';a.innerHTML='<button class="btn pink">🍵 차담 신청하러 가기</button>';w.appendChild(a);const u=document.createElement('a');u.href='https://www.unmyung.kr/?utm_source=dalbit-amja&utm_medium=tea';u.target='_blank';u.rel='noopener';u.style.textDecoration='none';u.innerHTML='<button class="btn" style="background:linear-gradient(135deg,#2b2f5c,#4a3f7a);color:#f6e7b8">🌙 달빛암자 운신상담소 바로가기</button>';w.appendChild(u);const b=document.createElement('button');b.className='btn ghost';b.textContent='조금 더 머물게요';b.onclick=()=>closeM('#mTea');w.appendChild(b)}}
 
@@ -1257,6 +1262,8 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
     if(d>.2){s.x+=dx/d*1.3*dt;s.z+=dz/d*1.3*dt;s.yaw=Math.atan2(dx,dz);mv=true}else{s.wait-=dt;if(s.wait<0){const p=POI[Math.random()*POI.length|0];s.tx=p[0]+rand(-1.5,1.5);s.tz=p[1]+rand(-1.5,1.5);s.wait=rand(3,9);if(Math.random()<.3)n.userData.greet=1.2}}
     s.y=(s.y??0)+(heightAtR(s.x,s.z)-(s.y??0))*Math.min(1,dt*10);n.position.set(s.x,s.y,s.z);let dyw=s.yaw-n.rotation.y;dyw=Math.atan2(Math.sin(dyw),Math.cos(dyw));n.rotation.y+=dyw*Math.min(1,dt*6);animDali(n,dt,mv,.5)});
   animDali(monk,dt,false,1);
+  {const sitOut=P.mode==='sit'&&!P.sitCushion&&curArea!=='달빛전';const home=[TEA.x+1.1,TEA.z+.6];const goal=sitOut?[P.x+Math.cos(P.yaw+1.9)*.9,P.z+Math.sin(P.yaw+1.9)*.9]:home;const cdx=goal[0]-cat.position.x,cdz=goal[1]-cat.position.z,cd=Math.hypot(cdx,cdz);
+   if(cd>.25){const sp=Math.min(cd,1.1*dt);cat.position.x+=cdx/cd*sp;cat.position.z+=cdz/cd*sp;cat.rotation.y=-Math.atan2(cdz,cdx);cat.position.y=heightAtR(cat.position.x,cat.position.z,.15)+Math.abs(Math.sin(t*10))*.02;cat.userData.walking=true}else if(cat.userData.walking){cat.userData.walking=false;if(sitOut){say(cat,'냐아… 🐾');cat.rotation.y=-Math.atan2(P.z-cat.position.z,P.x-cat.position.x)}else{cat.rotation.y=-2.2;cat.position.y=.32}}}
   cat.userData.tail.rotation.x=Math.sin(t*(cat.userData.wag>0?8:1.5))*.4;if(cat.userData.wag>0)cat.userData.wag-=dt;
   // labels
   const proj=(obj,h,el)=>{tmpV.set(obj.position.x,obj.position.y+h,obj.position.z).project(camera);const vis=tmpV.z<1&&Math.abs(tmpV.x)<1.1&&Math.abs(tmpV.y)<1.1;const dd=camera.position.distanceTo(obj.position);
