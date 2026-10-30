@@ -1106,7 +1106,7 @@ const teaLines=['먼 길 오셨어요. 따뜻한 차 한 잔 내어드릴게요.
 let teaI=0;function openTea(){teaI=0;showTea();openM('#mTea');monk.userData.greet=1.2}
 function showTea(){$('#teaT').textContent=teaLines[teaI];const w=$('#teaBtns');w.innerHTML='';
   if(teaI<teaLines.length-1){const b=document.createElement('button');b.className='btn ghost';b.textContent='네 ▸';b.onclick=()=>{teaI++;showTea()};w.appendChild(b)}
-  else{const a=document.createElement('a');a.href='landing.html';a.style.textDecoration='none';a.innerHTML='<button class="btn pink">🍵 차담 신청하러 가기</button>';w.appendChild(a);const b=document.createElement('button');b.className='btn ghost';b.textContent='조금 더 머물게요';b.onclick=()=>closeM('#mTea');w.appendChild(b)}}
+  else{const a=document.createElement('a');a.href='landing.html';a.style.textDecoration='none';a.innerHTML='<button class="btn pink">🍵 차담 신청하러 가기</button>';w.appendChild(a);const u=document.createElement('a');u.href='https://www.unmyung.kr/?utm_source=dalbit-amja&utm_medium=tea';u.target='_blank';u.rel='noopener';u.style.textDecoration='none';u.innerHTML='<button class="btn" style="background:linear-gradient(135deg,#2b2f5c,#4a3f7a);color:#f6e7b8">🌙 달빛암자 운신상담소 바로가기</button>';w.appendChild(u);const b=document.createElement('button');b.className='btn ghost';b.textContent='조금 더 머물게요';b.onclick=()=>closeM('#mTea');w.appendChild(b)}}
 
 /* ================= input ================= */
 const keys={};addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;keys[e.code]=true;if(e.code==='Space'&&bowState.active){bowOnce();e.preventDefault()}if(e.code==='Space'&&mokState.on){mokHit();e.preventDefault()}});addEventListener('keyup',e=>keys[e.code]=false);
