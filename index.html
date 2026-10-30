@@ -106,6 +106,8 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
 #mokHud .row{width:100%}#mokHud .btn{margin:0}
 .ttok{position:fixed;z-index:7;pointer-events:none;font-family:'Gowun Batang',serif;font-weight:700;font-size:20px;color:#fff3d6;text-shadow:0 2px 10px rgba(0,0,0,.6);animation:tt 1s ease-out forwards}
 @keyframes tt{from{opacity:1;transform:translate(-50%,-100%)}to{opacity:0;transform:translate(-50%,-220%)}}
+#sitBow{left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);display:none;padding:16px 34px;font:inherit;font-size:17px;font-weight:700;border:none;color:#3a2730;background:linear-gradient(135deg,#fde2e6,#f2a9b5);border-radius:999px;box-shadow:0 8px 24px rgba(242,169,181,.45);cursor:pointer;z-index:12}
+#sitBow span{font-weight:500;font-size:14px;opacity:.75}
 #medi{top:42%;left:50%;transform:translate(-50%,-50%);text-align:center;display:none;pointer-events:none}
 #medi .t{font-family:'Gowun Batang',serif;font-size:20px;text-shadow:0 2px 16px rgba(0,0,0,.6)}
 #medi .c{font-size:13px;opacity:.75;margin-top:6px}
@@ -153,6 +155,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
   <div class="pb"><i id="bowBar"></i></div>
   <div class="row"><button class="btn pink" id="bowOne">🙏 한 배 올리기</button><button class="btn ghost" id="bowAuto" style="flex:.6">자동 절</button><button class="btn ghost" id="bowStop" style="flex:.45">그만</button></div>
 </div>
+<button id="sitBow" class="ui">🙏 절하기<span id="sitBowN"></span></button>
 <div id="medi" class="ui"><div class="t">숨을 천천히 들이쉬고, 내쉬어요</div><div class="c" id="mediT">0:00 · 화면을 누르면 일어나요</div></div>
 <div id="sleepHud" class="ui"><div class="t" id="sleepT">오늘 하루, 정말 애쓰셨어요</div><div class="c">이불 속이 따뜻해요 · 1분 뒤 새벽에 깨워드려요</div><button class="btn ghost" id="sleepWake">☀️ 아침에 일어나기</button></div>
 <div id="fade"></div>
@@ -980,8 +983,13 @@ let shake=0;
 $('#aGreet').onclick=()=>{player.userData.greet=1.4;say(player,'🙏');status(nick+'님이 합장으로 인사했어요')};
 // sit / meditate
 let mediStart=0;
-$('#aSit').onclick=()=>{if(P.mode==='sit'){standUp();return}P.mode='sit';player.userData.sit=1;mediStart=performance.now();$('#medi').style.display='block';$('#bar').style.opacity=.35};
-function standUp(){P.mode='walk';player.userData.sit=0;$('#medi').style.display='none';$('#bar').style.opacity=1}
+$('#aSit').onclick=()=>{if(P.mode==='sit'){standUp();return}if(P.mode!=='walk')return;
+  if(curArea==='달빛전'){let best=null,bd=1e9;CUSHIONS.forEach(c=>{if(c.taken)return;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c}});if(best){P.x=best.x;P.z=best.z;P.y=best.y;P.sitCushion=best;best.taken=true}P.yaw=Math.PI;cam.yaw=0;cam.targetDist=4.2;$('#sitBow').style.display='block';$('#sitBowN').textContent=sitBows?` · ${sitBows}배`:''}
+  P.mode='sit';player.userData.sit=1;mediStart=performance.now();$('#medi').style.display='block';$('#bar').style.opacity=.35};
+let sitBows=0;
+$('#sitBow').onclick=e=>{e.stopPropagation();if(P.mode!=='sit'||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);sitBows++;$('#sitBowN').textContent=` · ${sitBows}배`;if(navigator.vibrate)navigator.vibrate(10);
+  const m={1:'부처님께 정성껏 절을 올렸어요 🙏',3:'삼배를 올렸어요. 마음이 한결 차분해져요',7:'한 배 한 배, 마음이 가벼워져요',21:'스물한 배. 오늘의 나를 칭찬해 주세요'}[sitBows];if(m)status(m,3200)};
+function standUp(){P.mode='walk';player.userData.sit=0;$('#sitBow').style.display='none';if(P.sitCushion){P.sitCushion.taken=false;P.sitCushion=null;P.z+=.9;cam.targetDist=6.2}$('#medi').style.display='none';$('#bar').style.opacity=1}
 $('#aTea').onclick=()=>{if(curArea==='차담실'){openTea();return}info('차담실로 갈까요?','오른쪽 아래 정자에서 달이 스님이 차를 내어드려요.',[['차담실로 이동','pink',()=>teleport(TEA.x-.2,TEA.z+2.6,Math.PI)],['둘러볼게요','ghost']])};
 $('#aLantern').onclick=()=>{if(curArea!=='달맞이 터'){info('달맞이 터로 갈까요?','달이 가장 잘 보이는 너럭바위에서 소원등을 띄워요.',[['달맞이 터로 이동','pink',()=>teleport(MOONSPOT.x+1.5,MOONSPOT.z-1,Math.atan2(moonDir.x,moonDir.z))],['둘러볼게요','ghost']]);return}startLantern()};
 function teleport(x,z,yaw){$('#fade').style.opacity=1;setTimeout(()=>{P.x=x;P.z=z;P.y=heightAt(x,z);if(yaw!=null){P.yaw=yaw}cam.yaw=P.yaw+Math.PI;$('#fade').style.opacity=0},700)}
@@ -1178,7 +1186,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   if(sleepS.on){const sk=((performance.now()-sleepS.t0)/7000|0)%sleepLines.length;const el=$('#sleepT');if(el.textContent!==sleepLines[sk])el.textContent=sleepLines[sk]}fillL.position.set(camera.position.x*.5+P.x*.5,P.y+2.2,camera.position.z*.5+P.z*.5);animDali(player,dt,moving,speed/2.6);animMok(dt);
   // camera
   cam.dist+=(cam.targetDist-cam.dist)*Math.min(1,dt*4);
-  if(P.mode==='sit'){cam.yaw+=dt*.05;const s=(performance.now()-mediStart)/1000|0;$('#mediT').textContent=`${s/60|0}:${String(s%60).padStart(2,'0')} · 화면을 누르면 일어나요`}
+  if(P.mode==='sit'){cam.yaw+=dt*.05;const s=(performance.now()-mediStart)/1000|0;$('#mediT').textContent=`${s/60|0}:${String(s%60).padStart(2,'0')} · 화면을 누르면 일어나요`+(P.sitCushion?' · 아래 버튼으로 절을 올려요':'')}
   const inside=curArea==='달빛전';const dist=inside?Math.min(cam.dist,4.2):cam.dist;
   const tgt=tmpV.set(P.x,P.y+1.05,P.z);let lim=dist;{const ux=Math.sin(cam.yaw)*Math.cos(cam.pitch),uz=Math.cos(cam.yaw)*Math.cos(cam.pitch);for(let s=.45;s<=dist;s+=.15){if(blocked(tgt.x+ux*s,tgt.z+uz*s)&&Math.hypot(tgt.x+ux*s,tgt.z+uz*s)<COURT+5){lim=Math.max(.9,s-.3);break}}}
   cam.cd=cam.cd??dist;cam.cd+=(lim-cam.cd)*Math.min(1,dt*(lim<cam.cd?14:2.5));const dist2=Math.min(dist,cam.cd);
