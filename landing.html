@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>달빛암자 차담 · 운명론자 사주상담</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#fbf5e9;--cream2:#f3e8d2;--pink:#f6c9cf;--pink2:#ee9fab;--navy:#1f2a4d;--gold:#e8c26a;--gold2:#c99a3a;--ink:#3b3540;--soft:#8a8090;--daangn:#ff6f0f}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Pretendard,system-ui,sans-serif;background:#e9e2d6;color:var(--ink);display:flex;justify-content:center}
+.page{width:100%;max-width:430px;background:var(--cream);min-height:100vh;padding-bottom:96px}
+.serif{font-family:'Gowun Batang',serif}
+.hero{position:relative;background:linear-gradient(180deg,#1f2a4d 0%,#34416f 55%,#f3d9cf 100%);color:#fff;padding:26px 22px 0;overflow:hidden}
+.hero .brand{font-size:13px;opacity:.8;letter-spacing:.5px}
+.hero h1{font-family:'Gowun Batang',serif;font-size:31px;line-height:1.35;margin:22px 0 12px}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero p{font-size:15px;line-height:1.7;opacity:.88}
+.hero .moon{position:absolute;right:26px;top:58px;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle,#fffbe6,#f6d98a);box-shadow:0 0 40px rgba(255,236,170,.7)}
+.hero .dali{width:150px;margin:18px auto 0;display:block}
+.stats{display:flex;justify-content:space-around;background:#fff;margin:-18px 18px 0;border-radius:22px;padding:16px 8px;box-shadow:0 8px 24px rgba(31,42,77,.1);position:relative}
+.stats div{text-align:center}.stats b{display:block;font-size:20px;color:var(--navy)}.stats small{font-size:12px;color:var(--soft)}
+section{padding:34px 20px 0}
+.eyebrow{font-size:12.5px;color:var(--pink2);font-weight:700;letter-spacing:1px}
+h2{font-family:'Gowun Batang',serif;font-size:23px;line-height:1.4;margin:6px 0 14px}
+.worry{display:flex;flex-direction:column;gap:9px}
+.worry div{background:#fff;border-radius:16px;padding:13px 15px;font-size:14.5px;box-shadow:0 3px 10px rgba(80,60,40,.05)}
+.answer{margin-top:14px;font-size:15px;line-height:1.75;background:linear-gradient(135deg,#fff,#fdeef0);border-radius:20px;padding:18px}
+.menu{display:flex;flex-direction:column;gap:12px}
+.item{background:#fff;border-radius:22px;padding:18px;box-shadow:0 4px 16px rgba(80,60,40,.07);position:relative;border:2px solid transparent}
+.item.best{border-color:var(--pink2)}
+.item .tag{position:absolute;top:-10px;left:16px;background:var(--pink2);color:#fff;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:99px}
+.item .tag.new{background:var(--navy)}
+.item h3{font-family:'Gowun Batang',serif;font-size:18px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.item h3 span{font-family:Pretendard;font-size:19px;color:var(--navy);white-space:nowrap}
+.item h3 s{font-size:12.5px;color:var(--soft);font-weight:400;margin-right:4px}
+.item p{font-size:13.5px;color:var(--soft);line-height:1.6;margin-top:6px}
+.steps{display:flex;flex-direction:column;gap:0;position:relative}
+.step{display:flex;gap:14px;padding:12px 0;align-items:flex-start}
+.step .no{flex:none;width:38px;height:38px;border-radius:50%;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Gowun Batang',serif;font-weight:700}
+.step b{display:block;font-size:15.5px}.step small{font-size:13.5px;color:var(--soft);line-height:1.55}
+.who{background:#fff;border-radius:22px;padding:20px;display:flex;gap:14px;align-items:center;box-shadow:0 4px 16px rgba(80,60,40,.07)}
+.who .ph{flex:none;width:74px;height:74px;border-radius:50%;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--soft);text-align:center}
+.who p{font-size:13.5px;line-height:1.65;color:var(--soft)}.who b{color:var(--ink);font-size:15.5px}
+.review-slot{border:2px dashed var(--cream2);border-radius:18px;padding:22px;text-align:center;color:var(--soft);font-size:13px;line-height:1.6;background:#fffdf8}
+details{background:#fff;border-radius:16px;padding:14px 16px;margin-bottom:9px;box-shadow:0 3px 10px rgba(80,60,40,.05)}
+summary{font-weight:700;font-size:14.5px;cursor:pointer;list-style:none}
+summary::before{content:'Q. ';color:var(--pink2)}
+details p{font-size:13.5px;color:var(--soft);line-height:1.65;margin-top:8px}
+.foot{padding:30px 20px 10px;font-size:12px;color:var(--soft);line-height:1.7;text-align:center}
+.cta{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:10px 14px calc(12px + env(safe-area-inset-bottom));background:rgba(251,245,233,.95);backdrop-filter:blur(10px);border-top:1px solid var(--cream2);display:flex;gap:8px;z-index:20}
+.cta a{flex:1;text-decoration:none;text-align:center;border-radius:16px;padding:15px 8px;font-weight:700;font-size:15px}
+.cta .d{background:var(--daangn);color:#fff;flex:1.6}
+.cta .k{background:#fee500;color:#3b1e1e}
+.back{display:inline-block;color:#fff;opacity:.8;font-size:13px;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hero">
+    <a class="back" href="index.html">← 달빛암자로 돌아가기</a>
+    <div class="moon"></div>
+    <h1>산중 암자에서<br>차 한 잔 하듯,<br><em>당신의 운</em>을 묻다</h1>
+    <p>달빛암자 차담실은 사주명리로<br>지금 내 운의 흐름을 읽어드리는 1:1 상담이에요.</p>
+    <svg class="dali" viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="60" cy="146" rx="34" ry="4" fill="rgba(0,0,0,.12)"/>
+      <path d="M26 145 Q24 100 60 92 Q96 100 94 145Z" fill="#b9b3c4"/>
+      <path d="M60 92 Q78 96 90 120 L94 145 L66 145 Q70 118 60 92Z" fill="#f2a9b5"/>
+      <ellipse cx="60" cy="112" rx="13" ry="9" fill="#ffe7d6"/><rect x="50" y="100" width="20" height="13" rx="4" fill="#fff" stroke="#ccb"/>
+      <circle cx="60" cy="56" r="40" fill="#ffe7d6"/>
+      <path d="M22 50 Q26 18 60 16 Q94 18 98 50 Q90 30 60 28 Q30 30 22 50Z" fill="#f3d4c0"/>
+      <path d="M60 6 a9 9 0 1 0 8 13 a7 7 0 1 1 -8 -13z" fill="#f0c45c"/>
+      <ellipse cx="44" cy="58" rx="4.2" ry="5" fill="#4a3540"/><ellipse cx="76" cy="58" rx="4.2" ry="5" fill="#4a3540"/><circle cx="45.5" cy="56" r="1.6" fill="#fff"/><circle cx="77.5" cy="56" r="1.6" fill="#fff"/>
+      <ellipse cx="34" cy="70" rx="8" ry="5" fill="#f7a6b2" opacity=".75"/><ellipse cx="86" cy="70" rx="8" ry="5" fill="#f7a6b2" opacity=".75"/>
+      <path d="M55 72 Q60 77 65 72" stroke="#c4677a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <circle cx="20" cy="58" r="6" fill="#ffe0cc"/><circle cx="100" cy="58" r="6" fill="#ffe0cc"/>
+    </svg>
+  </div>
+  <div class="stats">
+    <div><b>4.8</b><small>당근 별점</small></div>
+    <div><b>229</b><small>후기</small></div>
+    <div><b>6,675</b><small>단골</small></div>
+  </div>
+
+  <section>
+    <div class="eyebrow">이런 마음으로 오셨나요</div>
+    <h2>요즘 마음이 자꾸<br>무거우셨죠?</h2>
+    <div class="worry">
+      <div>🌙 왜 나만 이렇게 안 풀리는 걸까</div>
+      <div>💼 이직, 사업… 지금 움직여도 될까</div>
+      <div>💗 이 사람, 계속 만나도 괜찮을까</div>
+      <div>🪷 내년엔 좀 나아질까</div>
+    </div>
+    <div class="answer">운에도 <b>계절</b>이 있어요. 씨를 뿌릴 때, 기다릴 때, 거둘 때가 따로 있죠.<br>내 사주에 흐르는 계절을 알면 <b>지금 무엇을 해야 할지</b>가 보여요.</div>
+  </section>
+
+  <section>
+    <div class="eyebrow">차담 메뉴</div>
+    <h2>오늘은 어떤 차를<br>내어드릴까요?</h2>
+    <div class="menu">
+      <div class="item best"><span class="tag">가장 많이 찾는 차담</span>
+        <h3>프리미엄 정통사주 <span><s>60,000</s>29,800원</span></h3>
+        <p>130장 이상 결과지 · 타고난 성향, 10년 대운, 재물·인연·건강 흐름 · 궁금한 질문은 개수 상관없이</p></div>
+      <div class="item"><span class="tag new">2027 정미년</span>
+        <h3>2027 신년사주 <span><s>39,800</s>19,800원</span></h3>
+        <p>내년 한 해 월별 흐름 + 질문 2개 포함</p></div>
+      <div class="item"><h3>연애운 · 인연 <span>19,800원</span></h3>
+        <p>나에게 들어오는 인연의 때, 지금 그 사람과의 흐름</p></div>
+      <div class="item"><h3>기본사주 <span>9,900원</span></h3>
+        <p>타고난 나를 알아보는 가벼운 첫 차담 (질문 1개 추가 14,900원)</p></div>
+      <div class="item"><h3>궁합 · 가족 사주 <span>2인 55,000원~</span></h3>
+        <p>2인 55,000 · 3인 79,000 · 4인 97,000 (궁합 무료 포함)</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">차담 순서</div>
+    <h2>편하게, 이렇게 진행돼요</h2>
+    <div class="steps">
+      <div class="step"><div class="no">一</div><div><b>차담 신청</b><small>당근 또는 카카오톡으로 원하시는 차담을 말씀해주세요.</small></div></div>
+      <div class="step"><div class="no">二</div><div><b>기초정보 보내기</b><small>생년월일, 태어난 시간, 궁금한 점, 결과 받을 이메일을 적어주세요.</small></div></div>
+      <div class="step"><div class="no">三</div><div><b>입금</b><small>입금 확인 후 정성껏 풀이를 시작해요.</small></div></div>
+      <div class="step"><div class="no">四</div><div><b>결과 받기</b><small>다음날 낮 12시 전에 이메일로 결과지를 보내드려요.</small></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">차를 내리는 사람</div>
+    <h2>달이는 안내만 하고,<br>풀이는 사람이 직접 해요</h2>
+    <div class="who">
+      <div class="ph">운명론자<br>프로필 사진</div>
+      <p><b>운명론자</b><br>명리심리상담사 · 유튜브 「운명론자 : 제2의 인생 개운법」 운영<br>운의 흐름을 읽어주는 현실 사주</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">차담 후기</div>
+    <h2>먼저 다녀가신 분들</h2>
+    <div class="review-slot">여기에 실제 당근 후기 캡처 3~4장을 넣어요<br>(이름은 가려서)</div>
+  </section>
+
+  <section>
+    <div class="eyebrow">자주 묻는 질문</div>
+    <h2>궁금한 점</h2>
+    <details><summary>태어난 시간을 몰라도 되나요?</summary><p>네, 괜찮아요. 시간 없이도 풀이할 수 있고, 아시면 더 정확해져요.</p></details>
+    <details><summary>결과는 언제 받나요?</summary><p>입금 확인 후 다음날 낮 12시 전에 이메일로 보내드려요.</p></details>
+    <details><summary>이메일이 없어요</summary><p>가족분 이메일로 받으셔도 되고, 다른 방법도 안내해드려요.</p></details>
+    <details><summary>정말 스님이 상담하나요?</summary><p>달이는 달빛암자의 안내 캐릭터예요. 상담과 풀이는 명리심리상담사 운명론자가 직접 해요.</p></details>
+  </section>
+
+  <div class="foot">달빛암자 · 운명론자<br>사주 풀이는 삶의 흐름을 참고하는 상담이며, 의료·법률·투자 판단을 대신하지 않아요.</div>
+</div>
+<div class="cta">
+  <a class="d" href="https://www.daangn.com/kr/local-profile/x6frmt7yxpz1" target="_blank">🥕 당근으로 차담 신청</a>
+  <a class="k" href="https://pf.kakao.com/_ltMQn" target="_blank">카톡 문의</a>
+</div>
+</body>
+</html>
