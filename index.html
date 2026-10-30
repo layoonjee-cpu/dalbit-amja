@@ -808,11 +808,29 @@ function setChorong(on){[player,...npcs.map(s=>s.n)].forEach(n=>{const c=n.userD
 /* ================= weather ================= */
 let weather='clear';
 const WX={clear:{ic:'🌤️',tx:'맑음'},rain:{ic:'🌧️',tx:'비'},snow:{ic:'❄️',tx:'함박눈'}};
-// rain streaks
-const RAIN_N=isTouch?2500:5000;const rainGeo=new THREE.BufferGeometry();const rainPos=new Float32Array(RAIN_N*6);
-for(let i=0;i<RAIN_N;i++){const x=rand(-30,30),y=rand(0,30),z=rand(-30,30);rainPos.set([x,y,z,x+.02,y-.55,z],i*6)}
-rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPos,3));
-const rain=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color:0xaab8c8,transparent:true,opacity:.42,depthWrite:false}));rain.visible=false;rain.frustumCulled=false;scene.add(rain);
+// rain drops (instanced streaks) + ground ripples
+const RAIN_N=isTouch?1600:3400;
+function dropTex(){const c=document.createElement('canvas');c.width=8;c.height=128;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,128);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.65,'rgba(255,255,255,.45)');g.addColorStop(1,'rgba(255,255,255,1)');x.fillStyle=g;x.fillRect(0,0,8,128);return new THREE.CanvasTexture(c)}
+const rain=new THREE.Group();rain.visible=false;scene.add(rain);
+const dropMat=new THREE.MeshBasicMaterial({map:dropTex(),color:0xcbd7e4,transparent:true,opacity:.5,depthWrite:false,side:THREE.DoubleSide});
+const drops=new THREE.InstancedMesh(new THREE.PlaneGeometry(.016,.55).translate(0,.275,0),dropMat,RAIN_N);drops.frustumCulled=false;rain.add(drops);
+const dropD=[];for(let i=0;i<RAIN_N;i++)dropD.push({x:rand(-26,26),y:rand(0,26),z:rand(-26,26),v:rand(12.5,17),l:rand(.6,1.25)});
+const SPL_N=isTouch?160:340;
+const splMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending});
+const spl=new THREE.InstancedMesh(new THREE.RingGeometry(.72,1,24).rotateX(-Math.PI/2),splMat,SPL_N);spl.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(SPL_N*3),3);spl.frustumCulled=false;rain.add(spl);
+const splD=[];for(let i=0;i<SPL_N;i++)splD.push({x:0,y:-9,z:0,t:-rand(0,.6),life:rand(.35,.6),s:rand(.14,.26)});
+const _o=new THREE.Object3D(),_q=new THREE.Quaternion(),_qt=new THREE.Quaternion(),_f=new THREE.Vector3(),_e=new THREE.Euler(),_c=new THREE.Color();
+function updateRain(dt,t){const cx=camera.position.x,cz=camera.position.z;camera.getWorldDirection(_f);const wind=Math.sin(t*.21)*.9+.6;
+  _q.setFromEuler(_e.set(0,Math.atan2(-_f.x,-_f.z),0));_qt.setFromEuler(_e.set(0,0,-wind*.05));_q.multiply(_qt);
+  for(let i=0;i<RAIN_N;i++){const d=dropD[i];d.y-=d.v*dt;d.x+=wind*.8*dt;if(d.y<0||Math.abs(d.x-cx)>26||Math.abs(d.z-cz)>26){d.y=rand(14,26);d.x=cx+rand(-26,26);d.z=cz+rand(-26,26)}
+    _o.position.set(d.x,d.y,d.z);_o.quaternion.copy(_q);_o.scale.set(1,d.l,1);_o.updateMatrix();drops.setMatrixAt(i,_o.matrix)}
+  drops.instanceMatrix.needsUpdate=true;
+  const base=TIMES[timeKey].night?.32:.55;
+  for(let i=0;i<SPL_N;i++){const s=splD[i];s.t+=dt;if(s.t>=s.life){let tries=0;do{const a=rand(0,6.28),r=Math.sqrt(Math.random())*15;s.x=P.x+Math.cos(a)*r;s.z=P.z+Math.sin(a)*r;tries++}while(heightAt(s.x,s.z)>.05&&tries<4);
+      s.y=heightAt(s.x,s.z)>.05?-9:.035;s.t=0;s.life=rand(.35,.6);s.s=rand(.14,.26)}
+    const k=Math.max(0,s.t)/s.life;const sc=s.t<0?0:.02+k*s.s;_o.position.set(s.x,s.y,s.z);_o.quaternion.identity();_o.scale.set(sc,1,sc);_o.updateMatrix();spl.setMatrixAt(i,_o.matrix);
+    const a=(1-k)*(1-k)*base;spl.setColorAt(i,_c.setRGB(a*.85,a*.92,a))}
+  spl.instanceMatrix.needsUpdate=true;spl.instanceColor.needsUpdate=true}
 // snow flakes
 function flakeTex(){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.4,'rgba(255,255,255,.8)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c)}
 const SNOW_N=isTouch?2200:4000;const snowGeo=new THREE.BufferGeometry();const snowPos=new Float32Array(SNOW_N*3);const snowPh=new Float32Array(SNOW_N);
@@ -837,20 +855,24 @@ function applyWeatherLight(){const s=TIMES[timeKey];
     [M.ground,M.granite,M.floor,M.stone].forEach(m=>{m.roughness=.45});panoMat.uniforms.tint.value.multiplyScalar(.6)}
   else{[M.ground,M.granite,M.floor,M.stone].forEach(m=>{m.roughness=1})}
   if(weather==='snow'){sun.intensity=s.sunI*.55;hemi.intensity=s.hemiI*1.15;scene.fog.color.lerp(new THREE.Color(0xc9cfd8),s.night?.25:.6);scene.fog.density=s.fogD*1.9;panoMat.uniforms.tint.value.lerp(new THREE.Color(1,1,1.05),.4)}}
-let rainNode=null,dripTimer=null;
+let rainNode=null,rainLoading=false;
+function xfLoop(ctx,buf,t0,t1,xf){const sr=buf.sampleRate;const s0=Math.floor(t0*sr),s1=Math.floor(Math.min(t1,buf.duration)*sr),X=Math.floor(xf*sr);const len=s1-s0-X;const out=ctx.createBuffer(buf.numberOfChannels,len,sr);
+  for(let c=0;c<buf.numberOfChannels;c++){const src=buf.getChannelData(c),dst=out.getChannelData(c);for(let i=0;i<len;i++)dst[i]=src[s0+i];for(let i=0;i<X;i++){const a=i/X;dst[i]=src[s0+i]*Math.sqrt(a)+src[s0+len+i]*Math.sqrt(1-a)}}return out}
+async function initRainAudio(){if(rainNode||rainLoading)return;rainLoading=true;const ctx=AU.ctx;const g=ctx.createGain();g.gain.value=0;
+  const lo=ctx.createBiquadFilter();lo.type='lowshelf';lo.frequency.value=260;lo.gain.value=3;const hs=ctx.createBiquadFilter();hs.type='highshelf';hs.frequency.value=3800;hs.gain.value=-6;const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=7500;
+  g.connect(lo).connect(hs).connect(lp).connect(AU.amb);
+  const layer=async(url,vol,pan,a,b)=>{try{const buf=await ctx.decodeAudioData(await (await fetch(url)).arrayBuffer());const lb=xfLoop(ctx,buf,a,b,2.5);const s=ctx.createBufferSource();s.buffer=lb;s.loop=true;const lg=ctx.createGain();lg.gain.value=vol;const p=ctx.createStereoPanner();p.pan.value=pan;s.connect(lg).connect(p).connect(g);s.start(0,rand(0,lb.duration*.9))}catch(e){console.warn('rain',e)}};
+  await Promise.all([layer('assets/sound/rain_a.mp3',1,-.2,.5,51.6),layer('assets/sound/rain_b.mp3',.4,.3,.3,15.5)]);rainNode=g;applyWeatherAudio()}
 function applyWeatherAudio(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;
-  if(!rainNode){const src=ctx.createBufferSource();src.buffer=AU.noise;src.loop=true;const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=500;const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=5200;const g=ctx.createGain();g.gain.value=0;src.connect(hp).connect(lp).connect(g).connect(AU.amb);src.start();rainNode=g}
-  rainNode.gain.setTargetAtTime(weather==='rain'?.55:0,t,.8);
-  const s=TIMES[timeKey];AU.birds.gain.setTargetAtTime(weather==='clear'?s.birds*.55:0,t,.8);AU.crk.gain.setTargetAtTime(weather==='clear'?s.crk:0,t,.8);AU.wind.gain.setTargetAtTime(weather==='snow'?.25:weather==='rain'?.3:.5,t,.8);
-  clearInterval(dripTimer);if(weather==='rain')dripTimer=setInterval(()=>{if(Math.random()<.7)drip()},380)}
-function drip(){const ctx=AU.ctx,t=ctx.currentTime;const o=ctx.createOscillator();const f=rand(900,2200);o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*1.6,t+.04);const g=ctx.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.07,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.07);const pn=ctx.createStereoPanner();pn.pan.value=rand(-1,1);o.connect(g).connect(pn).connect(AU.amb);o.start(t);o.stop(t+.09)}
+  if(!rainNode){if(weather==='rain')initRainAudio()}else rainNode.gain.setTargetAtTime(weather==='rain'?1.7:0,t,1.6);
+  const s=TIMES[timeKey];AU.birds.gain.setTargetAtTime(weather==='clear'?s.birds*.55:0,t,.8);AU.crk.gain.setTargetAtTime(weather==='clear'?s.crk:0,t,.8);AU.wind.gain.setTargetAtTime(weather==='snow'?.25:weather==='rain'?.18:.5,t,.8)}
 function snowStep(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=rand(1100,1600);bp.Q.value=1.4;const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3200;
   const g=ctx.createGain();g.gain.setValueAtTime(0,t);const grains=9+(Math.random()*5|0);for(let i=0;i<grains;i++){const tt=t+i*.016+rand(0,.008);g.gain.setValueAtTime(rand(.15,.4),tt);g.gain.setValueAtTime(.02,tt+.006)}g.gain.linearRampToValueAtTime(0,t+.24);
   n.connect(bp).connect(lp).connect(g).connect(AU.master);n.start(t,rand(0,2));n.stop(t+.26);
   const o=ctx.createOscillator();o.frequency.value=110;const og=ctx.createGain();og.gain.setValueAtTime(.12,t);og.gain.exponentialRampToValueAtTime(.001,t+.12);o.connect(og).connect(AU.master);o.start(t);o.stop(t+.13)}
-function rainStep(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=rand(700,1100);bp.Q.value=.8;const g=ctx.createGain();g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+.16);n.connect(bp).connect(g).connect(AU.master);n.start(t,rand(0,2));n.stop(t+.18)}
+function rainStep(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=rand(700,1100);bp.Q.value=.8;const g=ctx.createGain();g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.16);n.connect(bp).connect(g).connect(AU.master);n.start(t,rand(0,2));n.stop(t+.18)}
 function updateWeather(dt,t){const cx=camera.position.x,cz=camera.position.z;const inside=curArea==='달빛전';
-  if(rain.visible){const p=rainGeo.attributes.position.array;for(let i=0;i<RAIN_N;i++){const k=i*6;let y=p[k+1]-dt*22;let x=p[k],z=p[k+2];if(y<0||Math.abs(x-cx)>30||Math.abs(z-cz)>30){y=rand(18,30);x=cx+rand(-30,30);z=cz+rand(-30,30)}p[k]=x;p[k+1]=y;p[k+2]=z;p[k+3]=x+.03;p[k+4]=y-.55;p[k+5]=z}rainGeo.attributes.position.needsUpdate=true;rain.material.opacity=inside?.15:.42}
+  if(rain.visible){updateRain(dt,t);dropMat.opacity=inside?.16:.5;splMat.opacity=inside?0:.9}
   if(snow.visible){const p=snowGeo.attributes.position.array;for(let i=0;i<SNOW_N;i++){const k=i*3;p[k+1]-=dt*(.9+Math.sin(snowPh[i])*.3);p[k]+=Math.sin(t*.8+snowPh[i])*dt*.35;p[k+2]+=Math.cos(t*.6+snowPh[i])*dt*.25;
       if(p[k+1]<0||Math.abs(p[k]-cx)>30||Math.abs(p[k+2]-cz)>30){p[k+1]=rand(14,25);p[k]=cx+rand(-30,30);p[k+2]=cz+rand(-30,30)}}snowGeo.attributes.position.needsUpdate=true}
   snowAcc=clamp(snowAcc+(weather==='snow'?dt/25:-dt/12),0,1);const a=snowAcc;snowMat.opacity=a*.97;snowHill.material.opacity=a*.95;roofSnowMat.opacity=a*.95;
@@ -897,7 +919,7 @@ function updateContext(){const a=areaOf(P.x,P.z);if(a!==curArea){curArea=a;$('#a
   let act=null;if(P.mode==='walk'){if(a==='범종각')act=['🔔 범종 치기',ringBell];else if(a==='달빛전')act=['🪷 108배 소원빌기',startWish];else if(a==='공양간')act=['🍚 공양하기',()=>openFood()];else if(a==='차담실')act=['🍵 스님과 차담하기',openTea];else if(a==='돌탑 기도터')act=['🪨 돌 올리고 소원빌기',startStone];else if(a==='약수터')act=['💧 약수 한 모금',()=>{status('시원한 약수 한 모금. 마음이 맑아져요');}];else if(a==='달맞이 터')act=['🏮 달님께 소원등 띄우기',startLantern]}
   const el=$('#ctx');if(act){if(ctxAction?.[0]!==act[0]){el.textContent=act[0];el.onclick=act[1]}el.classList.add('on')}else el.classList.remove('on');ctxAction=act;
   if(AU.ctx){const inside=a==='달빛전';AU.ambLP.frequency.setTargetAtTime(inside?1400:18000,AU.ctx.currentTime,.4)}}
-const greeted={};function onEnterArea(a){if(greeted[a])return;greeted[a]=1;const msg={'달빛전':'달빛전이에요. 방석에 앉아 108배를 올려보세요','범종각':'범종각이에요. 당목을 당겨 종을 울려보세요','공양간':'공양간이에요. 절밥 한 그릇 드시고 가세요','차담실':'차담실이에요. 달이 스님이 차를 내어주세요','약수터':'졸졸, 약수가 흘러요','달맞이 터':'달이 가장 잘 보이는 자리예요','돌탑 기도터':'소원 돌탑이에요. 작은 돌 하나에 소원을 담아 올려보세요'}[a];if(msg)status(msg)}
+const greeted={};function onEnterArea(a){if(greeted[a])return;greeted[a]=1;const msg={'달빛전':'달빛전이에요. 방석에 앉아 108배를 올려보세요','범종각':'범종각이에요. 당목을 당겨 종을 울려보세요','공양간':'공양간이에요. 절밥 한 그릇 드시고 가세요','차담실':'차담실이에요. 달이 스님이 차를 내어주세요','약수터':'졸졸, 약수가 흘러요','달맞이 터':'달이 가장 잘 보이는 자리예요','돌탑 기도터':'소원 돌탑이에요. 여기서 소원 빌고 결혼한 분, 딸 낳은 분 있어요 😊'}[a];if(msg)status(msg)}
 
 /* ================= interactions ================= */
 let bellSwing=0;
@@ -946,7 +968,7 @@ $('#cTea').onclick=()=>{closeM('#mCard');teleport(TEA.x-.2,TEA.z+2.6,Math.PI);se
 /* 소원 돌탑 */
 function stoneClick(v=.5,f=2600){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=4;const g=ctx.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+.09);const pn=panner(CAIRN.x,1,CAIRN.z,3,1);n.connect(bp).connect(g).connect(pn);pn.connect(AU.master);n.start(t,rand(0,1.5));n.stop(t+.1)}
 function startStone(){$('#wTitle').textContent='소원 돌 올리기';
-  $('#wSub').innerHTML='작은 돌 하나에 소원을 담아 돌탑 위에 조심스럽게 올려요.'+(myStones.length?'<br>지금까지 <b>'+myStones.length+'개</b>의 돌을 올렸어요.':'');
+  $('#wSub').innerHTML='여기서 소원 빌고 <b>결혼한 분, 딸 낳은 분</b> 있어요 😊<br>작은 돌 하나에 소원을 담아 돌탑 위에 조심스럽게 올려요.'+(myStones.length?'<br>지금까지 <b>'+myStones.length+'개</b>의 돌을 올렸어요.':'');
   $('#wText').value='';$('#wGo').textContent='돌 올리기';$('#wGo').onclick=()=>{const w=$('#wText').value.trim();if(!w){$('#wText').focus();return}closeM('#mWish');$('#wGo').textContent='시작하기';placeStone(w)};openM('#mWish')}
 function placeStone(wish){let c=cairns[0],bd=1e9;cairns.forEach(k=>{const d=Math.hypot(k.x-P.x,k.z-P.z)+k.top*.4;if(d<bd){bd=d;c=k}});
   P.yaw=Math.atan2(c.x-P.x,c.z-P.z);player.userData.greet=1.4;
