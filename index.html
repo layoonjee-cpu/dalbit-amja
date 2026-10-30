@@ -106,6 +106,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
 #mokHud .row{width:100%}#mokHud .btn{margin:0}
 .ttok{position:fixed;z-index:7;pointer-events:none;font-family:'Gowun Batang',serif;font-weight:700;font-size:20px;color:#fff3d6;text-shadow:0 2px 10px rgba(0,0,0,.6);animation:tt 1s ease-out forwards}
 @keyframes tt{from{opacity:1;transform:translate(-50%,-100%)}to{opacity:0;transform:translate(-50%,-220%)}}
+#stopWalk{left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);display:none;padding:13px 30px;font:inherit;font-size:16px;font-weight:700;border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(22,24,34,.55);backdrop-filter:blur(12px);border-radius:999px;cursor:pointer;z-index:12}
 #sitBow{left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);display:none;padding:16px 34px;font:inherit;font-size:17px;font-weight:700;border:none;color:#3a2730;background:linear-gradient(135deg,#fde2e6,#f2a9b5);border-radius:999px;box-shadow:0 8px 24px rgba(242,169,181,.45);cursor:pointer;z-index:12}
 #sitBow span{font-weight:500;font-size:14px;opacity:.75}
 #medi{top:42%;left:50%;transform:translate(-50%,-50%);text-align:center;display:none;pointer-events:none}
@@ -138,6 +139,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
   <button id="aTea"><span class="i">🍵</span>차담</button>
 </div>
 <div id="joy" class="ui"><i></i></div>
+<button id="stopWalk" class="ui">⏸ 멈추기</button>
 <div id="snd" class="ui glass">
   <b>소리 조절</b>
   <label>전체 <input type="range" id="vMaster" min="0" max="100" value="80"></label>
@@ -798,7 +800,7 @@ async function initAudio(){const ctx=new (window.AudioContext||window.webkitAudi
   AU.wind=await loop('assets/sound/wind.mp3',.5);AU.birds=await loop('assets/sound/birds.mp3',.0);
   // crickets (night)
   AU.crk=ctx.createGain();AU.crk.gain.value=0;AU.crk.connect(AU.amb);
-  setInterval(()=>{if(!AU.ctx||AU.crk.gain.value<.01||Math.random()<.55)return;const t=ctx.currentTime;const f=rand(4200,4700);for(let k=0;k<3;k++){const o=ctx.createOscillator();o.frequency.value=f;const g=ctx.createGain();g.gain.value=0;const st=t+k*.07;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(.028,st+.01);g.gain.linearRampToValueAtTime(0,st+.045);const pan=ctx.createStereoPanner();pan.pan.value=rand(-.9,.9);o.connect(g).connect(pan).connect(AU.crk);o.start(st);o.stop(st+.06)}},620);
+  setInterval(()=>{if(!AU.ctx||AU.crk.gain.value<.01||Math.random()<.7)return;const t=ctx.currentTime;const f=rand(4200,4700);for(let k=0;k<3;k++){const o=ctx.createOscillator();o.frequency.value=f;const g=ctx.createGain();g.gain.value=0;const st=t+k*.07;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(.016,st+.01);g.gain.linearRampToValueAtTime(0,st+.045);const pan=ctx.createStereoPanner();pan.pan.value=rand(-.9,.9);o.connect(g).connect(pan).connect(AU.crk);o.start(st);o.stop(st+.06)}},620);
   // spring water (spatial)
   {const src=ctx.createBufferSource();src.buffer=AU.noise;src.loop=true;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1400;bp.Q.value=.7;const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=500;const g=ctx.createGain();g.gain.value=.35;
    const lfo=ctx.createOscillator();lfo.frequency.value=7;const lg=ctx.createGain();lg.gain.value=.15;lfo.connect(lg).connect(g.gain);lfo.start();
@@ -808,7 +810,7 @@ async function initAudio(){const ctx=new (window.AudioContext||window.webkitAudi
   applyVolumes();
   applyTimeAudio();
   // 새소리: 아주 가끔, 작게
-  const birdPhrase=()=>{const s=TIMES[timeKey];if(weather==='clear'&&s.birds>0&&P.mode!=='sleep'){const t=ctx.currentTime,v=s.birds*rand(.14,.24),hold=rand(3.5,7);AU.birds.gain.cancelScheduledValues(t);AU.birds.gain.setValueAtTime(AU.birds.gain.value,t);AU.birds.gain.linearRampToValueAtTime(v,t+2.2);AU.birds.gain.setValueAtTime(v,t+2.2+hold);AU.birds.gain.linearRampToValueAtTime(0,t+5.5+hold)}setTimeout(birdPhrase,rand(35000,90000))};setTimeout(birdPhrase,rand(12000,25000));
+  const birdPhrase=()=>{const s=TIMES[timeKey];const outdoor=heightAt(P.x,P.z)<.2&&!['달빛전','요사채','공양간','차담실'].includes(curArea);if(weather==='clear'&&s.birds>0&&P.mode!=='sleep'&&outdoor){const t=ctx.currentTime,v=s.birds*rand(.08,.14),hold=rand(3.5,7);AU.birds.gain.cancelScheduledValues(t);AU.birds.gain.setValueAtTime(AU.birds.gain.value,t);AU.birds.gain.linearRampToValueAtTime(v,t+2.2);AU.birds.gain.setValueAtTime(v,t+2.2+hold);AU.birds.gain.linearRampToValueAtTime(0,t+5.5+hold)}setTimeout(birdPhrase,rand(35000,90000))};setTimeout(birdPhrase,rand(12000,25000));
 }
 const VOL=Object.assign({master:80,nature:80,bell:80,chant:70,mute:false},JSON.parse(localStorage.getItem('dalbit_vol')||'{}'));
 function applyVolumes(){if(!AU.ctx)return;const t=AU.ctx.currentTime;const k=v=>Math.pow(v/100,1.6);
@@ -828,7 +830,7 @@ function moktak(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const o=c
   const o2=ctx.createOscillator();o2.frequency.value=1850;const g2=ctx.createGain();g2.gain.setValueAtTime(.12,t);g2.gain.exponentialRampToValueAtTime(.0001,t+.05);
   const out=ctx.createGain();out.gain.value=.55;o.connect(g).connect(out);o2.connect(g2).connect(out);out.connect(AU.bellBus);o.start(t);o.stop(t+.2);o2.start(t);o2.stop(t+.08)}
 function footstep(onWood){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=onWood?420:rand(1600,2400);bp.Q.value=onWood?3:.9;const g=ctx.createGain();g.gain.setValueAtTime(onWood?.35:.16,t);g.gain.exponentialRampToValueAtTime(.001,t+(onWood?.07:.11));n.connect(bp).connect(g).connect(AU.master);n.start(t,rand(0,2));n.stop(t+.13)}
-function chimeTick(){if(!AU.ctx)return;const c=chimes[Math.random()*chimes.length|0];const gust=windAmt();windBell(c.pos,.2+gust*.22);c.kick=1;setTimeout(chimeTick,rand(9000,26000)/(.6+gust*.6))}
+function chimeTick(){if(!AU.ctx)return;const c=chimes[Math.random()*chimes.length|0];const gust=windAmt();windBell(c.pos,.12+gust*.12);c.kick=1;setTimeout(chimeTick,rand(18000,45000)/(.6+gust*.6))}
 function windAmt(){return .5+.5*Math.sin(clock.elapsedTime*.13)*Math.sin(clock.elapsedTime*.051+1)}
 function updateListener(){if(!AU.ctx)return;const L=AU.ctx.listener;const p=camera.position;const f=new THREE.Vector3();camera.getWorldDirection(f);
   if(L.positionX){L.positionX.value=p.x;L.positionY.value=p.y;L.positionZ.value=p.z;L.forwardX.value=f.x;L.forwardY.value=f.y;L.forwardZ.value=f.z;L.upX.value=0;L.upY.value=1;L.upZ.value=0}else{L.setPosition(p.x,p.y,p.z);L.setOrientation(f.x,f.y,f.z,0,1,0)}}
@@ -841,7 +843,7 @@ const TIMES={
  night:{ic:'🌙',tx:'밤',night:true,exp:1.55,sunC:0xa9bcff,sunI:1.1,hemiS:0x2c3550,hemiG:0x12121c,hemiI:.5,fog:0x0e1632,fogD:.0105,pano:'night',tint:[1,1,1],lan:1,birds:0,crk:.7,door:1}};
 let timeKey=(()=>{const h=new Date().getHours();return h>=4&&h<7?'dawn':h<17?'day':h<19?'sunset':'night'})();
 if(new Date().getHours()<4)timeKey='night';
-let lastRitual='';function ritualBell(k){if(!started||!AU.ctx||lastRitual===k||P.mode==='sleep')return;lastRitual=k;[0,9,18].forEach((d,i)=>setTimeout(()=>{strikeBell(.38);bellSwing=1},d*1000));setTimeout(()=>status(k==='sunset'?'저녁 예불 종소리가 산을 건너가요 🔔':'새벽 종소리가 하루를 열어요 🔔',4200),900)}
+let lastRitual='';function ritualBell(k){if(!started||!AU.ctx||lastRitual===k||P.mode==='sleep')return;lastRitual=k;setTimeout(()=>{strikeBell(.28);bellSwing=1},0);setTimeout(()=>status(k==='sunset'?'저녁 예불 종소리가 산을 건너가요 🔔':'새벽 종소리가 하루를 열어요 🔔',4200),900)}
 function setTime(k){timeKey=k;if(k==='sunset'||k==='dawn')setTimeout(()=>ritualBell(k),1500);const s=TIMES[k];$('#timeIc').textContent=s.ic;$('#timeTx').textContent=s.tx;
   renderer.toneMappingExposure=s.exp;sun.color.set(s.sunC);sun.intensity=s.sunI;hemi.color.set(s.hemiS);hemi.groundColor.set(s.hemiG);hemi.intensity=s.hemiI;scene.fog.color.set(s.fog);scene.fog.density=s.fogD;
   panoMat.uniforms.map.value=s.pano==='night'?panoNight:panoDawn;panoMat.uniforms.tint.value.setRGB(...s.tint);
@@ -941,7 +943,7 @@ async function initRainAudio(){if(rainNode||rainLoading)return;rainLoading=true;
   await Promise.all([layer('assets/sound/rain_a.mp3',1,-.2,.5,51.6),layer('assets/sound/rain_b.mp3',.4,.3,.3,15.5)]);rainNode=g;applyWeatherAudio()}
 function applyWeatherAudio(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;
   if(!rainNode){if(weather==='rain')initRainAudio()}else rainNode.gain.setTargetAtTime(weather==='rain'?1.7:0,t,1.6);
-  const s=TIMES[timeKey];if(weather!=='clear')AU.birds.gain.setTargetAtTime(0,t,.8);AU.crk.gain.setTargetAtTime(weather==='clear'?s.crk:0,t,.8);AU.wind.gain.setTargetAtTime(weather==='snow'?.22:weather==='rain'?.16:.4,t,.8)}
+  const s=TIMES[timeKey];if(weather!=='clear')AU.birds.gain.setTargetAtTime(0,t,.8);AU.crk.gain.setTargetAtTime(weather==='clear'?s.crk:0,t,.8);AU.wind.gain.setTargetAtTime(weather==='snow'?.18:weather==='rain'?.12:.3,t,.8)}
 function snowStep(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=rand(1100,1600);bp.Q.value=1.4;const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3200;
   const g=ctx.createGain();g.gain.setValueAtTime(0,t);const grains=9+(Math.random()*5|0);for(let i=0;i<grains;i++){const tt=t+i*.016+rand(0,.008);g.gain.setValueAtTime(rand(.15,.4),tt);g.gain.setValueAtTime(.02,tt+.006)}g.gain.linearRampToValueAtTime(0,t+.24);
   n.connect(bp).connect(lp).connect(g).connect(AU.master);n.start(t,rand(0,2));n.stop(t+.26);
@@ -995,7 +997,7 @@ function updateContext(){const a=areaOf(P.x,P.z);if(a!==curArea){curArea=a;$('#a
   let act=null;if(P.mode==='walk'){if(a==='범종각')act=['🔔 범종 치기',ringBell];else if(a==='달빛전')act=['🪷 108배 소원빌기',startWish];else if(a==='공양간')act=['🍚 공양하기',()=>openFood()];else if(a==='차담실')act=['🍵 스님과 차담하기',openTea];else if(a==='요사채')act=['🌙 하룻밤 묵어가기',askSleep];else if(a==='돌탑 기도터')act=['🪨 돌 올리고 소원빌기',startStone];else if(a==='약수터')act=['💧 약수 한 모금',drinkWater];else if(a==='달맞이 터')act=['🏮 달님께 소원등 띄우기',startLantern]}
   const el=$('#ctx');if(act){if(ctxAction?.[0]!==act[0]){el.textContent=act[0];el.onclick=act[1]}el.classList.add('on')}else el.classList.remove('on');ctxAction=act;
   if(AU.ctx){const inside=a==='달빛전';AU.ambLP.frequency.setTargetAtTime(inside?1400:18000,AU.ctx.currentTime,.4)}}
-const greeted={};function onEnterArea(a){if(greeted[a])return;greeted[a]=1;const msg={'달빛전':'달빛전이에요. 방석에 앉아 108배를 올려보세요','범종각':'범종각이에요. 당목을 당겨 종을 울려보세요','공양간':'공양간이에요. 절밥 한 그릇 드시고 가세요','차담실':'차담실이에요. 달이 스님이 차를 내어주세요','약수터':'졸졸, 약수가 흘러요','달맞이 터':'달이 가장 잘 보이는 자리예요','요사채':'요사채예요. 따뜻한 온돌방에 이불을 깔아두었어요','돌탑 기도터':'소원 돌탑이에요. 여기서 소원 빌고 결혼한 분, 딸 낳은 분 있어요 😊'}[a];if(msg)status(msg)}
+const greeted={};function onEnterArea(a){if(AU.ctx&&['달빛전','요사채','공양간','차담실'].includes(a)){AU.birds.gain.cancelScheduledValues(AU.ctx.currentTime);AU.birds.gain.setTargetAtTime(0,AU.ctx.currentTime,.8)}if(greeted[a])return;greeted[a]=1;const msg={'달빛전':'달빛전이에요. 방석에 앉아 108배를 올려보세요','범종각':'범종각이에요. 당목을 당겨 종을 울려보세요','공양간':'공양간이에요. 절밥 한 그릇 드시고 가세요','차담실':'차담실이에요. 달이 스님이 차를 내어주세요','약수터':'졸졸, 약수가 흘러요','달맞이 터':'달이 가장 잘 보이는 자리예요','요사채':'요사채예요. 따뜻한 온돌방에 이불을 깔아두었어요','돌탑 기도터':'소원 돌탑이에요. 여기서 소원 빌고 결혼한 분, 딸 낳은 분 있어요 😊'}[a];if(msg)status(msg)}
 
 /* ================= interactions ================= */
 let bellSwing=0;
@@ -1010,6 +1012,7 @@ $('#aSit').onclick=()=>{if(P.mode==='sit'){standUp();return}if(P.mode!=='walk')r
   if(curArea==='달맞이 터'){P.x=MOONSPOT.x+.2;P.z=MOONSPOT.z-.1;P.sitRock=true;P.yaw=Math.atan2(moonDir.x,moonDir.z);cam.yaw=P.yaw+Math.PI;cam.pitch=.08;status(TIMES[timeKey].night?'달이 참 밝아요. 오늘 하루를 천천히 돌아봐요 🌕':'밤이 되면 이 자리에서 달이 가장 잘 보여요',4500)}
   P.mode='sit';player.userData.sit=1;mediStart=performance.now();mindNext=60;$('#medi').style.display='block';$('#bar').style.opacity=.35};
 let sitBows=0;
+$('#stopWalk').onclick=e=>{e.stopPropagation();stopAuto()};
 $('#sitBow').onclick=e=>{e.stopPropagation();if(P.mode!=='sit'||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);sitBows++;$('#sitBowN').textContent=` · ${sitBows}배`;if(navigator.vibrate)navigator.vibrate(10);
   const m={1:'부처님께 정성껏 절을 올렸어요 🙏',3:'삼배를 올렸어요. 마음이 한결 차분해져요',7:'한 배 한 배, 마음이 가벼워져요',21:'스물한 배. 오늘의 나를 칭찬해 주세요'}[sitBows];if(m)status(m,3200)};
 function standUp(){P.mode='walk';player.userData.sit=0;if(P.sitRock){P.sitRock=false;P.x=MOONSPOT.x+1.6;P.z=MOONSPOT.z-1.4}$('#sitBow').style.display='none';if(P.sitCushion){P.sitCushion.taken=false;P.sitCushion=null;P.z+=.9;cam.targetDist=6.2}$('#medi').style.display='none';$('#bar').style.opacity=1}
@@ -1079,7 +1082,7 @@ function updateEat(dt){if(!eatS)return;eatS.t+=dt;const k=eatS.t/eatS.dur;player
   if(k>=1){const kind=eatS.kind;eatS.g.visible=false;eatS=null;BOWLS.forEach(f=>f.parent.visible=true);player.userData.eat=0;player.userData.sit=0;P.mode='walk';cam.pitch=.32;cam.targetDist=6.2;player.userData.greet=1.4;
     const msg=kind==='bib'?['🥗 산채비빔밥 공양','고사리, 도라지, 시금치, 무생채, 표고… 산에서 온 나물을 들기름에 비벼 먹었어요.<br><br>절에서는 음식을 남기지 않고, 지은 이의 정성에 감사하며 천천히 먹어요. 배도 마음도 든든해졌지요?']:['🍡 떡 한 접시와 식혜','쑥떡, 인절미, 백설기에 살얼음 동동 식혜까지. 달큰하고 쫀득한 맛에 마음이 풀어져요.<br><br>잠깐 쉬어가도 괜찮아요. 오늘은 나를 위해 천천히 먹어도 되는 날이에요.'];
     info(msg[0],msg[1],[['잘 먹었습니다 🙏','pink'],['차담실에서 차 한 잔','ghost',()=>{teleport(TEA.x-.2,TEA.z+2.6,Math.PI);setTimeout(openTea,1200)}]])}}
-function spoonClink(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;[2900,4100].forEach((f,i)=>{const o=ctx.createOscillator();o.frequency.value=f*rand(.97,1.03);const g=ctx.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.05/(i+1),t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.35);o.connect(g).connect(AU.bellBus);o.start(t);o.stop(t+.4)})}
+function spoonClink(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;[2900,4100].forEach((f,i)=>{const o=ctx.createOscillator();o.frequency.value=f*rand(.97,1.03);const g=ctx.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.02/(i+1),t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.35);o.connect(g).connect(AU.bellBus);o.start(t);o.stop(t+.4)})}
 /* 호박잎 우산 */
 function leafTex(){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');const g=x.createRadialGradient(128,128,10,128,128,128);g.addColorStop(0,'#8fb25a');g.addColorStop(.7,'#5f8f3a');g.addColorStop(1,'#46752c');x.fillStyle=g;x.fillRect(0,0,256,256);
   x.strokeStyle='rgba(220,240,180,.55)';x.lineWidth=3;for(let i=0;i<7;i++){const a=i/7*Math.PI*2;x.beginPath();x.moveTo(128,128);x.quadraticCurveTo(128+Math.cos(a+.2)*60,128+Math.sin(a+.2)*60,128+Math.cos(a)*125,128+Math.sin(a)*125);x.stroke();
@@ -1097,7 +1100,7 @@ function singingBowl(v=.07){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime
 const mindLines=['애쓰지 않아도 괜찮은 시간이에요','마음에도 쉼표가 필요해요','천천히 가도 늦지 않아요','지나간 일은 지나간 대로, 오늘은 오늘만큼만','나를 돌보는 것도 좋은 수행이에요','걱정은 잠시 마루에 내려놓고 가세요','오늘 여기까지 온 나, 참 잘했어요','바람처럼 왔다가, 가볍게 돌아가요'];
 let breathPh=-1,mindNext=60,mindI=Math.random()*mindLines.length|0;
 function updateBreath(){if(P.mode!=='sit'){breathPh=-1;return}const s=(performance.now()-mediStart)/1000;const cyc=s%10;const ph=cyc<4?0:1;
-  if(ph!==breathPh){breathPh=ph;const b=$('#breath');b.style.transition=ph?'transform 6s ease-in-out':'transform 4s ease-in-out';b.style.transform=ph?'scale(.55)':'scale(1)';$('#mediBr').textContent=ph?'천천히… 내쉬어요':'숨을 천천히 들이쉬어요';if(!ph&&Math.floor(s/10)%3===0)singingBowl(P.sitCushion?.045:.06)}
+  if(ph!==breathPh){breathPh=ph;const b=$('#breath');b.style.transition=ph?'transform 6s ease-in-out':'transform 4s ease-in-out';b.style.transform=ph?'scale(.55)':'scale(1)';$('#mediBr').textContent=ph?'천천히… 내쉬어요':'숨을 천천히 들이쉬어요';if(!ph&&s<2)singingBowl(.035)}
   if(s>mindNext){mindNext=s+90;status('🍃 '+mindLines[mindI++%mindLines.length],6500)}}
 /* 가만히 두면 천천히 둘러보기 (멍 모드) */
 let lastAct=performance.now(),idleOn=false;['keydown','pointerdown','wheel','touchstart'].forEach(ev=>addEventListener(ev,()=>{lastAct=performance.now();if(idleOn){idleOn=false;cam.targetDist=6.2;$('#bar').style.opacity=1}},{passive:true}));
@@ -1106,7 +1109,7 @@ function updateIdle(dt){if(!started||P.mode!=='walk'||document.querySelector('.m
   if(idleOn){cam.yaw+=dt*.03;cam.pitch+=(.22-cam.pitch)*Math.min(1,dt*.3)}}
 /* 약수 한 모금 */
 function drinkWater(){if(P.mode!=='walk')return;const yaw=Math.atan2(SPRING.x-P.x,SPRING.z-P.z);P.yaw=yaw;player.userData.bow=1;
-  setTimeout(()=>{if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;for(let i=0;i<3;i++){const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=rand(500,800);bp.Q.value=2;const g=ctx.createGain();const st=t+i*.42;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(.18,st+.05);g.gain.exponentialRampToValueAtTime(.001,st+.25);n.connect(bp).connect(g).connect(AU.master);n.start(st,rand(0,2));n.stop(st+.3)}},700);
+  setTimeout(()=>{if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;for(let i=0;i<3;i++){const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=rand(500,800);bp.Q.value=2;const g=ctx.createGain();const st=t+i*.42;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(.06,st+.05);g.gain.exponentialRampToValueAtTime(.001,st+.25);n.connect(bp).connect(g).connect(AU.master);n.start(st,rand(0,2));n.stop(st+.3)}},700);
   setTimeout(()=>status(['시원한 약수 한 모금. 머리까지 맑아져요 💧','산에서 내려온 물이라 달고 시원해요','물 한 모금에 마음이 차분해져요'][Math.random()*3|0],3800),1500)}
 /* 처음 오신 분 안내 */
 function firstGuide(){if(localStorage.getItem('dalbit_guided'))return;localStorage.setItem('dalbit_guided','1');
@@ -1122,7 +1125,7 @@ function placeStone(wish){let c=cairns[0],bd=1e9;cairns.forEach(k=>{const d=Math
   const s=makeStone(Math.max(.1,c.r0*.32)*rand(.9,1.1));const ty=c.top+s.userData.h;const sx=c.x+rand(-.03,.03),sz=c.z+rand(-.03,.03);
   s.position.set(P.x+(c.x-P.x)*.35,P.y+1.4,P.z+(c.z-P.z)*.35);scene.add(s);const from=s.position.clone();const t0=performance.now();
   (function anim(){const k=Math.min(1,(performance.now()-t0)/1400);const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;s.position.set(lerp(from.x,sx,e),lerp(from.y,ty,e)+Math.sin(k*Math.PI)*.6,lerp(from.z,sz,e));
-    if(k<1){requestAnimationFrame(anim);return}s.position.set(sx,ty,sz);c.top+=s.userData.h*2;c.n++;stoneClick(.55,2400);setTimeout(()=>stoneClick(.3,3100),90);
+    if(k<1){requestAnimationFrame(anim);return}s.position.set(sx,ty,sz);c.top+=s.userData.h*2;c.n++;stoneClick(.25,2400);setTimeout(()=>stoneClick(.12,3100),90);
     myStones.push({w:wish.slice(0,60),d:Date.now()});localStorage.setItem('dalbit_stones',JSON.stringify(myStones.slice(-50)));
     status('돌 하나에 소원을 담았어요. 무너지지 않게 마음을 모아요 🙏',3800);setTimeout(()=>{player.userData.greet=1.4;say(player,'🙏')},500);
     setTimeout(()=>{drawCard(wish,'돌탑 소원',myStones.length+'번째 소원 돌');openM('#mCard')},2600)})()}
@@ -1174,7 +1177,8 @@ canvas.addEventListener('wheel',e=>{cam.targetDist=clamp(cam.targetDist+e.deltaY
 const ray=new THREE.Raycaster();let moveTarget=null;const groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 function tapMove(e){if(P.mode!=='walk')return;const v=new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(v,camera);
   const npcHit=ray.intersectObjects([cat,monk],true)[0];if(npcHit){let o=npcHit.object;while(o.parent&&o!==cat&&o!==monk)o=o.parent;if(o===cat){say(cat,'야옹~ 🐾');cat.userData.wag=2;return}if(o===monk){if(curArea==='차담실')openTea();else moveTarget=new THREE.Vector3(TEA.x-.2,0,TEA.z+2.2);return}}
-  groundPlane.constant=-P.y;const p=new THREE.Vector3();if(ray.ray.intersectPlane(groundPlane,p))moveTarget=p}
+  groundPlane.constant=-P.y;const p=new THREE.Vector3();if(ray.ray.intersectPlane(groundPlane,p)){const dx=p.x-P.x,dz=p.z-P.z,l=Math.hypot(dx,dz);if(l>.3){autoDir={x:dx/l,z:dz/l};moveTarget=null;$('#stopWalk').style.display='block'}}}
+let autoDir=null;function stopAuto(){autoDir=null;$('#stopWalk').style.display='none'}
 if(isTouch){const J=$('#joy');J.style.display='block';const knob=J.querySelector('i');
   J.addEventListener('pointerdown',e=>{joy.id=e.pointerId;J.setPointerCapture(e.pointerId);upd(e)});J.addEventListener('pointermove',e=>{if(e.pointerId===joy.id)upd(e)});
   const end=()=>{joy.id=null;joy.x=joy.y=0;knob.style.transform=''};J.addEventListener('pointerup',end);J.addEventListener('pointercancel',end);
@@ -1197,7 +1201,7 @@ setTimeout(()=>{if($('#enter').disabled){$('#enter').disabled=false;$('#enter').
 $('#enter').onclick=async()=>{nick=($('#nick').value.trim()||rndNick()).slice(0,10);localStorage.setItem('dalbit_nick',nick);meLab.innerHTML='<i>나</i>'+nick;
   $('#intro').style.transition='opacity 1.4s';$('#intro').style.opacity=0;setTimeout(()=>$('#intro').remove(),1500);
   try{await initAudio()}catch(e){console.warn(e)}
-  setTimeout(()=>{strikeBell(.9);status('달빛암자에 오신 것을 환영해요 🌙',3800)},900);setTimeout(chimeTick,3000);
+  setTimeout(()=>{strikeBell(.45);status('달빛암자에 오신 것을 환영해요 🌙',3800)},900);setTimeout(chimeTick,3000);
   setTimeout(()=>status('천천히 걸어 올라가 보세요. 법당과 범종각, 공양간, 요사채, 소원 돌탑이 있어요',4500),5200);setTimeout(firstGuide,10500);
   started=true};
 let started=false;
@@ -1206,9 +1210,9 @@ let started=false;
 const clock=new THREE.Clock();const tmpV=new THREE.Vector3();let stepAcc=0;
 setTime(timeKey);
 function animDali(d,dt,moving,speed){const u=d.userData;u.walk+=dt*(moving?9*speed:0);const sw=moving?Math.sin(u.walk):0;
-  u.body.position.y=moving?Math.abs(Math.sin(u.walk))*.05:0;u.body.rotation.z=sw*.04;
-  u.feet.forEach((f,i)=>{f.position.z=.06+(moving?Math.sin(u.walk+(i?Math.PI:0))*.1:0);f.visible=!u.sit});
-  u.arms.forEach((a,i)=>{const s=i?1:-1;let rz=s*-.35,rx=moving?Math.sin(u.walk+(i?0:Math.PI))*.5:0;
+  u.body.position.y=moving?Math.abs(Math.sin(u.walk))*.022:0;u.body.rotation.z=sw*.02;
+  u.feet.forEach((f,i)=>{f.position.z=.06+(moving?Math.sin(u.walk+(i?Math.PI:0))*.07:0);f.visible=!u.sit});
+  u.arms.forEach((a,i)=>{const s=i?1:-1;let rz=s*-.35,rx=moving?Math.sin(u.walk+(i?0:Math.PI))*.28:0;
     if(u.greet>0){rz=s*.25;rx=-1.25}if(u.sit){rz=s*-.2;rx=-.6}if(i===1&&u.chorong&&u.chorong.visible&&!(u.greet>0)){rx=-.7;rz=.1}a.rotation.set(rx,0,-rz)});
   if(u.greet>0)u.greet-=dt;
   let pitch=0,dy=0;
@@ -1220,18 +1224,19 @@ function animDali(d,dt,moving,speed){const u=d.userData;u.walk+=dt*(moving?9*spe
   u.body.rotation.x=pitch;u.body.position.y+=dy;u.head.rotation.x=u.greet>0?.15:(u.lie?-.1:0)}
 function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
   // movement
-  let ix=0,iz=0;if(started&&P.mode==='walk'){if(keys.KeyW||keys.ArrowUp)iz-=1;if(keys.KeyS||keys.ArrowDown)iz+=1;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;ix+=joy.x;iz+=joy.y;if(ix||iz)moveTarget=null}
+  let ix=0,iz=0;if(started&&P.mode==='walk'){if(keys.KeyW||keys.ArrowUp)iz-=1;if(keys.KeyS||keys.ArrowDown)iz+=1;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;ix+=joy.x;iz+=joy.y;if(ix||iz){moveTarget=null;if(autoDir)stopAuto()}}
   let mvx=0,mvz=0;const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);
   if(ix||iz){const l=Math.min(1,Math.hypot(ix,iz));const nx=ix/(Math.hypot(ix,iz)||1),nz=iz/(Math.hypot(ix,iz)||1);mvx=(nx*cy+nz*sy)*l;mvz=(-nx*sy+nz*cy)*l}
+  else if(autoDir&&P.mode==='walk'){mvx=autoDir.x;mvz=autoDir.z;lastAct=performance.now()}
   else if(moveTarget){const dx=moveTarget.x-P.x,dz=moveTarget.z-P.z,d=Math.hypot(dx,dz);if(d<.15)moveTarget=null;else{mvx=dx/d;mvz=dz/d}}
-  const speed=keys.ShiftLeft?4.6:2.6;const moving=(mvx||mvz)&&P.mode==='walk';
+  const speed=keys.ShiftLeft?2.4:1.3;const moving=(mvx||mvz)&&P.mode==='walk';
   if(moving){const nx=P.x+mvx*speed*dt,nz=P.z+mvz*speed*dt;const tryMove=(x,z)=>{if(blockedR(x,z))return false;const h=heightAtR(x,z);if(h-P.y>.38)return false;P.x=x;P.z=z;return true};
-    if(!tryMove(nx,nz)){if(!tryMove(nx,P.z))if(!tryMove(P.x,nz))moveTarget=null}
+    if(!tryMove(nx,nz)){if(!tryMove(nx,P.z))if(!tryMove(P.x,nz)){moveTarget=null;if(autoDir)stopAuto()}}
     const ty=Math.atan2(mvx,mvz);let dyaw=ty-P.yaw;dyaw=Math.atan2(Math.sin(dyaw),Math.cos(dyaw));P.yaw+=dyaw*Math.min(1,dt*10);
-    stepAcc+=speed*dt;if(stepAcc>.55){stepAcc=0;const onPlat=P.y>.2;if(!onPlat&&snowAcc>.3)snowStep();else if(!onPlat&&weather==='rain')rainStep();else footstep(onPlat)}}
+    }
   if(P.mode!=='bow'&&P.mode!=='sleep'){const th=P.sitRock?.66:heightAtR(P.x,P.z);P.y+=(th-P.y)*Math.min(1,dt*(th>P.y?14:10))}
   player.position.set(P.x,P.y,P.z);player.rotation.y=P.yaw;player.rotation.x=player.userData.lie?-Math.PI/2:0;updateEat(dt);
-  if(sleepS.on){const sk=((performance.now()-sleepS.t0)/7000|0)%sleepLines.length;const el=$('#sleepT');if(el.textContent!==sleepLines[sk])el.textContent=sleepLines[sk]}fillL.position.set(camera.position.x*.5+P.x*.5,P.y+2.2,camera.position.z*.5+P.z*.5);animDali(player,dt,moving,speed/2.6);animMok(dt);
+  if(sleepS.on){const sk=((performance.now()-sleepS.t0)/7000|0)%sleepLines.length;const el=$('#sleepT');if(el.textContent!==sleepLines[sk])el.textContent=sleepLines[sk]}fillL.position.set(camera.position.x*.5+P.x*.5,P.y+2.2,camera.position.z*.5+P.z*.5);animDali(player,dt,moving,.62);animMok(dt);
   // camera
   cam.dist+=(cam.targetDist-cam.dist)*Math.min(1,dt*4);
   if(P.mode==='sit'){cam.yaw+=dt*.05;const s=(performance.now()-mediStart)/1000|0;$('#mediT').textContent=`${s/60|0}:${String(s%60).padStart(2,'0')} · 화면을 누르면 일어나요`+(P.sitCushion?' · 아래 버튼으로 절을 올려요':'')}
@@ -1259,7 +1264,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   // npcs
   npcs.forEach(s=>{const n=s.n;if(s.sit){s.bowT-=dt;if(s.bowT<0){n.userData.bow=1;s.bowT=rand(2.2,4)}animDali(n,dt,false,1);return}
     const dx=s.tx-s.x,dz=s.tz-s.z,d=Math.hypot(dx,dz);let mv=false;
-    if(d>.2){s.x+=dx/d*1.3*dt;s.z+=dz/d*1.3*dt;s.yaw=Math.atan2(dx,dz);mv=true}else{s.wait-=dt;if(s.wait<0){const p=POI[Math.random()*POI.length|0];s.tx=p[0]+rand(-1.5,1.5);s.tz=p[1]+rand(-1.5,1.5);s.wait=rand(3,9);if(Math.random()<.3)n.userData.greet=1.2}}
+    if(d>.2){s.x+=dx/d*.9*dt;s.z+=dz/d*.9*dt;s.yaw=Math.atan2(dx,dz);mv=true}else{s.wait-=dt;if(s.wait<0){const p=POI[Math.random()*POI.length|0];s.tx=p[0]+rand(-1.5,1.5);s.tz=p[1]+rand(-1.5,1.5);s.wait=rand(3,9);if(Math.random()<.3)n.userData.greet=1.2}}
     s.y=(s.y??0)+(heightAtR(s.x,s.z)-(s.y??0))*Math.min(1,dt*10);n.position.set(s.x,s.y,s.z);let dyw=s.yaw-n.rotation.y;dyw=Math.atan2(Math.sin(dyw),Math.cos(dyw));n.rotation.y+=dyw*Math.min(1,dt*6);animDali(n,dt,mv,.5)});
   animDali(monk,dt,false,1);
   {const sitOut=P.mode==='sit'&&!P.sitCushion&&curArea!=='달빛전';const home=[TEA.x+1.1,TEA.z+.6];const goal=sitOut?[P.x+Math.cos(P.yaw+1.9)*.9,P.z+Math.sin(P.yaw+1.9)*.9]:home;const cdx=goal[0]-cat.position.x,cdz=goal[1]-cat.position.z,cd=Math.hypot(cdx,cdz);
@@ -1270,6 +1275,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
     if(!vis||dd>26){el.style.display='none';return}el.style.display='block';el.style.left=((tmpV.x+1)/2*innerWidth)+'px';el.style.top=((1-tmpV.y)/2*innerHeight)+'px';el.style.opacity=clamp(1.4-dd/22,0,1)};
   if(started){if(P.mode==='sleep')meLab.style.display='none';else proj(player,1.45,meLab);npcs.forEach(s=>proj(s.n,1.45,s.lab));proj(monk,1.25,monkLab)}
   for(let i=bubbles.length-1;i>=0;i--){const b=bubbles[i];if(performance.now()>b.until){b.b.remove();bubbles.splice(i,1);continue}proj(b.obj,1.85,b.b)}
+  if(autoDir&&P.mode!=='walk')stopAuto();
   updateWeather(dt,t);updateWisps(dt,t);updateMist(dt,t);updateBreath();updateIdle(dt);
   {const indoorP=heightAt(P.x,P.z)>.2||curArea==='달빛전';const pc=player.userData.chorong;if(pc)pc.visible=chorongOn&&!indoorP&&P.mode!=='bow'&&P.mode!=='mok'&&P.mode!=='sleep'&&P.mode!=='eat';
    npcs.forEach(s=>{const c=s.n.userData.chorong;if(c)c.visible=chorongOn&&heightAt(s.x,s.z)<.2})
