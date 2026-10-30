@@ -197,6 +197,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const $=s=>document.querySelector(s);
@@ -220,6 +221,11 @@ const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,1500);
 const composer=new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene,camera));
+/* sanitize: NaN/Inf 픽셀이 bloom에서 검은 사각형으로 번지는 문제 방지 */
+const sanitize=new ShaderPass({uniforms:{tDiffuse:{value:null}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:'uniform sampler2D tDiffuse;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);bvec4 bad=bvec4(!(c.r==c.r)||isinf(c.r),!(c.g==c.g)||isinf(c.g),!(c.b==c.b)||isinf(c.b),!(c.a==c.a)||isinf(c.a));c=mix(c,vec4(0.,0.,0.,1.),vec4(bad));gl_FragColor=vec4(clamp(c.rgb,0.,64.),clamp(c.a,0.,1.));}'});
+composer.addPass(sanitize);
 const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.55,.6,.82);
 composer.addPass(bloom); composer.addPass(new OutputPass());
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
@@ -707,7 +713,7 @@ async function initAudio(){const ctx=new (window.AudioContext||window.webkitAudi
    const lfo=ctx.createOscillator();lfo.frequency.value=7;const lg=ctx.createGain();lg.gain.value=.15;lfo.connect(lg).connect(g.gain);lfo.start();
    const pn=panner(SPRING.x,1,SPRING.z,2.5,1.4);src.connect(bp).connect(hp).connect(g).connect(pn).connect(AU.master);src.start()}
   // chant (독경) from the Buddha, spatial
-  try{const r=await fetch('assets/sound/chant.mp3');if(r.ok){const buf=await ctx.decodeAudioData(await r.arrayBuffer());const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;const pn=panner(0,2.4,HALL.z-3,3.5,1.1);const g=ctx.createGain();g.gain.value=.9;src.connect(g).connect(pn).connect(AU.chantG);src.start(0,rand(0,buf.duration*.8));AU.hasChant=true}}catch(e){console.warn('no chant',e)}
+  try{const r=await fetch('assets/sound/chant.m4a');if(r.ok){const buf=await ctx.decodeAudioData(await r.arrayBuffer());const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;const pn=panner(0,2.4,HALL.z-3,3.5,1.1);const g=ctx.createGain();g.gain.value=.9;src.connect(g).connect(pn).connect(AU.chantG);src.start(0,rand(0,buf.duration*.8));AU.hasChant=true}}catch(e){console.warn('no chant',e)}
   applyVolumes();
   applyTimeAudio();
 }
