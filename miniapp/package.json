@@ -7,6 +7,7 @@
     "build": "node build.mjs && ait build"
   },
   "dependencies": {
-    "@apps-in-toss/web-framework": "3.0.4"
+    "@apps-in-toss/web-framework": "3.0.4",
+    "esbuild": "0.24.0"
   }
 }
