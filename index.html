@@ -554,7 +554,7 @@ function hanok({x,z,W,D,wallH=3.6,plat=1,rot=0,openSide='front',openBays=[],name
   if(stairs){const sw=Math.min(W>18?7:4,W*.35),steps=Math.max(2,Math.round(plat/.25));const r=rect(-sw/2,sw/2,PD/2,PD/2+steps*.42);
     const axis=Math.abs(s)>.5?'x':'z';const outward=tr(0,PD/2+1);const inward=tr(0,0);
     r.steps=steps;r.plat=plat;r.axis=axis;if(axis==='z'){r.h0=outward[1]>inward[1]?plat:0;r.h1=outward[1]>inward[1]?0:plat}else{r.h0=outward[0]>inward[0]?plat:0;r.h1=outward[0]>inward[0]?0:plat}ramps.push(r)}
-  if(walls){const t=.35;const segs={back:[-W/2,W/2,-D/2-t,-D/2+t],front:[-W/2,W/2,D/2-t,D/2+t],left:[-W/2-t,-W/2+t,-D/2,D/2],right:[W/2-t,W/2+t,-D/2,D/2]};
+  if(walls){const t=.35;const ro=1.05;const segs={back:[-W/2-ro,W/2+ro,-D/2-ro,-D/2+t],front:[-W/2,W/2,D/2-t,D/2+t],left:[-W/2-ro,-W/2+t,-D/2-ro,D/2+ro],right:[W/2-t,W/2+ro,-D/2-ro,D/2+ro]};
     for(const [sn,sg] of Object.entries(segs)){if(sn===openSide){if(openBays==='all')continue;const list=sides[sn].list;for(let i=0;i<list.length-1;i++){if(openBays.includes(i))continue;const a=list[i],b=list[i+1];if(sides[sn].axis==='x')colliders.push(rect(a,b,sg[2],sg[3]));else colliders.push(rect(sg[0],sg[1],a,b))}}else colliders.push(rect(...sg))}}
   return g}
 
@@ -1941,6 +1941,7 @@ function receiveTogetherPhoto(m){const r=remotes.get(m.id);if(!r||!chatAllowed)r
  else if(m.t==='photoReply'&&photoBuddy===m.id){photoBuddy=null;if(!m.accept){status('친구가 지금은 쉬고 싶어해요. 다음에 함께 찍어요');return}setTimeout(()=>{if(P.mode==='sit')standUp();player.userData.greet=3;P.yaw=r.yaw;cam.yaw=r.yaw+.45;cam.pitch=.3;cam.targetDist=4.6;info('친구와 함께 한 컷','친구와 나란히 선 모습을 폴라로이드로 남겨요.',[['같이 사진 찍기','pink',()=>setTimeout(capturePolaroid,500)],['조금 더 함께 쉬기','ghost']])},900)}}
 addMoreButton('내 곁으로 친구 초대 · 카톡 공유',openFriendInvite);addMoreButton('친구와 함께 기념사진 찍기',requestTogetherPhoto);
 
+let stuckT=0;function unstick(){for(let r=.5;r<=7;r+=.5){for(let k=0;k<16;k++){const a=k/16*Math.PI*2,x=P.x+Math.cos(a)*r,z=P.z+Math.sin(a)*r;if(!blockedR(x,z)&&heightAtR(x,z)-P.y<=.35&&!(Math.hypot(x,z)>COURT+5)){P.x=x;P.z=z;P.y=heightAt(x,z);status('길이 막혀 가까운 빈 자리로 옮겨드렸어요');return}}}}
 function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
   // movement
   let ix=0,iz=0;if(started&&P.mode==='walk'){if(keys.KeyW||keys.ArrowUp)iz-=1;if(keys.KeyS||keys.ArrowDown)iz+=1;if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;ix+=joy.x;iz+=joy.y;if(ix||iz){moveTarget=null;if(autoDir)stopAuto()}}
@@ -1949,8 +1950,9 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   else if(autoDir&&P.mode==='walk'){mvx=autoDir.x;mvz=autoDir.z;lastAct=performance.now()}
   else if(moveTarget){const dx=moveTarget.x-P.x,dz=moveTarget.z-P.z,d=Math.hypot(dx,dz);if(d<.15)moveTarget=null;else{mvx=dx/d;mvz=dz/d}}
   const speed=keys.ShiftLeft?2.4:1.3;const moving=(mvx||mvz)&&P.mode==='walk';
+  if(started&&P.mode==='walk'&&blocked(P.x,P.z)){unstick()}
   if(moving){const nx=P.x+mvx*speed*dt,nz=P.z+mvz*speed*dt;const tryMove=(x,z)=>{if(blockedR(x,z))return false;{const dd=Math.hypot(x-D.x,z-D.z);if(dd<.5&&dd<Math.hypot(P.x-D.x,P.z-D.z))return false}{const hb=npcBlock(x,z);if(hb){bump(hb);return false}}const h=heightAtR(x,z);if(h-P.y>.38)return false;P.x=x;P.z=z;return true};
-    if(!tryMove(nx,nz)){if(!tryMove(nx,P.z))if(!tryMove(P.x,nz)){moveTarget=null;if(autoDir)stopAuto()}}
+    if(!tryMove(nx,nz)){if(!tryMove(nx,P.z))if(!tryMove(P.x,nz)){moveTarget=null;if(autoDir)stopAuto();stuckT+=dt;if(stuckT>1.2){stuckT=0;unstick()}}else stuckT=0}else stuckT=0
     const ty=Math.atan2(mvx,mvz);let dyaw=ty-P.yaw;dyaw=Math.atan2(Math.sin(dyaw),Math.cos(dyaw));P.yaw+=dyaw*Math.min(1,dt*10);
     }
   if(P.mode!=='bow'&&P.mode!=='sleep'&&P.mode!=='mat'){const th=P.sitRock?.66:heightAtR(P.x,P.z);P.y+=(th-P.y)*Math.min(1,dt*(th>P.y?14:10))}
@@ -1960,7 +1962,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   cam.dist+=(cam.targetDist-cam.dist)*Math.min(1,dt*4);
   if(P.mode==='sit'){const s=(performance.now()-mediStart)/1000|0;$('#mediT').textContent=`${s/60|0}:${String(s%60).padStart(2,'0')} · 화면을 누르면 일어나요`+(P.sitCushion?' · 아래 버튼으로 절을 올려요':'')}
   const inside=curArea==='달빛전';const dist=inside?Math.min(cam.dist,4.2):cam.dist;
-  const tgt=tmpV.set(P.x,P.y+1.05+(P.mode==='sit'&&curArea==='달맞이 터'?1.4:0),P.z);let lim=dist;{const ux=Math.sin(cam.yaw)*Math.cos(cam.pitch),uz=Math.cos(cam.yaw)*Math.cos(cam.pitch);for(let s=.45;s<=dist;s+=.15){if(cameraBlocked(tgt.x+ux*s,tgt.z+uz*s)&&Math.hypot(tgt.x+ux*s,tgt.z+uz*s)<COURT+5){lim=Math.max(.9,s-.3);break}}}
+  const tgt=tmpV.set(P.x,P.y+1.05+(P.mode==='sit'&&curArea==='달맞이 터'?1.4:0),P.z);let lim=dist;{const ux=Math.sin(cam.yaw)*Math.cos(cam.pitch),uz=Math.cos(cam.yaw)*Math.cos(cam.pitch);for(let s=.45;s<=dist;s+=.15){if(cameraBlocked(tgt.x+ux*s,tgt.z+uz*s)&&Math.hypot(tgt.x+ux*s,tgt.z+uz*s)<COURT+5){lim=Math.min(dist,Math.max(2.4,s-.3));break}}}
   cam.cd=cam.cd??dist;cam.cd+=(lim-cam.cd)*Math.min(1,dt*(lim<cam.cd?14:2.5));const dist2=Math.min(dist,cam.cd);
   const cx=tgt.x+Math.sin(cam.yaw)*Math.cos(cam.pitch)*dist2,cz=tgt.z+Math.cos(cam.yaw)*Math.cos(cam.pitch)*dist2;let cyy=tgt.y+Math.sin(cam.pitch)*dist2;if(curArea==='요사채')cyy=Math.min(cyy,YOSA.plat+2.55);
   cyy=Math.max(cyy,heightAt(cx,cz)+.4);if(inside)cyy=Math.min(cyy,HALL.plat+3.9);
