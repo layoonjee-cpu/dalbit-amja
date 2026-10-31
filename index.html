@@ -609,7 +609,7 @@ const hallLanterns=[];const candleLights=[];
    const L=new THREE.PointLight(0xffa860,4,9,1.6);L.position.set(cx,fy+2,bz+.9);scene.add(L);candleLights.push({L,fl,base:6})});
  // cushions
  const cg=new RoundedBoxGeometry(.85,.16,.85,3,.07);const cols=[0x56606e,0x8a6d3b,0x6d3b3b,0x4f5d4a,0x7b6a8e];
- window.CUSHIONS=[];colliders.push({x1:-6.9,x2:6.9,z1:-19.6,z2:HALL.z-.6-.48});for(let r=0;r<3;r++)for(let c=0;c<5;c++){const m=new THREE.Mesh(cg,new THREE.MeshStandardMaterial({color:cols[(r*5+c)%cols.length],roughness:.95}));const px=-4+c*2,pz=HALL.z-.6+r*1.7;m.position.set(px,fy+.08,pz);m.receiveShadow=true;m.castShadow=true;scene.add(m);CUSHIONS.push({x:px,z:pz,y:fy+.16,taken:false,m});colliders.push({x1:px-.4,x2:px+.4,z1:pz-.4,z2:pz+.4,cushion:true})}
+ window.CUSHIONS=[];colliders.push({x1:-6.9,x2:6.9,z1:-19.6,z2:HALL.z-.6-.48});for(let r=0;r<3;r++)for(let c=0;c<5;c++){const m=new THREE.Mesh(cg,new THREE.MeshStandardMaterial({color:cols[(r*5+c)%cols.length],roughness:.95}));const px=-4.8+c*2.4,pz=HALL.z-.6+r*2.2;m.position.set(px,fy+.08,pz);m.receiveShadow=true;m.castShadow=true;scene.add(m);CUSHIONS.push({x:px,z:pz,y:fy+.16,taken:false,m});colliders.push({x1:px-.4,x2:px+.4,z1:pz-.4,z2:pz+.4,cushion:true})}
  // hanging lotus lanterns
  const lg=new THREE.SphereGeometry(.28,16,12);
  for(let i=0;i<9;i++){const mat=new THREE.MeshStandardMaterial({color:0xf6c2cb,emissive:0xff8fa3,emissiveIntensity:.05,roughness:.6});const m=new THREE.Mesh(lg,mat);m.scale.y=.8;const px=-5.2+(i%9)*1.3,pz=HALL.z+1.2;m.position.set(px,HALL.plat+3.3,pz);scene.add(m);
@@ -890,7 +890,7 @@ function makeDali(robe=0x5f6470,{monk=false}={}){
     const shoe=new THREE.Mesh(new THREE.SphereGeometry(.06,16,10),GOMUSIN_M);shoe.scale.set(1,.5,1.7);shoe.position.set(0,.03,.02);shoe.castShadow=true;f.add(shoe);
     const toe=new THREE.Mesh(new THREE.SphereGeometry(.022,10,8),GOMUSIN_M);toe.scale.set(1,.8,1.6);toe.position.set(0,.055,.115);toe.rotation.x=-.5;f.add(toe);feet.push(f)});
   body.position.y=.13;
-  root.userData={body,head,arms,feet,walk:0,bow:0,greet:0,sit:0,lift:.13};root.scale.setScalar(1.05);return root}
+  root.userData={body,head,arms,feet,walk:0,bow:0,greet:0,sit:0,lift:.13};root.scale.setScalar(.9);return root}
 
 /* ================= player ================= */
 const player=makeDali();scene.add(player);
