@@ -1,4 +1,4 @@
-import { IAP } from "@apps-in-toss/web-framework";
+import { IAP, Share, Clipboard } from "@apps-in-toss/web-framework";
 const SKU="ait.0000094986.bba31e5c.084ade73b2.3465092764";
 const API=(typeof __SAJU_API__!=="undefined"?__SAJU_API__:"https://www.unmyung.kr").replace(/\/$/,"");
 const PRICE="4,895원";
@@ -15,7 +15,7 @@ const css=`#sj{position:fixed;inset:0;z-index:90;background:rgba(10,10,20,.55);d
 #sj .err{color:#d93636;font-size:13.5px;margin-top:10px;min-height:18px}
 #sj .pil{display:flex;gap:8px;margin:10px 0}#sj .pil div{flex:1;text-align:center;border-radius:12px;background:#f6f4ff;padding:10px 0}#sj .pil b{display:block;font-size:22px;color:#1c1650}#sj .pil small{color:#6b7280}
 #sj .sec{margin:16px 0;padding:14px;border-radius:14px;background:#faf9ff}#sj .sec h3{margin:0 0 8px;font-size:16px;color:#1c1650}#sj .sec .b{white-space:pre-wrap;line-height:1.75;font-size:14.5px;color:#374151}
-#sj .tags span{display:inline-block;margin:3px 4px 3px 0;padding:5px 10px;border-radius:999px;background:#f1eeff;color:#5B3DF5;font-size:13px}`;
+#sj .acts{display:flex;gap:8px;margin:12px 0}#sj .acts button{flex:1;padding:12px 4px;border:0;border-radius:12px;background:#f1eeff;color:#5B3DF5;font-size:14.5px;font-weight:800}#sj .tags span{display:inline-block;margin:3px 4px 3px 0;padding:5px 10px;border-radius:999px;background:#f1eeff;color:#5B3DF5;font-size:13px}`;
 const st=document.createElement("style");st.textContent=css;(document.head||document.documentElement).appendChild(st);
 let root=null,box=null,busy=false;
 function ensureRoot(){if(root)return;root=document.createElement("div");root.id="sj";root.innerHTML='<div class="box"></div>';document.body.appendChild(root);box=$(".box",root);root.addEventListener("click",e=>{if(e.target===root&&!busy)close()})}
@@ -30,10 +30,10 @@ function showForm(msg){
   '<label>달력</label><div class="seg" id="sjC"><button data-v="solar" class="'+(form.calendar==="solar"?"on":"")+'">양력</button><button data-v="lunar" class="'+(form.calendar==="lunar"?"on":"")+'">음력</button><button data-v="leap_lunar" class="'+(form.calendar==="leap_lunar"?"on":"")+'">음력 윤달</button></div>'+
   '<label>생년월일</label><input id="sjD" type="date" min="1920-01-01" max="'+yearNow+'-12-31" value="'+esc(form.birthDate||"")+'">'+
   '<label>태어난 시간대</label><select id="sjT">'+TIMES.map(([v,l])=>'<option value="'+v+'"'+(form.birthTime===v?" selected":"")+'>'+l+'</option>').join("")+'</select>'+
-  '<div class="err" id="sjE">'+esc(msg||"")+'</div><button class="go" id="sjGo">'+PRICE+' 결제하고 사주풀이 보기</button><button class="ghost" id="sjX">닫기</button>';
+  '<div class="err" id="sjE">'+esc(msg||"")+'</div><button class="go" id="sjGo">'+PRICE+' 결제하고 사주풀이 보기</button>'+(hasLast()?'<button class="ghost" id="sjL">🔖 지난 풀이 다시 보기</button>':"")+'<button class="ghost" id="sjX">닫기</button>';
   $("#sjG").onclick=e=>{const b=e.target.closest("button");if(!b)return;form.gender=b.dataset.v;[...$("#sjG").children].forEach(x=>x.classList.toggle("on",x===b))};
   $("#sjC").onclick=e=>{const b=e.target.closest("button");if(!b)return;form.calendar=b.dataset.v;[...$("#sjC").children].forEach(x=>x.classList.toggle("on",x===b))};
-  $("#sjX").onclick=close;
+  $("#sjX").onclick=close;if($("#sjL"))$("#sjL").onclick=showLast;
   $("#sjGo").onclick=()=>{form.name=$("#sjN").value.trim();form.birthDate=$("#sjD").value;form.birthTime=$("#sjT").value;
     if(!form.name){$("#sjE").textContent="이름을 입력해 주세요.";return}if(!form.birthDate){$("#sjE").textContent="생년월일을 입력해 주세요.";return}
     startPay()}
@@ -54,20 +54,28 @@ function startPay(){
 }
 function pillar(l,p){const s=p&&p.stem||"?",b=p&&p.branch||"?";return '<div><small>'+l+'</small><b>'+esc(s)+'</b><b>'+esc(b)+'</b></div>'}
 function luckyHtml(l){if(!l||typeof l!=="object")return"";return '<div class="tags">'+Object.entries(l).filter(([k,v])=>v&&typeof v!=="object").map(([k,v])=>'<span>'+esc(k)+' · '+esc(v)+'</span>').join("")+'</div>'}
+function resultText(prof,data,bodies){const p=(data.summary&&data.summary.pillars)||{};const pl=(l,x)=>l+" "+((x&&x.stem)||"?")+((x&&x.branch)||"?");let t="[달빛암자 사주풀이] "+prof.name+"님\n"+(data.headline||"")+"\n\n"+[pl("시주",p.hour),pl("일주",p.day),pl("월주",p.month),pl("연주",p.year)].join(" · ")+"\n";(data.sections||[]).forEach((s,i)=>{t+="\n■ "+s.title+"\n"+(bodies[i]||"")+"\n"});return t+"\n- 달빛암자 · 운명론자"}
+async function copyText(t){try{await Clipboard.setText(t);return true}catch(e){}try{await navigator.clipboard.writeText(t);return true}catch(e){}try{const ta=document.createElement("textarea");ta.value=t;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();return true}catch(e){return false}}
+function actsHtml(){return '<div class="acts"><button data-a="cp">📋 전체 복사하기</button><button data-a="sh">📤 카톡·메일로 보내기</button></div>'}
+function renderResult(prof,data,bodies,done){const p=(data.summary&&data.summary.pillars)||{};
+  box.innerHTML='<h2>'+esc(prof.name)+'님의 사주풀이</h2><p class="s">'+esc(data.headline||"")+'</p>'+(done?actsHtml():'<p class="s">풀이를 쓰는 중이에요. 다 끝나면 복사·보내기 버튼이 나와요.</p>')+'<div class="pil">'+pillar("시주",p.hour)+pillar("일주",p.day)+pillar("월주",p.month)+pillar("연주",p.year)+'</div>'+luckyHtml(data.lucky)+
+  (data.sections||[]).map((s,i)=>'<div class="sec"><h3>'+esc(s.title)+'</h3><div class="b" id="sjS'+i+'">'+esc(bodies[i]||"풀이를 쓰는 중이에요…")+'</div></div>').join("")+(done?actsHtml():"")+'<button class="ghost" id="sjX2">닫기</button>';
+  $("#sjX2").onclick=()=>{busy=false;close()};
+  if(done){const text=resultText(prof,data,bodies);box.querySelectorAll(".acts button").forEach(b=>{const orig=b.textContent;b.onclick=async()=>{if(b.dataset.a==="cp"){const ok=await copyText(text);b.textContent=ok?"✅ 복사했어요":"복사에 실패했어요"}else{try{await Share.sendMessage({message:text});return}catch(e){const ok=await copyText(text);b.textContent=ok?"✅ 복사했어요. 카톡에 붙여넣기":"공유에 실패했어요"}}setTimeout(()=>{b.textContent=orig},3000)}})}}
 async function runAnalysis(prof,orderId){
   ensureRoot();busy=true;box.innerHTML='<h2>사주를 풀고 있어요</h2><p class="s">'+esc(prof.name)+'님의 사주 원국을 살펴보고 있어요. 1분 정도 걸려요.</p>';root.classList.add("on");
   try{
     const data=await api("/api/saju/analyze",{productId:"saju-analysis",profile:prof,orderId});
-    const p=(data.summary&&data.summary.pillars)||{};
-    box.innerHTML='<h2>'+esc(prof.name)+'님의 사주풀이</h2><p class="s">'+esc(data.headline||"")+'</p><div class="pil">'+pillar("시주",p.hour)+pillar("일주",p.day)+pillar("월주",p.month)+pillar("연주",p.year)+'</div>'+luckyHtml(data.lucky)+
-      (data.sections||[]).map((s,i)=>'<div class="sec"><h3>'+esc(s.title)+'</h3><div class="b" id="sjS'+i+'">풀이를 쓰는 중이에요…</div></div>').join("")+'<button class="ghost" id="sjX2">닫기</button>';
-    $("#sjX2").onclick=()=>{busy=false;close()};
+    const bodies=[];renderResult(prof,data,bodies,false);
     const titles=(data.sections||[]).map(s=>s.title);
-    await Promise.all((data.sections||[]).map((s,i)=>api("/api/saju/section",{productId:"saju-analysis",profile:prof,context:data.context,section:s,otherTitles:titles,orderId}).then(r=>{$("#sjS"+i).textContent=r.body||""}).catch(()=>{$("#sjS"+i).textContent="이 부분은 잠시 후 다시 열어 주세요."})));
-    try{localStorage.setItem("dalbit_saju_last",JSON.stringify({prof,data,t:Date.now()}))}catch(e){}
+    await Promise.all((data.sections||[]).map((s,i)=>api("/api/saju/section",{productId:"saju-analysis",profile:prof,context:data.context,section:s,otherTitles:titles,orderId}).then(r=>{bodies[i]=r.body||"";const el=$("#sjS"+i);if(el)el.textContent=bodies[i]}).catch(()=>{bodies[i]="이 부분은 잠시 후 다시 열어 주세요.";const el=$("#sjS"+i);if(el)el.textContent=bodies[i]})));
+    try{localStorage.setItem("dalbit_saju_last",JSON.stringify({prof,data:{headline:data.headline,summary:data.summary,lucky:data.lucky,sections:(data.sections||[]).map(s=>({id:s.id,title:s.title}))},bodies,t:Date.now()}))}catch(e){}
+    renderResult(prof,data,bodies,true);
   }catch(e){showForm("풀이를 불러오지 못했어요: "+(e.message||""))}
   busy=false;
 }
+function showLast(){try{const l=JSON.parse(localStorage.getItem("dalbit_saju_last")||"null");if(!l)return false;ensureRoot();root.classList.add("on");renderResult(l.prof,l.data,l.bodies||[],true);return true}catch(e){return false}}
+function hasLast(){try{return !!localStorage.getItem("dalbit_saju_last")}catch(e){return false}}
 async function recover(){try{const o=JSON.parse(localStorage.getItem("dalbit_saju_order")||"null");if(IAP.getPendingOrders&&IAP.getPendingOrders.isSupported&&IAP.getPendingOrders.isSupported()){const r=await IAP.getPendingOrders();for(const po of (r&&r.orders)||[]){if(po.sku!==SKU)continue;try{const c=await confirmOrder(po.orderId);await IAP.completeProductGrant({params:{orderId:po.orderId}});const pend=JSON.parse(localStorage.getItem("dalbit_saju_pending")||"null");if(pend&&pend.profile){form={...form,name:pend.profile.name,gender:pend.profile.gender,birthDate:pend.profile.birthDate,calendar:pend.profile.calendar};runAnalysis(pend.profile,c.orderId)}return}catch(e){}}}}catch(e){}}
 function openSaju(){ensureRoot();busy=false;showForm("");root.classList.add("on");recover()}
 window.openSaju=openSaju;
