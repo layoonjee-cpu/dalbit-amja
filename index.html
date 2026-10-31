@@ -1197,7 +1197,7 @@ let bowlT=0;$('#bowlBtn').onclick=e=>{e.stopPropagation();const n=performance.no
 $('#ctx2').onclick=e=>{e.stopPropagation();petDog()};
 $('#dineServe').onclick=serveDine;$('#dineEat').onclick=startDineEat;
 $('#stopWalk').onclick=e=>{e.stopPropagation();stopAuto()};
-$('#sitBow').onclick=e=>{e.stopPropagation();if(P.mode!=='sit'||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);sitBows++;sendRitual('bow');$('#sitBowN').textContent=` · ${sitBows}배`;if(navigator.vibrate)navigator.vibrate(10);
+$('#sitBow').onclick=e=>{e.stopPropagation();if(P.mode!=='sit'||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,1100);sitBows++;sendRitual('bow');$('#sitBowN').textContent=` · ${sitBows}배`;if(navigator.vibrate)navigator.vibrate(10);
   const m={1:'부처님께 정성껏 절을 올렸어요 🙏',3:'삼배를 올렸어요. 마음이 한결 차분해져요',7:'한 배 한 배, 마음이 가벼워져요',21:'스물한 배. 오늘의 나를 칭찬해 주세요'}[sitBows];if(m)status(m,3200)};
 function standUp(){P.mode='walk';player.userData.sit=0;$('#sitBar').style.display='none';if(P.sitRock){P.sitRock=false;P.x=MOONSPOT.x+1.6;P.z=MOONSPOT.z-1.4}$('#sitBow').style.display='none';if(P.sitCushion){P.sitCushion.taken=false;P.sitCushion=null;P.z+=.9;cam.targetDist=6.2}$('#medi').style.display='none';$('#bar').style.opacity=1}
 $('#aTea').onclick=()=>{if(curArea==='차담실'){openTea();return}info('차담실로 갈까요?','오른쪽 아래 정자에서 달이 스님이 차를 내어드려요.',[['차담실로 이동','pink',()=>teleport(TEA.x-.2,TEA.z+2.6,Math.PI)],['둘러볼게요','ghost']])};
@@ -1213,9 +1213,9 @@ function beginBow(){const w=$('#wText').value.trim();if(!w){$('#wText').focus();
     $('#bowHud').style.display='flex';$('#bar').style.display='none';$('#ctx').classList.remove('on');bowState.active=true;bowState.n=0;updBow();status('“'+w+'”');strikeBell(.35)},700)}
 const bowMsgs={};
 function updBow(){$('#bowN').textContent=bowState.n;$('#bowBar').style.width=(bowState.n/108*100)+'%';const lit=Math.floor(bowState.n/12);hallLanterns.forEach((m,i)=>m.emissiveIntensity=i<lit?2.2:.05);if(bowMsgs[bowState.n])$('#bowMsg').textContent=bowMsgs[bowState.n]}
-function bowOnce(){if(!bowState.active||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);bowState.n++;sendRitual('bow');updBow();if(navigator.vibrate)navigator.vibrate(10);if(bowState.n>=108){clearInterval(bowState.auto);bowState.auto=null;bowState.active=false;setTimeout(finishBow,1300)}}
+function bowOnce(){if(!bowState.active||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,1100);bowState.n++;sendRitual('bow');updBow();if(navigator.vibrate)navigator.vibrate(10);if(bowState.n>=108){clearInterval(bowState.auto);bowState.auto=null;bowState.active=false;setTimeout(finishBow,1300)}}
 $('#bowOne').onclick=bowOnce;
-$('#bowAuto').onclick=()=>{if(bowState.auto){clearInterval(bowState.auto);bowState.auto=null;$('#bowAuto').textContent='자동 절';return}bowState.auto=setInterval(bowOnce,1150);$('#bowAuto').textContent='멈추기'};
+$('#bowAuto').onclick=()=>{if(bowState.auto){clearInterval(bowState.auto);bowState.auto=null;$('#bowAuto').textContent='자동 절';return}bowState.auto=setInterval(bowOnce,3400);$('#bowAuto').textContent='멈추기'};
 $('#bowStop').onclick=()=>{clearInterval(bowState.auto);bowState.auto=null;endBow();status('언제든 다시 와서 이어가도 돼요')};
 function endBow(){bowState.active=false;$('#bowHud').style.display='none';$('#bar').style.display='flex';P.mode='walk';cam.targetDist=6.2;if(bowState.cushion){bowState.cushion.taken=false;P.z+=1.2}}
 function finishBow(){strikeBell(.8);status('108배를 모두 올렸어요. 연등이 환하게 켜졌어요 🪷',4000);bowState.done=true;endBow();drawCard(bowState.wish,'108배 소원 카드','108배 원만 회향');setTimeout(()=>openM('#mCard'),1400)}
@@ -1310,7 +1310,7 @@ function npcBlock(x,z){for(const r of remotes.values()){const dn=Math.hypot(x-r.
 let chatWith=null;
 const chatRules=[[/안녕|반가|하이|ㅎㅇ/,['안녕하세요! 반가워요 🙏','네, 반갑습니다. 편히 쉬다 가세요']],[/힘들|힘드|힘듬|지쳐|지친|지쳤|피곤|우울|속상|슬퍼|슬프|외로|괴로|아파|지침/,['많이 애쓰셨네요. 여기선 천천히 쉬어가요','오늘은 마음 내려놓고 푹 쉬다 가세요 🍵','토닥토닥… 다 잘 될 거예요']],[/고마|감사/,['저도 고마워요 😊','별말씀을요 🙏']],[/밥|공양|비빔밥|배고|떡/,['공양간 산채비빔밥 정말 맛있어요!','떡이랑 식혜도 꼭 드셔보세요 😋']],[/잠|하룻밤|요사채|졸려/,['요사채 온돌방 따끈해서 잠이 솔솔 와요']],[/소원|기도|돌탑/,['소원 돌탑에 돌 하나 올려보세요. 이뤄진 분들 많대요']],[/어디|사세|사는|왔어/,['저는 서울에서 바람 쐬러 왔어요 🍃','부산에서 왔어요. 여기 공기가 참 좋네요']],[/이름|누구/,[n=>'저는 '+n+'이에요 😊']],[/날씨|비|눈|달|하늘/,['오늘 하늘이 참 곱네요','달 뜨면 달맞이 터에 가보세요 🌕']]];
 const chatDefault=['그렇군요 😊','네~ 좋은 하루 보내세요','저도 그 마음 알 것 같아요','천천히 둘러보세요 🙏','여기 오니 마음이 편해지죠?'];
-function addChatLine(who,txt){const d=document.createElement('div');d.className='cl '+who;d.textContent=txt;$('#chLog').appendChild(d);$('#chLog').scrollTop=1e5}
+function addChatLine(who,txt){if(who==='sys')status(txt,3200);const d=document.createElement('div');d.className='cl '+who;d.textContent=txt;$('#chLog').appendChild(d);$('#chLog').scrollTop=1e5}
 function openChat(s){if(!started)return;if(!chatAllowed){status('대화를 끈 상태예요. 더보기에서 대화를 켤 수 있어요');return}if(s.real&&s.chatOn===false){status('이 분은 지금 조용히 쉬고 계세요');return}chatWith=s;s.chat=true;$('#chLog').innerHTML='';if(s.real){$('#chTitle').textContent='💬 '+s.name+'님과 대화';addChatLine('sys','지금 실제로 함께 있는 분이에요. 따뜻한 말 한마디 건네보세요 🙏');$('#chIn').value='';openM('#mChat');setTimeout(()=>$('#chIn').focus(),300);return}$('#chTitle').textContent='💬 '+s.name+'님과 대화';const hi=['안녕하세요, '+s.name+'이에요 🙏','어머, 반가워요! 처음 오셨어요?','좋은 저녁이에요… 아니 좋은 하루예요 😊'][Math.random()*3|0];setTimeout(()=>{addChatLine('you',hi);say(s.n,hi,2800)},350);$('#chIn').value='';openM('#mChat');setTimeout(()=>$('#chIn').focus(),300)}
 function sendChat(){if(!chatAllowed||chatWith?.chatOn===false){addChatLine('sys','대화를 끈 분께는 메시지를 보낼 수 없어요.');return}const t=$('#chIn').value.trim().slice(0,30);if(!t||!chatWith)return;if(isBad(t)){addChatLine('sys','고운 말로 다시 적어주세요 🙏 (욕설은 보낼 수 없어요)');return}$('#chIn').value='';addChatLine('me',t);say(player,t,3200);const s=chatWith;
   if(s.real){if(ws&&ws.readyState===1)ws.send(JSON.stringify({t:'chat',to:s.id,text:t}));else addChatLine('sys','연결이 잠시 끊겼어요. 잠시 후 다시 보내주세요');return}
@@ -1546,6 +1546,7 @@ function showFoodIntro(f){
   setTimeout(()=>n.classList.add('out'),6500);setTimeout(()=>n.remove(),7100);
 }
 function tapMove(e){const v0=new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(v0,camera);if(dineMeshes.length){const dh=ray.intersectObjects(dineMeshes,true)[0];if(dh){let o=dh.object;while(o.parent&&!o.userData.food)o=o.parent;if(o.userData.food){const f=o.userData.food;showFoodIntro(f);return}}}
+  if(P.mode==='bath'){const hit=ray.intersectObjects(bathNpcs.map(s=>s.n),true)[0];if(hit){let o=hit.object;while(o.parent&&!bathNpcs.some(s=>s.n===o))o=o.parent;const w=bathNpcs.find(s=>s.n===o);if(w)openChat(w)}return}
   if(P.mode!=='walk')return;const v=new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(v,camera);
   {const f=ray.intersectObjects(scene.children.filter(o=>o.userData?.fortuneCorner),true)[0];if(f){openFortune();return}}
   {const f=ray.intersectObjects(scene.children.filter(o=>o.userData?.candleShelf),true)[0];if(f){askCandle();return}}
@@ -1586,12 +1587,12 @@ const clock=new THREE.Clock();const tmpV=new THREE.Vector3();let stepAcc=0;
 setTime(timeKey);
 function animDali(d,dt,moving,speed){const u=d.userData;u.cush=false;u.cdef=0;for(const c of (window.CUSHIONS||[])){if(Math.abs(c.x-d.position.x)<.4&&Math.abs(c.z-d.position.z)<.4&&Math.abs(d.position.y-c.y)<.5){u.cush=true;u.cdef=Math.max(0,c.y-d.position.y);break}}u.walk+=dt*(moving?9*speed:0);const sw=moving?Math.sin(u.walk):0;
   u.body.position.y=(u.lift||0)+(moving?Math.abs(Math.sin(u.walk))*.022:0);u.body.rotation.z=sw*.02;
-  const kw=u.bow>0?Math.max(0,Math.min(1,Math.min(1-u.bow,u.bow)/.14)):0;u.feet.forEach((f,i)=>{if(kw>0){f.visible=true;f.position.z=.06+(-.32-.06)*kw;f.position.y=.045*kw;f.rotation.x=1.45*kw}else{f.position.y=0;f.rotation.x=0;f.position.z=.06+(moving?Math.sin(u.walk+(i?Math.PI:0))*.07:0);f.visible=!u.sit}});
+  const kw=u.bow>0?Math.max(0,Math.min(1,Math.min(1-u.bow,u.bow)/.2)):0;u.feet.forEach((f,i)=>{if(kw>0){f.visible=true;f.position.z=.06+(-.32-.06)*kw;f.position.y=.045*kw;f.rotation.x=1.45*kw}else{f.position.y=0;f.rotation.x=0;f.position.z=.06+(moving?Math.sin(u.walk+(i?Math.PI:0))*.07:0);f.visible=!u.sit}});
   u.arms.forEach((a,i)=>{const s=i?1:-1;let rz=s*-.35,rx=moving?Math.sin(u.walk+(i?0:Math.PI))*.28:0;
     if(u.greet>0){rz=s*.25;rx=-1.25}if(u.sit){rz=s*-.2;rx=-.6}if(i===1&&u.chorong&&u.chorong.visible&&!(u.greet>0)){rx=-.7;rz=.1}a.rotation.set(rx,0,-rz)});
   if(u.greet>0)u.greet-=dt;
   let pitch=0,dy=0;
-  if(u.bow>0){u.bow-=dt*.9;const p=1-Math.max(0,u.bow);const k=Math.sin(Math.min(1,p)*Math.PI);pitch=k*1.25;dy=u.cush?k*.1:-k*.08;u.arms.forEach((a,i)=>{a.rotation.x=-k*1.6})}
+  if(u.bow>0){u.bow-=dt*.33;const p=1-Math.max(0,u.bow);const k=Math.sin(Math.min(1,p)*Math.PI);pitch=k*1.25;dy=u.cush?k*.1:-k*.08;u.arms.forEach((a,i)=>{a.rotation.x=-k*1.6})}
   else if(u.greet>0){pitch=.35}
   if(u.sit){dy=-.18-(u.lift||0)+(u.cush?.18+u.cdef:0)}else if(u.cush){dy+=u.cdef}
   if(u.eat){u.eatPh=(u.eatPh||0)+dt;const e=Math.sin(u.eatPh*5);u.arms[1].rotation.set(-1.15-e*.3,0,-.15);u.arms[0].rotation.set(-.55,0,.25);pitch=.12+Math.max(0,e)*.06}
@@ -2215,8 +2216,8 @@ function updateBath(dt,t){
     if(player.userData.chorong)player.userData.chorong.visible=false;if(player.userData.leaf)player.userData.leaf.visible=false;
     // View from behind and above the bather, out toward the mountain panorama, not faces.
     const desired=s.desiredCamera;
-    desired.position.set(BATH.x+3.85+Math.sin(t*.075)*.025,BATH.waterLevel+1.18+Math.sin(t*.10)*.012,BATH.z+3.55);
-    desired.up.set(0,1,0);desired.lookAt(BATH.x-29,6.0,BATH.z-30);
+    desired.position.set(BATH.x+4.9+Math.sin(t*.075)*.025,BATH.waterLevel+2.05+Math.sin(t*.10)*.012,BATH.z+4.7);
+    desired.up.set(0,1,0);desired.lookAt(BATH.x-6,BATH.waterLevel+.9,BATH.z-5.5);
     const k=Math.min(1,s.elapsed/1.25),ease=k*k*(3-2*k);
     camera.position.lerpVectors(s.cameraFrom,desired.position,ease);camera.quaternion.slerpQuaternions(s.cameraQuat,desired.quaternion,ease);camera.up.set(0,1,0);
   }
@@ -2297,8 +2298,20 @@ addMoreButton('Language · 언어',()=>info('Language','',['ko','en','ja','zh','
  document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on')}));
  document.head.insertAdjacentHTML('beforeend','<style>#bar{flex-direction:column!important;gap:3px!important;padding:5px 6px!important}#bar .brow{display:flex;gap:3px;justify-content:center}#bar button{width:56px!important;min-height:38px!important;font-size:10.5px!important;padding:3px 0!important}#bar button .i{font-size:17px!important}#bar .row2 button{min-height:36px!important}#moreActions{display:grid!important;grid-template-columns:1fr 1fr;gap:7px}#moreActions .btn{min-height:44px;font-size:13.5px;padding:6px 4px;margin:0!important;line-height:1.25;display:flex;align-items:center;justify-content:center;gap:5px}#moreActions .mi{font-size:18px;display:inline-flex;align-items:center}#chatSwitch{font-size:13.5px;min-height:42px;margin-bottom:8px}#chatSwitch::before{content:"💬 "}#mMore .sheet{max-height:86vh;overflow:auto}</style>')}
 
+/* 노천탕 이웃들: 탕 안에서 서로 이야기 나눔(말풍선만, 소리 없음) */
+document.head.insertAdjacentHTML('beforeend',`<style>#mChat{background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;pointer-events:none}#mChat .sheet{pointer-events:auto;position:fixed;left:50%;top:auto;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));width:min(360px,94vw);max-width:94vw;padding:6px 8px;border-radius:999px;background:rgba(20,22,30,.42);backdrop-filter:blur(8px);display:flex;align-items:center;gap:6px;box-shadow:none}#mChat #chTitle,#mChat #chLog{display:none}#mChat .row{margin:0!important;flex:1;min-width:0}#mChat input{background:transparent;color:#fff;border:none;font-size:14px;padding:8px 6px}#mChat input::placeholder{color:#cfc8d0}#mChat #chSend{padding:0 12px!important;min-height:36px;font-size:13px}#mChat .btn.ghost[data-close]{width:34px;min-width:34px;min-height:34px;padding:0;margin:0;font-size:0;background:rgba(255,255,255,.14);border:none;border-radius:50%}#mChat .btn.ghost[data-close]::after{content:'✕';font-size:14px;color:#fff}.bubble{background:rgba(255,255,255,.14)!important;color:#fff!important;font-size:11.5px!important;padding:3px 9px!important;border-radius:12px!important;border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-shadow:none!important;text-shadow:0 1px 3px rgba(0,0,0,.75);width:max-content;max-width:190px;white-space:normal!important;text-align:center}</style>`);
+const bathNpcs=[];
+{const fw={x:Math.sin(BATH.yaw),z:Math.cos(BATH.yaw)},rt={x:Math.cos(BATH.yaw),z:-Math.sin(BATH.yaw)};
+ const spots=[[1.7,1.4,'다정한 차향',0x8a9ab5],[2.0,-1.2,'포근한 달빛',0xa89a8a],[0.2,-2.3,'고운 풍경',0x9aa890]];
+ spots.forEach(([f,r,name,col])=>{const n=makeDali(col);n.scale.setScalar(.8);const x=BATH.seat.x+fw.x*f+rt.x*r,z=BATH.seat.z+fw.z*f+rt.z*r;n.position.set(x,BATH.waterLevel-.58,z);n.rotation.y=Math.atan2(BATH.seat.x-x,BATH.seat.z-z)+((Math.random()-.5)*.8);n.userData.sit=0;scene.add(n);bathTowel(n,true);bathNpcs.push({n,name,real:false,x,z})})}
+const bathBubbles=[];const _say0=say;function bathSay(obj,text,ms=3200){const b=document.createElement('div');b.className='bubble';b.textContent=text;b.style.display='none';document.body.appendChild(b);bathBubbles.push({obj,b,until:performance.now()+ms})}
+say=function(obj,text,ms){if(bathNpcs.some(s=>s.n===obj)||(P.mode==='bath'&&obj===player))return bathSay(obj,text,ms);return _say0(obj,text,ms)};
+const _bv=new THREE.Vector3();function updateBathBubbles(){for(let i=bathBubbles.length-1;i>=0;i--){const it=bathBubbles[i];if(performance.now()>it.until||P.mode!=='bath'&&Math.hypot(P.x-BATH.x,P.z-BATH.z)>9){it.b.remove();bathBubbles.splice(i,1);continue}_bv.copy(it.obj.position);_bv.y+=(it.obj===player?1.55:1.4);_bv.project(camera);if(_bv.z>1||Math.abs(_bv.x)>1.1||Math.abs(_bv.y)>1.1){it.b.style.display='none';continue}it.b.style.display='block';it.b.style.left=((_bv.x+1)/2*innerWidth)+'px';it.b.style.top=((1-_bv.y)/2*innerHeight)+'px'}}
+const bathLines=['아, 물이 참 따뜻하네요','산 위로 구름이 천천히 흘러가요','이렇게 쉬니 어깨가 풀려요','바람이 시원해서 더 좋네요','오늘 하루도 고생 많으셨어요','달걀 할머니 달걀이 맛있었어요','조용해서 마음이 편안해져요','저는 자주 와서 쉬어가요'];
+let bathTalkI=0;setInterval(()=>{if(P.mode!=='bath'&&Math.hypot(P.x-BATH.x,P.z-BATH.z)>9)return;const sp=bathNpcs[bathTalkI%bathNpcs.length];say(sp.n,bathLines[(bathTalkI*3+((Math.random()*3)|0))%bathLines.length],4200);bathTalkI++},6500);
+setInterval(()=>{bathNpcs.forEach((s,i)=>{s.n.position.y=BATH.waterLevel-.58+Math.sin(performance.now()*.0007+i)*.004});updateBathBubbles()},50);
 tick();
-window.__d={askCandle,candleShelf,tapMove,scene,camera,get sharedDay(){return sharedDay},get liveRoom(){return liveRoom},get serverPresence(){return serverPresence},sendRitual,openRoomPicker,openQuiet,quietReact,get ws(){return ws},npcs,scene,renderer,sun,hemi,sky,M,setTime,setWeather,camera,P,cam,bloom,composer,TIMES};
+window.__d={bubbles,say,bathNpcs,askCandle,candleShelf,tapMove,scene,camera,get sharedDay(){return sharedDay},get liveRoom(){return liveRoom},get serverPresence(){return serverPresence},sendRitual,openRoomPicker,openQuiet,quietReact,get ws(){return ws},npcs,scene,renderer,sun,hemi,sky,M,setTime,setWeather,camera,P,cam,bloom,composer,TIMES};
 // Actual server presence replaces simulated numbers.
 // roof transparency for main hall when inside
 setInterval(()=>{const inside=curArea==='달빛전';const r=roofs[0].grp;r.userData.mats.forEach(m=>{if(inside&&!m.material.__cl){m.material=m.material.clone();m.material.__cl=true}m.material.transparent=inside;m.material.opacity=inside?.12:1;m.material.depthWrite=!inside})},200);
