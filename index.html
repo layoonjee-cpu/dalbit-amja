@@ -289,6 +289,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
 <div class="modal" id="mTile"><div class="sheet"><h3>기와장 올리기</h3><p class="s" style="text-align:center;line-height:1.8;font-size:15.5px">기와 한 장에 이름이나 소원을 적어<br>암자를 짓는 정성을 보태주세요<br><br><b>정성스러운 마음으로<br>공양미를 보태주세요</b></p><div id="tBmc" style="display:none;text-align:center;margin:6px 0 10px"><a class="btn pink" href="https://buymeacoffee.com/dalbitamja" target="_blank" rel="noopener" style="display:block;text-decoration:none;line-height:1.35;padding:13px 10px">☕ 해외 카드로 후원하기 (Buy Me a Coffee)</a><p class="s small" style="margin-top:6px">후원하신 뒤 이 화면으로 돌아와 '입금 완료'를 눌러주세요.</p></div><div id="tQR" style="text-align:center"><img id="tileQR" alt="계좌 QR 코드" style="width:176px;height:176px;image-rendering:pixelated;background:#fff;padding:8px;border-radius:12px"></div><p class="s" id="tAcct" style="text-align:center;margin:8px 0"><b>카카오뱅크 3333355912880</b><br>예금주 운명론자</p><button class="btn ghost" id="tCopy">계좌 복사하기</button><p class="s small" id="tNote0">송금은 직접 해주신 뒤 '입금 완료'를 눌러주세요. 적어주신 기와가 선반에 올라가요.</p><button class="btn pink" id="tilePaid">입금 완료</button><div id="tileBox" style="display:none"><canvas id="tilePrev" width="320" height="310" style="width:100%;max-width:300px;display:block;margin:4px auto 8px;border-radius:10px"></canvas><input id="tileText" maxlength="12" placeholder="이름 또는 소원 (12자 이내)"><button class="btn pink" id="tilePut">기와 올리기</button></div><p class="s small" id="tileNote"></p><button class="btn ghost" data-close>닫기</button></div></div>
 <div id="tileWish" class="ui" style="display:none;position:fixed;left:0;right:0;bottom:calc(120px + env(safe-area-inset-bottom));justify-content:center;gap:8px;z-index:30;padding:0 12px"><button id="tileWishBtn" class="btn pink" style="width:auto;padding:13px 22px">나도 소원 적기</button><button id="tileWishX" class="btn ghost" style="width:auto;padding:13px 16px;background:rgba(22,24,34,.6);color:#fff">닫기</button></div>
 <div id="tileWrite" class="ui" style="display:none;position:fixed;left:0;right:0;bottom:calc(120px + env(safe-area-inset-bottom));justify-content:center;align-items:center;gap:6px;z-index:31;padding:0 10px"><input id="tileDraft" maxlength="12" placeholder="이름 또는 소원 (12자 이내)" style="flex:1;max-width:230px;margin:0"><button id="tileGo" class="btn pink" style="width:auto;padding:12px 16px;white-space:nowrap">기와 올리기</button><button id="tileWishX2" class="btn ghost" style="width:auto;padding:12px 12px;background:rgba(22,24,34,.6);color:#fff">✕</button></div>
+<div id="teaHud" class="ui" style="display:none;position:fixed;left:0;right:0;bottom:calc(120px + env(safe-area-inset-bottom));justify-content:center;gap:8px;z-index:30;flex-wrap:wrap;padding:0 12px"></div>
 <div id="tileHud" class="ui" style="display:none;position:fixed;left:0;right:0;bottom:calc(120px + env(safe-area-inset-bottom));justify-content:center;gap:8px;z-index:30;flex-wrap:wrap;padding:0 12px"><button id="tileSave" class="btn pink" style="width:auto;padding:12px 18px">이미지 저장</button><button id="tileHudClose" class="btn ghost" style="width:auto;padding:12px 18px;background:rgba(22,24,34,.6);color:#fff">닫기</button></div>
 <div class="modal" id="mPocket"><div class="sheet"><h3>말씀 주머니</h3><p class="s small">뽑은 말씀은 이 기기에만 저장돼요.</p><div id="pocketList" style="max-height:48vh;overflow:auto"></div><button class="btn ghost" data-close>닫기</button></div></div>
 <div id="fortuneHud" class="ui" style="display:none;position:fixed;left:0;right:0;bottom:calc(36px + env(safe-area-inset-bottom));justify-content:center;gap:8px;z-index:30;flex-wrap:wrap;padding:0 12px"><button id="fortunePocket" class="btn pink" style="width:auto;padding:12px 18px">주머니에 넣기</button><button id="fortuneSave" class="btn ghost" style="width:auto;padding:12px 18px;background:rgba(22,24,34,.6);color:#fff">이미지 저장</button><button id="fortuneAway" class="btn ghost" style="width:auto;padding:12px 18px;background:rgba(22,24,34,.6);color:#fff">통에 도로 꽂기</button></div>
@@ -708,12 +709,26 @@ const YO={x:YOSA.x+.4,z:YOSA.z+1.1,y:YOSA.plat+.075};
  const cup=new THREE.Mesh(new THREE.CylinderGeometry(.05,.04,.06,14),new THREE.MeshStandardMaterial({color:0xe9efe6,roughness:.3}));cup.position.set(YOSA.x-1.0,fl+.36,YOSA.z-1.22);scene.add(cup);
  colliders.push({x1:YO.x-.55,x2:YO.x+.55,z1:YO.z-1.3,z2:YO.z+.9})}
 // 차담실 (정자)
-const TEA={x:11,z:13};
+const TEA={x:11,z:13};const TEA_TOP=.71,TEA_REST=new THREE.Vector3(TEA.x-.4,TEA_TOP,TEA.z-.08),TEA_CUP=new THREE.Vector3(TEA.x+.05,TEA_TOP,TEA.z+.25),TEA_POUR=new THREE.Vector3(TEA.x-.15,TEA_TOP+.1,TEA.z+.25),TEA_MOUTH=new THREE.Vector3(TEA.x+.15,.32+.74,TEA.z+1.0);const teaSet={};
 hanok({x:TEA.x,z:TEA.z,W:5,D:5,plat:.32,walls:false,doors:false,stairs:false,name:'차담실',wallH:3.0,roofH:2.4,over:1.5});
 {box(1.4,.06,.9,M.floor,TEA.x,.32+.36,TEA.z);box(1.2,.32,.7,M.wood,TEA.x,.32+.16,TEA.z);
  colliders.push({x1:TEA.x-.75,x2:TEA.x+.75,z1:TEA.z-.5,z2:TEA.z+.5});
- const cup=new THREE.Mesh(new THREE.CylinderGeometry(.07,.05,.08,16),new THREE.MeshStandardMaterial({color:0xe9efe6,roughness:.3}));cup.position.set(TEA.x+.3,.32+.43,TEA.z+.15);scene.add(cup);
- const pot=new THREE.Mesh(new THREE.SphereGeometry(.13,16,12),new THREE.MeshStandardMaterial({color:0x6d4b3a,roughness:.4}));pot.scale.y=.8;pot.position.set(TEA.x-.3,.32+.48,TEA.z);scene.add(pot)}
+
+ {const cel=new THREE.MeshStandardMaterial({color:0xe6eee6,roughness:.3,metalness:.04,side:THREE.DoubleSide});const clay=new THREE.MeshStandardMaterial({color:0x5e4a3a,roughness:.55});
+  const potG=new THREE.Group();potG.position.copy(TEA_REST);scene.add(potG);
+  const pp=[[0,0],[.07,0],[.098,.025],[.112,.075],[.1,.13],[.062,.165],[.052,.17]].map(([a,b])=>new THREE.Vector2(a,b));
+  const body=new THREE.Mesh(new THREE.LatheGeometry(pp,28),clay);body.castShadow=true;potG.add(body);
+  const lidG=new THREE.Group();lidG.position.y=.168;potG.add(lidG);const lid=new THREE.Mesh(new THREE.SphereGeometry(.055,16,10,0,Math.PI*2,0,Math.PI/2),clay);lid.scale.y=.55;lidG.add(lid);const knob=new THREE.Mesh(new THREE.SphereGeometry(.013,10,8),clay);knob.position.y=.03;lidG.add(knob);
+  const sp=new THREE.Mesh(new THREE.CylinderGeometry(.013,.022,.1,10),clay);sp.position.set(.115,.095,0);sp.rotation.z=-.9;potG.add(sp);
+  const hd=new THREE.Mesh(new THREE.TorusGeometry(.055,.01,8,18,Math.PI*1.2),clay);hd.position.set(-.105,.09,0);hd.rotation.z=Math.PI*.4;potG.add(hd);
+  const cupG=new THREE.Group();cupG.position.copy(TEA_CUP);scene.add(cupG);
+  const cp=[[0,0],[.03,0],[.036,.006],[.05,.045],[.058,.075],[.056,.077]].map(([a,b])=>new THREE.Vector2(a,b));
+  const cupM=new THREE.Mesh(new THREE.LatheGeometry(cp,28),cel);cupM.castShadow=true;cupG.add(cupM);
+  const liq=new THREE.Mesh(new THREE.CylinderGeometry(.052,.04,1,24),new THREE.MeshStandardMaterial({color:0xa4c35c,roughness:.15,transparent:true,opacity:.92}));liq.scale.y=.0001;liq.visible=false;cupG.add(liq);
+  const stream=new THREE.Mesh(new THREE.CylinderGeometry(.005,.005,1,8),new THREE.MeshStandardMaterial({color:0xb7d88a,transparent:true,opacity:.75,roughness:.1}));stream.visible=false;scene.add(stream);
+  const sc=document.createElement('canvas');sc.width=sc.height=64;{const x=sc.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,.9)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64)}
+  const stex=new THREE.CanvasTexture(sc);const mkSteam=n=>[...Array(n)].map((_,i)=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:stex,transparent:true,opacity:0,depthWrite:false}));s.scale.set(.1,.1,1);s.visible=false;scene.add(s);return {s,ph:i/n}});
+  Object.assign(teaSet,{potG,lidG,cupG,liq,stream,potSteam:mkSteam(5),cupSteam:mkSteam(5)})}}
 // 식당 (절밥상)
 const DINE={x:17,z:7};
 {const g=new THREE.Group();g.position.set(DINE.x,0,DINE.z);scene.add(g);const W=4.6,D=4.4,plat=.3,wallH=3.0;
@@ -950,7 +965,7 @@ function makeCat(){const g=new THREE.Group();const fur=new THREE.MeshStandardMat
     const bl=new THREE.Mesh(new THREE.CircleGeometry(.03,10),blushM);bl.position.set(.39,.29,s*.1);bl.rotation.y=Math.PI/2;g.add(bl)});
   const col=new THREE.Mesh(new THREE.TorusGeometry(.12,.018,6,16),sashM);col.position.set(.2,.24,0);col.rotation.y=Math.PI/2;g.add(col);
   const tail=new THREE.Mesh(new THREE.TorusGeometry(.14,.035,8,16,Math.PI*1.2),fur);tail.position.set(-.25,.25,0);tail.rotation.z=1.2;g.add(tail);g.userData.tail=tail;return g}
-const cat=makeCat();cat.position.set(TEA.x+1.1,.32,TEA.z+.6);cat.rotation.y=-2.2;scene.add(cat);
+const cat=makeCat();cat.position.set(TEA.x+1.9,.32,TEA.z-1.5);cat.rotation.y=-2.2;scene.add(cat);
 /* monk NPC at tea house */
 const monk=makeDali(0x7a6a50);monk.position.set(TEA.x-.95,.32,TEA.z);monk.rotation.y=Math.PI/2;monk.userData.sit=1;scene.add(monk);
 
@@ -1493,15 +1508,42 @@ $('#fEat').onclick=()=>{closeM('#mFood');picked.forEach((di,i)=>{BOWLS[i].visibl
 
 /* 차담 */
 const teaLines=['먼 길 오셨어요. 따뜻한 차 한 잔 내어드릴게요. 🍵','요즘 마음이 자꾸 무거우셨죠? 왜 나만 안 풀리나, 지금 움직여도 될까… 그런 생각이 많으셨을 거예요.','운에도 계절이 있어요. 씨를 뿌릴 때, 기다릴 때, 거둘 때가 따로 있지요.','내 사주에 흐르는 계절을 알면, 지금 무엇을 해야 할지 보여요. 차담에서 찬찬히 풀어드릴게요.'];
-const calmTea=['오늘 차는 산에서 딴 국화차예요. 먼저 향을 맡아보세요 🌼','뜨거우니 천천히, 한 모금씩이요. 서두를 것 하나 없어요.','찻물이 알맞게 식기를 기다리듯, 마음도 기다려주면 스스로 가라앉아요.','언제든 또 오세요. 차는 늘 따뜻하게 데워둘게요.'];
-let teaI=0,teaMode='ask';function openTea(){teaI=0;teaMode='ask';showTea();openM('#mTea');monk.userData.greet=1.2}
-function showTea(){const w=$('#teaBtns');w.innerHTML='';const mk=(t,c,fn)=>{const b=document.createElement('button');b.className='btn '+c;b.textContent=t;b.onclick=fn;w.appendChild(b);return b};
-  if(teaMode==='ask'){$('#teaT').textContent='먼 길 오셨어요. 따뜻한 차 한 잔 내어드릴게요. 🍵';mk('🍵 차 한 잔 마실게요','pink',()=>{teaMode='calm';teaI=0;P.yaw=-Math.PI/2;player.userData.sit=1;if(P.mode==='walk')P.mode='sit';mediStart=performance.now();setTimeout(()=>{monk.userData.greet=1.4;spoonClink()},400);showTea()});mk('요즘 운의 흐름이 궁금해요','ghost',()=>{teaMode='sales';teaI=1;showTea()});return}
-  if(teaMode==='calm'){$('#teaT').textContent=calmTea[teaI];if(teaI<calmTea.length-1){mk('네 ▸','ghost',()=>{teaI++;if(teaI===2)spoonClink();showTea()})}else{mk('잘 마셨습니다 🙏','pink',()=>{closeM('#mTea');if(P.mode==='sit')standUp();status('따뜻한 차 한 잔에 몸과 마음이 풀렸어요',3600)});mk('운의 흐름도 궁금해요 ▸','ghost',()=>{teaMode='sales';teaI=1;showTea()})}return}
-  $('#teaT').textContent=teaLines[teaI];
-  if(teaI<teaLines.length-1){const b=document.createElement('button');b.className='btn ghost';b.textContent='네 ▸';b.onclick=()=>{teaI++;showTea()};w.appendChild(b)}
-  else{const a=document.createElement('a');a.href='landing.html';a.style.textDecoration='none';a.innerHTML='<button class="btn pink">🍵 차담 신청하러 가기</button>';w.appendChild(a);const u=document.createElement('a');u.href='https://www.unmyung.kr/?utm_source=dalbit-amja&utm_medium=tea';u.target='_blank';u.rel='noopener';u.style.textDecoration='none';u.innerHTML='<button class="btn" style="background:linear-gradient(135deg,#2b2f5c,#4a3f7a);color:#f6e7b8">🌙 달빛암자 운신상담소 바로가기</button>';w.appendChild(u);const b=document.createElement('button');b.className='btn ghost';b.textContent='조금 더 머물게요';b.onclick=()=>closeM('#mTea');w.appendChild(b)}}
-
+const calmTea=['향이 참 좋지요? 녹차는 서두르지 않고 한 모금씩 마시는 차예요 🍃','뜨거우니 천천히, 한 모금씩이요. 서두를 것 하나 없어요.','찻물이 알맞게 식기를 기다리듯, 마음도 기다려주면 스스로 가라앉아요.','언제든 또 오세요. 차는 늘 따뜻하게 데워둘게요.'];
+const tea={on:false,seated:false,phase:'idle',t:0,level:0,pot:0,mode:'',i:0};
+function teaHudSet(btns){const w=$('#teaHud');w.innerHTML='';btns.forEach(([t,c,fn])=>{const b=document.createElement('button');b.className='btn '+c;b.style.cssText='width:auto;padding:12px 18px';if(c==='ghost')b.style.cssText+=';background:rgba(22,24,34,.6);color:#fff';b.textContent=t;b.onclick=fn;w.appendChild(b)});w.style.display=btns.length?'flex':'none'}
+function teaSay(t,ms=6200){say(monk,t,ms);monk.userData.greet=1.1}
+function openTea(){if(tea.on)return;if(P.mode==='sit')standUp();if(P.mode!=='walk'){status('지금 하던 쉼을 마친 뒤에 가주세요');return}
+  closeM('#mTea');tea.on=true;tea.seated=false;tea.phase='enter';tea.t=0;tea.level=0;tea.pot=0;teleport(TEA.x+.15,TEA.z+1.25,Math.PI);
+  setTimeout(()=>{if(!tea.on)return;P.mode='sit';player.userData.sit=1;P.yaw=Math.PI;cam.yaw=1.25;cam.pitch=.42;cam.targetDist=4.5;tea.seated=true;tea.phase='greet';teaGreet()},1000)}
+function teaGreet(){teaSay('먼 길 오셨어요. 따뜻한 차 한 잔 내어드릴게요 🍵');teaHudSet([['🍵 차 우려 주세요','pink',teaBrew],['요즘 운의 흐름이 궁금해요','ghost',()=>teaTalk('sales')],['자리에서 일어나기','ghost',endTea]])}
+function teaBrew(){tea.phase='brew';tea.t=0;teaHudSet([]);teaSay('오늘 차는 산에서 딴 햇녹차예요. 물을 알맞게 식혀 천천히 우려요 🍃',5600)}
+function teaDrink(){tea.phase='drink';tea.t=0;teaHudSet([]);teaSay('뜨거우니 천천히, 한 모금씩이요.',3600)}
+function teaTalk(mode,i=0){tea.mode=mode;tea.i=i;teaHudSet([]);const L=mode==='calm'?calmTea:teaLines;const last=i>=L.length-1;teaSay(L[i],7200);
+  const btns=[];if(!last)btns.push(['네 ▸','pink',()=>teaTalk(mode,i+1)]);else if(mode==='calm'){btns.push(['잘 마셨습니다 🙏','pink',endTea]);btns.push(['한 잔 더 주세요','ghost',()=>{tea.phase='pour';tea.t=0;tea.pot=0;teaHudSet([]);teaSay('따뜻한 차를 한 잔 더 따라드릴게요.',3600)}]);btns.push(['운의 흐름도 궁금해요 ▸','ghost',()=>teaTalk('sales')])}
+  else{(window.__TEA_CTA__||[['🍵 차담 신청하러 가기',()=>{location.href='landing.html'}],['🌙 달빛암자 운신상담소 바로가기',()=>{window.open('https://www.unmyung.kr/?utm_source=dalbit-amja&utm_medium=tea','_blank','noopener')}]]).forEach(([t,fn])=>btns.push([t,'pink',fn]));btns.push(['조금 더 머물게요','ghost',()=>teaHudSet([['자리에서 일어나기','ghost',endTea]])])}
+  setTimeout(()=>{if(tea.on&&tea.mode===mode&&tea.i===i)teaHudSet(btns)},700)}
+function endTea(){const was=tea.on;tea.on=false;tea.phase='idle';teaHudSet([]);if(was&&(P.mode==='sit'))standUp()}
+function teaEase(k){return k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2}
+const _tv=new THREE.Vector3();
+function updateTea(dt,t){const S=teaSet;if(!S.potG)return;
+  if(tea.on&&tea.seated&&P.mode!=='sit'){endTea()}
+  if(tea.on)tea.t+=dt;const ph=tea.on?tea.phase:'idle';
+  let steamPot=0,steamCup=0;
+  // pot & cup defaults
+  let potK=0,tilt=0,lid=0,cupK=0,cupTilt=0,stream=false;
+  if(ph==='brew'){lid=Math.min(1,tea.t/.6)*(tea.t<3.2?1:Math.max(0,1-(tea.t-3.2)/.5));steamPot=Math.min(1,tea.t/1.2)*(tea.t<3.4?1:Math.max(0,1-(tea.t-3.4)/.6));if(tea.t>3.9){tea.phase='pour';tea.t=0;teaSay('한 잔 따라드릴게요.',3600)}}
+  else if(ph==='pour'){const T=tea.t;const mv=Math.min(1,T/1.0),back=T>4.4?Math.min(1,(T-4.4)/1.0):0;potK=teaEase(mv)*(1-teaEase(back));tilt=Math.min(1,Math.max(0,(T-.9)/.5))*(1-Math.min(1,Math.max(0,(T-4.2)/.4)));stream=T>1.3&&T<4.3;if(T>1.4)tea.level=Math.min(1,(T-1.4)/2.8);steamPot=.2*(1-back);steamCup=tea.level;if(T>5.4){tea.phase='ready';tea.t=0;teaSay('향을 먼저 맡아보세요 🍃',4600);teaHudSet([['🍵 차 마시기','pink',teaDrink],['자리에서 일어나기','ghost',endTea]])}}
+  else if(ph==='ready'){steamCup=tea.level}
+  else if(ph==='drink'){const T=tea.t;const up=Math.min(1,T/1.4),down=T>5.2?Math.min(1,(T-5.2)/1.2):0;cupK=teaEase(up)*(1-teaEase(down));cupTilt=Math.min(1,Math.max(0,(T-1.3)/.7))*(1-Math.min(1,Math.max(0,(T-4.7)/.5)));if(T>1.6&&T<4.9)tea.level=Math.max(0,1-(T-1.6)/3.3);steamCup=tea.level*(1-cupTilt*.8);if(T>6.5){tea.level=0;tea.phase='idle2';tea.t=0;teaTalk('calm',0)}}
+  else if(ph==='idle2'){}
+  // apply
+  S.potG.position.lerpVectors(TEA_REST,TEA_POUR,potK);S.potG.rotation.z=-.58*tilt;S.lidG.position.y=.168+lid*.05;S.lidG.rotation.z=lid*.5;
+  S.cupG.position.lerpVectors(TEA_CUP,TEA_MOUTH,cupK);S.cupG.rotation.x=cupTilt*.55;
+  const lv=tea.level;S.liq.visible=lv>.01;S.liq.scale.y=Math.max(.0001,lv*.058);S.liq.position.y=.012+lv*.029;
+  S.stream.visible=stream;if(stream){S.potG.updateMatrixWorld(true);_tv.set(.158,.132,0);S.potG.localToWorld(_tv);const top=_tv.y,bot=S.cupG.position.y+.012+lv*.058+.004;const len=Math.max(.02,top-bot);S.stream.scale.y=len;S.stream.position.set(_tv.x,bot+len/2,_tv.z)}
+  const steamTick=(arr,src,k,spread)=>{arr.forEach((o,i)=>{const a=((t*.32+o.ph)%1);const vis=k>.02;o.s.visible=vis;if(!vis)return;o.s.position.set(src.x+Math.sin(t*1.3+i*2.1)*spread*(.4+a),src.y+.02+a*.3,src.z+Math.cos(t*1.1+i*1.7)*spread*(.4+a));const sc=.07+a*.16;o.s.scale.set(sc,sc,1);o.s.material.opacity=.38*k*Math.sin(Math.PI*Math.min(1,a*1.05))})};
+  _tv.set(.1,.2,0);S.potG.localToWorld(_tv);const pp=_tv.clone();steamTick(S.potSteam,pp,steamPot,.04);
+  const cc=S.cupG.position;steamTick(S.cupSteam,{x:cc.x,y:cc.y+.09,z:cc.z},steamCup,.025)}
 
 /* TOP5: real rooms, calm connection, a private souvenir */
 let serverPresence=0,liveState='연결 중',sharedDay=null,lastReaction=0,launchedDay='',jointMeshes=[],sharedStoneMeshes=[],sharedStoneDay='',sharedStoneTop=.05;
@@ -1999,7 +2041,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   const proj=(obj,h,el)=>{tmpV.set(obj.position.x,obj.position.y+h,obj.position.z).project(camera);const vis=tmpV.z<1&&Math.abs(tmpV.x)<1.1&&Math.abs(tmpV.y)<1.1;const dd=camera.position.distanceTo(obj.position);
     if(!vis||dd>26){el.style.display='none';return}el.style.display='block';el.style.left=((tmpV.x+1)/2*innerWidth)+'px';el.style.top=((1-tmpV.y)/2*innerHeight)+'px';el.style.opacity=clamp(1.4-dd/22,0,1)};
   if(started){remotes.forEach(r=>proj(r.n,1.6,r.lab));proj(dog,.85,dogLab);if(P.mode==='sleep'||P.mode==='mat')meLab.style.display='none';else proj(player,1.45,meLab);npcs.forEach(s=>proj(s.n,1.45,s.lab));proj(monk,1.25,monkLab)}
-  for(let i=bubbles.length-1;i>=0;i--){const b=bubbles[i];if(performance.now()>b.until){b.b.remove();bubbles.splice(i,1);continue}proj(b.obj,1.85,b.b)}
+  for(let i=bubbles.length-1;i>=0;i--){const b=bubbles[i];if(performance.now()>b.until){b.b.remove();bubbles.splice(i,1);continue}proj(b.obj,b.obj===monk?1.4:1.85,b.b);if(b.b.style.display==='block'){const w=b.b.offsetWidth;b.b.style.left=clamp(parseFloat(b.b.style.left),w/2+8,innerWidth-w/2-8)+'px'}}
   if(autoDir&&P.mode!=='walk')stopAuto();
   if(chatWith&&(!chatAllowed||chatWith.chatOn===false)){closeM('#mChat');chatWith.chat=false;chatWith=null}if(chatWith&&!$('#mChat').classList.contains('on')){chatWith.chat=false;chatWith=null}updateClouds(dt);
   updateJoint(dt);updateRemotes(dt);liveSend();updateDog(dt,t);updateDineEat(dt);
@@ -2009,7 +2051,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
    const lr=weather==='rain';leafFor(player).visible=lr&&!indoorP&&P.mode!=='sleep'&&P.mode!=='bow';npcs.forEach(s=>{if(s.sit)return;leafFor(s.n).visible=lr&&heightAt(s.x,s.z)<.2})}
   [player,...npcs.map(s=>s.n)].forEach(n=>{const c=n.userData.chorong;if(c&&c.visible){c.userData.hang.rotation.x=Math.sin(t*3+n.id)*.12*(n===player&&moving?1.6:.6);c.userData.hang.rotation.z=Math.cos(t*2.3+n.id)*.08}});
   if(started)updateContext();updateListener();
-  updateExtras(dt,t);updateBath(dt,t);updateEgg(dt,t);updateFortune(dt,t);updateCandles(dt,t);composer.render()}
+  updateExtras(dt,t);updateBath(dt,t);updateEgg(dt,t);updateFortune(dt,t);updateTea(dt,t);updateCandles(dt,t);composer.render()}
 /* 달빛암자 · 산끝 노천탕
  * Append inside the existing module script AFTER world/player/audio declarations.
  * Call updateBath(dt,t) after updateRemotes + accessory visibility, before
