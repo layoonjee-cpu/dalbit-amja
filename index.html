@@ -542,12 +542,12 @@ function hanok({x,z,W,D,wallH=3.6,plat=1,rot=0,openSide='front',openBays=[],name
   // roof
   const roof=makeRoof(W,D,roofH,over);roof.position.y=plat+wallH+.55;g.add(roof);roofs.push({grp:roof,x,z,W,D,rot,name});
   // stairs front
-  if(stairs){const sw=Math.min(4,W*.35),steps=Math.max(2,Math.round(plat/.25));for(let i=0;i<steps;i++){const h=plat*(i+1)/steps;const s=box(sw,h,.42,M.granite,0,h/2,PD/2+(steps-i)*.42-.21,g);setUVScale(s,sw/2,.4)}}
+  if(stairs){const sw=Math.min(W>18?7:4,W*.35),steps=Math.max(2,Math.round(plat/.25));for(let i=0;i<steps;i++){const h=plat*(i+1)/steps;const s=box(sw,h,.42,M.granite,0,h/2,PD/2+(steps-i)*.42-.21,g);setUVScale(s,sw/2,.4)}}
   // world-space collision/height (rot 0 or ±90 only)
   const c=Math.cos(rot),s=Math.sin(rot);const tr=(lx,lz)=>[x+lx*c+lz*s, z-lx*s+lz*c];
   const rect=(lx1,lx2,lz1,lz2)=>{const a=tr(lx1,lz1),b=tr(lx2,lz2);return{x1:Math.min(a[0],b[0]),x2:Math.max(a[0],b[0]),z1:Math.min(a[1],b[1]),z2:Math.max(a[1],b[1])}};
   platforms.push(Object.assign(rect(-PW/2,PW/2,-PD/2,PD/2),{h:plat}));
-  if(stairs){const sw=Math.min(4,W*.35),steps=Math.max(2,Math.round(plat/.25));const r=rect(-sw/2,sw/2,PD/2,PD/2+steps*.42);
+  if(stairs){const sw=Math.min(W>18?7:4,W*.35),steps=Math.max(2,Math.round(plat/.25));const r=rect(-sw/2,sw/2,PD/2,PD/2+steps*.42);
     const axis=Math.abs(s)>.5?'x':'z';const outward=tr(0,PD/2+1);const inward=tr(0,0);
     r.steps=steps;r.plat=plat;r.axis=axis;if(axis==='z'){r.h0=outward[1]>inward[1]?plat:0;r.h1=outward[1]>inward[1]?0:plat}else{r.h0=outward[0]>inward[0]?plat:0;r.h1=outward[0]>inward[0]?0:plat}ramps.push(r)}
   if(walls){const t=.35;const segs={back:[-W/2,W/2,-D/2-t,-D/2+t],front:[-W/2,W/2,D/2-t,D/2+t],left:[-W/2-t,-W/2+t,-D/2,D/2],right:[W/2-t,W/2+t,-D/2,D/2]};
@@ -556,24 +556,24 @@ function hanok({x,z,W,D,wallH=3.6,plat=1,rot=0,openSide='front',openBays=[],name
 
 /* ================= build the temple ================= */
 // 달빛전 (main hall)
-const HALL={x:0,z:-15,W:14,D:9,plat:1.1};
-hanok({x:HALL.x,z:HALL.z,W:HALL.W,D:HALL.D,plat:HALL.plat,openSide:'front',openBays:[1,2,3],name:'달빛전',wallH:3.8,roofH:3.8,over:2.4});
+const HALL={x:0,z:-17,W:21,D:11,plat:1.1};
+hanok({x:HALL.x,z:HALL.z,W:HALL.W,D:HALL.D,plat:HALL.plat,openSide:'front',openBays:[1,2,3,4,5],name:'달빛전',wallH:5.2,roofH:5.2,over:3.2});
 // signboard
 {const c=document.createElement('canvas');c.width=512;c.height=160;const x=c.getContext('2d');x.fillStyle='#1d2a44';x.fillRect(0,0,512,160);x.strokeStyle='#d8a948';x.lineWidth=10;x.strokeRect(8,8,496,144);x.fillStyle='#f3d27a';x.font='bold 92px "Gowun Batang", serif';x.textAlign='center';x.textBaseline='middle';x.fillText('달빛전',256,86);
- const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const m=new THREE.Mesh(new THREE.PlaneGeometry(2.4,.75),new THREE.MeshStandardMaterial({map:t,roughness:.6}));m.position.set(HALL.x,HALL.plat+3.8+.68,HALL.z+HALL.D/2+.26);scene.add(m);
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const m=new THREE.Mesh(new THREE.PlaneGeometry(2.4,.75),new THREE.MeshStandardMaterial({map:t,roughness:.6}));m.position.set(HALL.x,HALL.plat+5.2+.8,HALL.z+HALL.D/2+.26);m.scale.setScalar(1.45);scene.add(m);
  document.fonts?.ready.then(()=>{x.fillStyle='#1d2a44';x.fillRect(18,18,476,124);x.fillStyle='#f3d27a';x.fillText('달빛전',256,86);t.needsUpdate=true})}
 // interior: altar, buddha, painting, cushions, candles, lanterns
 const hallLanterns=[];const candleLights=[];
 {const bz=HALL.z-HALL.D/2+1.3,fy=HALL.plat+.08;
- const alt=box(6,1.1,1.4,M.lacquer,0,fy+.55,bz);box(6.2,.12,1.6,M.gold,0,fy+1.12,bz);box(6.2,.12,1.6,M.gold,0,fy+.06,bz);
+ const alt=box(8.4,1.1,1.6,M.lacquer,0,fy+.55,bz);box(8.6,.12,1.8,M.gold,0,fy+1.12,bz);box(8.6,.12,1.8,M.gold,0,fy+.06,bz);
  // painting (탱화 자리: 달빛 민화)
  const pt=T('assets/img/minhwa.jpg',{srgb:true});pt.wrapS=pt.wrapT=THREE.ClampToEdgeWrapping;
- const pm=new THREE.Mesh(new THREE.PlaneGeometry(6.4,3.6),new THREE.MeshStandardMaterial({map:pt,roughness:.85}));pm.position.set(0,fy+3.1,HALL.z-HALL.D/2+.17);scene.add(pm);
- box(6.7,3.9,.08,M.lacquer,0,fy+3.1,HALL.z-HALL.D/2+.1);
+ const pm=new THREE.Mesh(new THREE.PlaneGeometry(10,5.6),new THREE.MeshStandardMaterial({map:pt,roughness:.85}));pm.position.set(0,fy+3.9,HALL.z-HALL.D/2+.17);scene.add(pm);
+ box(10.3,5.9,.08,M.lacquer,0,fy+3.9,HALL.z-HALL.D/2+.1);
  // seated Buddha (본존불)
  const BG=new THREE.MeshStandardMaterial({color:0xb8913f,metalness:.75,roughness:.48,envMapIntensity:.7});
  const BGd=new THREE.MeshStandardMaterial({color:0x8d6a2c,metalness:.7,roughness:.55,envMapIntensity:.6});
- const bud=new THREE.Group();bud.position.set(0,fy+1.16,bz);scene.add(bud);window.BUDDHA=bud;
+ const bud=new THREE.Group();bud.position.set(0,fy+1.16,bz);bud.scale.setScalar(1.45);scene.add(bud);window.BUDDHA=bud;
  // lotus pedestal (연화대좌): octagonal base + lotus petals
  const oct=(rt,rb,h,y,m=BGd)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,8),m);o.position.y=y;o.castShadow=true;bud.add(o);return o};
  oct(.62,.7,.14,.07);oct(.42,.5,.16,.21);oct(.55,.45,.08,.33);
@@ -634,17 +634,17 @@ const hallLanterns=[];const candleLights=[];
   {const bur=new THREE.Mesh(new THREE.CylinderGeometry(.13,.1,.12,20),M.bronze);bur.position.set(0,fy+1.24,bz+.5);scene.add(bur);[-.03,0,.03].forEach((dx,i)=>{const st=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.28),new THREE.MeshStandardMaterial({color:0x8a5a3a}));st.position.set(dx,fy+1.42,bz+.5+(i-1)*.01);scene.add(st)});
    const tip=new THREE.Mesh(new THREE.SphereGeometry(.008,6,4),new THREE.MeshBasicMaterial({color:0xff7a3a}));tip.position.set(0,fy+1.56,bz+.5);scene.add(tip);window.__incense=[0,fy+1.56,bz+.5]}
   // candles & incense
- [-2.3,2.3].forEach(cx=>{const cd=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.5,12),new THREE.MeshStandardMaterial({color:0xf5efe2,roughness:.6}));cd.position.set(cx,fy+1.43,bz+.3);scene.add(cd);
+ [-3.6,3.6].forEach(cx=>{const cd=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.5,12),new THREE.MeshStandardMaterial({color:0xf5efe2,roughness:.6}));cd.position.set(cx,fy+1.43,bz+.3);scene.add(cd);
    const fl=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex('255,190,110'),blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));fl.scale.set(.35,.5,1);fl.position.set(cx,fy+1.78,bz+.3);scene.add(fl);
    const L=new THREE.PointLight(0xffa860,4,9,1.6);L.position.set(cx,fy+2,bz+.9);scene.add(L);candleLights.push({L,fl,base:6})});
  // cushions
  const cg=new RoundedBoxGeometry(.85,.16,.85,3,.07);const cols=[0x56606e,0x8a6d3b,0x6d3b3b,0x4f5d4a,0x7b6a8e];
- window.CUSHIONS=[];colliders.push({x1:-6.9,x2:6.9,z1:-19.6,z2:HALL.z-.6-.48});for(let r=0;r<3;r++)for(let c=0;c<5;c++){const m=new THREE.Mesh(cg,new THREE.MeshStandardMaterial({color:cols[(r*5+c)%cols.length],roughness:.95}));const px=-4.8+c*2.4,pz=HALL.z-.6+r*2.2;m.position.set(px,fy+.08,pz);m.receiveShadow=true;m.castShadow=true;scene.add(m);CUSHIONS.push({x:px,z:pz,y:fy+.16,taken:false,m});colliders.push({x1:px-.4,x2:px+.4,z1:pz-.4,z2:pz+.4,cushion:true})}
+ window.CUSHIONS=[];colliders.push({x1:-10.5,x2:10.5,z1:-26,z2:HALL.z-1.6-.48});for(let r=0;r<4;r++)for(let c=0;c<7;c++){const m=new THREE.Mesh(cg,new THREE.MeshStandardMaterial({color:cols[(r*7+c)%cols.length],roughness:.95}));const px=-7.2+c*2.4,pz=HALL.z-1.6+r*2.2;m.position.set(px,fy+.08,pz);m.receiveShadow=true;m.castShadow=true;scene.add(m);CUSHIONS.push({x:px,z:pz,y:fy+.16,taken:false,m});colliders.push({x1:px-.4,x2:px+.4,z1:pz-.4,z2:pz+.4,cushion:true})}
  // hanging lotus lanterns
  const lg=new THREE.SphereGeometry(.28,16,12);
- for(let i=0;i<9;i++){const mat=new THREE.MeshStandardMaterial({color:0xf6c2cb,emissive:0xff8fa3,emissiveIntensity:.05,roughness:.6});const m=new THREE.Mesh(lg,mat);m.scale.y=.8;const px=-5.2+(i%9)*1.3,pz=HALL.z+1.2;m.position.set(px,HALL.plat+3.3,pz);scene.add(m);
-   const s=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,1.2),M.wood);s.position.set(px,HALL.plat+4.0,pz);scene.add(s);hallLanterns.push(mat)}
- const inL=new THREE.PointLight(0xffc89a,0,16,1.5);inL.position.set(0,HALL.plat+3.2,HALL.z);scene.add(inL);window.HALL_LIGHT=inL;
+ for(let i=0;i<13;i++){const mat=new THREE.MeshStandardMaterial({color:0xf6c2cb,emissive:0xff8fa3,emissiveIntensity:.05,roughness:.6});const m=new THREE.Mesh(lg,mat);m.scale.y=.8;const px=-7.8+i*1.3,pz=HALL.z+1.6;m.position.set(px,HALL.plat+4.5,pz);scene.add(m);
+   const s=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,1.2),M.wood);s.position.set(px,HALL.plat+5.2,pz);scene.add(s);hallLanterns.push(mat)}
+ const inL=new THREE.PointLight(0xffc89a,0,16,1.5);inL.position.set(0,HALL.plat+4.2,HALL.z);scene.add(inL);window.HALL_LIGHT=inL;
 }
 // 범종각 (bell pavilion)
 const BELL={x:-14,z:-2};
