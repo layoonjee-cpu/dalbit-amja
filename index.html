@@ -722,7 +722,7 @@ function placeTrees(list,variants,mat){variants.forEach((v,vi)=>{const items=lis
   const o=new THREE.Object3D();items.forEach((it,i)=>{o.position.set(it.x,it.y,it.z);o.rotation.y=it.r;o.scale.setScalar(it.s);o.updateMatrix();tI.setMatrixAt(i,o.matrix);fI.setMatrixAt(i,o.matrix)});scene.add(tI,fI)})}
 {const near=[],far=[];
  const avoid=(x,z)=>(Math.abs(x)<7&&z>16)||[[0,-15,12],[-14,-2,5],[15,-3,7],[11,13,5],[0,24,4],[-17,-11,3],[-9,15,3]].some(([a,b,r])=>Math.hypot(x-a,z-b)<r)||Math.abs(x)<3&&z>-8;
- const specials=[[6.5,-7],[-7,5],[19,8],[-20,7],[-9,22],[9,22],[22,-12],[-22,-14],[-12,-21],[12,-22]];
+ const specials=[[12,-11],[-13,8],[19,8],[-20,7],[-9,22],[9,22],[22,-12],[-22,-14],[-12,-21],[12,-22]];
  specials.forEach(([x,z])=>near.push({x,y:0,z,r:rand(0,6),s:rand(.9,1.2)}));
  for(let i=0;i<70;i++){const a=rand(0,Math.PI*2),r=rand(COURT-2,COURT+14);const x=Math.cos(a)*r,z=Math.sin(a)*r;if(avoid(x,z))continue;near.push({x,y:heightAt(x,z),z,r:rand(0,6),s:rand(.8,1.25)})}
  for(let i=0;i<(isTouch?260:420);i++){const a=rand(0,Math.PI*2),r=rand(COURT+14,150);const x=Math.cos(a)*r,z=Math.sin(a)*r;far.push({x,y:terrainH(x,z)-.3,z,r:rand(0,6),s:rand(1,1.6)})}
@@ -1256,6 +1256,7 @@ function updateRemotes(dt){const now=performance.now();for(const [id,r] of remot
 function onLiveChat(m){if(m.id===myId||isBad(m.text))return;const r=remotes.get(m.id);if(!r)return;say(r.n,m.text,3800);if(m.to&&m.to===myId){if(chatWith!==r)openChat(r);addChatLine('you',m.text)}}
 
 /* ================= 백구 (하얀 진돗개 아기) ================= */
+let __dogSeed=3;function R2(){__dogSeed=(__dogSeed*16807)%2147483647;return __dogSeed/2147483647}
 function makeDog(){const g=new THREE.Group();const fur=new THREE.MeshStandardMaterial({color:0xe9e3d6,roughness:1,envMapIntensity:.08});const dark=new THREE.MeshStandardMaterial({color:0x1b1416,roughness:.35});const pink=new THREE.MeshStandardMaterial({color:0xe9a0a8,roughness:.8});
   const body=new THREE.Group();g.add(body);const torso=new THREE.Mesh(new THREE.SphereGeometry(.2,24,16),fur);torso.scale.set(1.35,.95,1);torso.position.y=.26;torso.castShadow=true;body.add(torso);
   const chest=new THREE.Mesh(new THREE.SphereGeometry(.13,16,12),fur);chest.position.set(.2,.3,0);body.add(chest);
@@ -1267,7 +1268,13 @@ function makeDog(){const g=new THREE.Group();const fur=new THREE.MeshStandardMat
     const ear=new THREE.Mesh(new THREE.ConeGeometry(.055,.13,4),fur);ear.position.set(-.02,.15,s*.075);ear.rotation.set(s*.28,0,.12);head.add(ear);const inn=new THREE.Mesh(new THREE.ConeGeometry(.03,.08,4),pink);inn.position.set(.005,.14,s*.074);inn.rotation.set(s*.28,0,.12);head.add(inn);
     const bl=new THREE.Mesh(new THREE.CircleGeometry(.024,12),blushM);bl.position.set(.115,-.035,s*.105);bl.rotation.y=s*1.15;head.add(bl)});
   const legs=[];[[.15,.1],[.15,-.1],[-.15,.1],[-.15,-.1]].forEach(([lx,lz])=>{const l=new THREE.Group();l.position.set(lx,.2,lz);const m=new THREE.Mesh(new THREE.CylinderGeometry(.04,.035,.2,10),fur);m.position.y=-.1;l.add(m);const p=new THREE.Mesh(new THREE.SphereGeometry(.043,10,8),fur);p.scale.y=.6;p.position.y=-.19;l.add(p);g.add(l);legs.push(l)});
-  const tail=new THREE.Mesh(new THREE.TorusGeometry(.07,.035,8,16,Math.PI*1.5),fur);tail.position.set(-.27,.43,0);tail.rotation.set(0,Math.PI/2,.4);body.add(tail);
+  const tailG=new THREE.Group();tailG.position.set(-.26,.36,0);body.add(tailG);
+  {const pts=[[0,0,0],[-.03,.1,0],[-.02,.22,0],[.05,.31,0],[.15,.35,0],[.24,.32,0]].map(p=>new THREE.Vector3(...p));const cv=new THREE.CatmullRomCurve3(pts);
+   const core=new THREE.Mesh(new THREE.TubeGeometry(cv,24,.055,10,false),fur);tailG.add(core);
+   const tip=new THREE.Mesh(new THREE.SphereGeometry(.05,12,10),fur);tip.position.copy(pts[5]);tailG.add(tip);
+   for(let i=0;i<30;i++){const t=i/29;const c=cv.getPointAt(t);const puff=new THREE.Mesh(new THREE.SphereGeometry(.052+(1-Math.abs(t-.4))*.03,8,7),fur);
+     puff.position.set(c.x+(R2()-.5)*.05,c.y+(R2()-.5)*.05,c.z+(R2()-.5)*.09);puff.scale.set(1,1,1.1+R2()*.3);tailG.add(puff)}}
+  const tail=tailG;
   g.userData={head,legs,tail,body,walk:0,wag:0,eyesOpen,eyesClosed};return g}
 const dog=makeDog();scene.add(dog);const D={x:4,z:12,tx:4,tz:12,y:0,state:'idle',wait:2,food:null,eatT:0,yaw:0};dog.position.set(D.x,0,D.z);
 const dogLab=document.createElement('div');dogLab.className='label talk';dogLab.textContent='🐶 백구';dogLab.onclick=e=>{e.stopPropagation();say(dog,'왈! 🐾',1600);dog.userData.wag=2.5};document.body.appendChild(dogLab);
@@ -1277,7 +1284,7 @@ function dogEyes(closed){const u=dog.userData;u.eyesOpen.forEach(m=>m.visible=!c
 function petDog(){if(P.mode!=='walk'||D.state==='eat'||D.state==='go'||D.state==='pet')return;if(typeof stopAuto==='function')stopAuto();const a=Math.atan2(P.z-D.z,P.x-D.x);const px=D.x+Math.cos(a)*.72,pz=D.z+Math.sin(a)*.72;if(!blocked(px,pz)){P.x=px;P.z=pz}
   P.yaw=Math.atan2(D.x-P.x,D.z-P.z);P.mode='pet';player.userData.pet=1;D.state='pet';D.petT=0;say(player,'백구야~ 착하지 🤚',2200);status('손으로 백구를 살살 쓰다듬어요',3000)}
 function updateDog(dt,t){const u=dog.userData;let mv=false,spd=.9;
-  if(D.state==='pet'){D.petT+=dt;const k=Math.min(1,D.petT/.8);u.body.position.y=-.12*k;u.body.rotation.z=0;u.legs.forEach(l=>l.visible=k<.6);u.head.rotation.z=-.18*k+Math.sin(t*1.2)*.03;dogEyes(D.petT>1.2);u.tail.rotation.x=Math.sin(t*3.2)*.38;
+  if(D.state==='pet'){D.petT+=dt;const k=Math.min(1,D.petT/.8);u.body.position.y=-.12*k;u.body.rotation.z=0;u.legs.forEach(l=>l.visible=k<.6);u.head.rotation.z=-.18*k+Math.sin(t*1.2)*.03;dogEyes(D.petT>1.2);u.tail.rotation.y=Math.sin(t*3.6)*.5;u.tail.rotation.z=.15+Math.sin(t*3.6)*.05;
     if(D.petT>2.5&&!D.h1){D.h1=1;say(dog,'💕',1800)}if(D.petT>5.5&&!D.h2){D.h2=1;say(dog,'끄응… 💤💕',2000)}
     if(D.petT>8){D.state='idle';D.wait=4;D.h1=D.h2=0;dogEyes(false);u.legs.forEach(l=>l.visible=true);P.mode='walk';player.userData.pet=0;u.wag=3;say(dog,'왈! 💕',1800);status('백구가 행복해해요 🐶',3000)}
     D.y+=(heightAtR(D.x,D.z,.15)-D.y)*Math.min(1,dt*10);dog.position.set(D.x,D.y,D.z);return}
@@ -1292,7 +1299,7 @@ function updateDog(dt,t){const u=dog.userData;let mv=false,spd=.9;
   D.y+=(heightAtR(D.x,D.z,.15)-D.y)*Math.min(1,dt*10);dog.position.set(D.x,D.y,D.z);let dyw=D.yaw-dog.rotation.y;dyw=Math.atan2(Math.sin(dyw),Math.cos(dyw));dog.rotation.y+=dyw*Math.min(1,dt*8);
   u.walk+=dt*(mv?(spd>1?18:13):0);u.legs.forEach((l,i)=>{l.rotation.z=mv?Math.sin(u.walk+((i===0||i===3)?0:Math.PI))*.55:0});
   const sitting=D.state==='sit';u.body.rotation.z=sitting?.32:0;u.body.position.y=sitting?-.05:(mv?Math.abs(Math.sin(u.walk))*.015:0);u.legs[2].visible=u.legs[3].visible=!sitting;
-  u.wag=Math.max(0,u.wag-dt);u.tail.rotation.x=Math.sin(t*(u.wag>0?18:3))*(u.wag>0?.55:.15);if(D.state!=='eat')u.head.rotation.z=sitting?-.15:Math.sin(t*.7)*.08}
+  u.wag=Math.max(0,u.wag-dt);u.tail.rotation.y=Math.sin(t*(u.wag>0?15:2.5))*(u.wag>0?.6:.22);u.tail.rotation.z=(u.wag>0?.05:0);if(D.state!=='eat')u.head.rotation.z=sitting?-.15:Math.sin(t*.7)*.08}
 
 /* 소원 돌탑 */
 function stoneClick(v=.5,f=2600){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=4;const g=ctx.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+.09);const pn=panner(CAIRN.x,1,CAIRN.z,3,1);n.connect(bp).connect(g).connect(pn);pn.connect(AU.master);n.start(t,rand(0,1.5));n.stop(t+.1)}
@@ -1426,7 +1433,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   cam.cd=cam.cd??dist;cam.cd+=(lim-cam.cd)*Math.min(1,dt*(lim<cam.cd?14:2.5));const dist2=Math.min(dist,cam.cd);
   const cx=tgt.x+Math.sin(cam.yaw)*Math.cos(cam.pitch)*dist2,cz=tgt.z+Math.cos(cam.yaw)*Math.cos(cam.pitch)*dist2;let cyy=tgt.y+Math.sin(cam.pitch)*dist2;if(curArea==='요사채')cyy=Math.min(cyy,YOSA.plat+2.55);
   cyy=Math.max(cyy,heightAt(cx,cz)+.4);if(inside)cyy=Math.min(cyy,HALL.plat+3.9);
-  camera.position.set(cx,cyy,cz);if(shake>0){shake-=dt;camera.position.x+=Math.sin(t*60)*shake*.04;camera.position.y+=Math.cos(t*55)*shake*.03}camera.lookAt(tgt);if(P.mode==='mat'){const k=performance.now()/1000;camera.position.set(P.x,P.y+.35,P.z-1.0);camera.lookAt(P.x+Math.sin(k*.02)*3,P.y+40,P.z-6+Math.cos(k*.017)*2.5)}if(P.mode==='sleep'){const k=performance.now()/1000;camera.position.set(YO.x-1.9+Math.sin(k*.05)*.12,YO.y+2.1,YO.z+1.7);camera.lookAt(YO.x,YO.y+.25,YO.z-.45)}
+  camera.position.set(cx,cyy,cz);if(shake>0){shake-=dt;camera.position.x+=Math.sin(t*60)*shake*.04;camera.position.y+=Math.cos(t*55)*shake*.03}camera.lookAt(tgt);if(P.mode==='mat'){const k=performance.now()/1000;const drift=innerHeight>innerWidth?1.2:3.0;camera.position.set(P.x,P.y+.35,P.z);camera.up.set(0,0,-1);camera.lookAt(P.x+Math.sin(k*.02)*drift,P.y+50,P.z+Math.cos(k*.017)*drift)}else if(camera.up.z!==0)camera.up.set(0,1,0);if(P.mode==='sleep'){const k=performance.now()/1000;camera.position.set(YO.x-1.9+Math.sin(k*.05)*.12,YO.y+2.1,YO.z+1.7);camera.lookAt(YO.x,YO.y+.25,YO.z-.45)}
   // sun follows player for shadows
   sun.target.position.set(P.x,0,P.z);const sp=sun.position.clone().normalize().multiplyScalar(90);sun.position.copy(sp).add(sun.target.position);
   // bell striker swing
