@@ -935,16 +935,13 @@ async function initAudio(){const ctx=new (window.AudioContext||window.webkitAudi
   // crickets (night)
   AU.crk=ctx.createGain();AU.crk.gain.value=0;AU.crk.connect(AU.amb);
   /* 귀뚜라미 소리 제거: 반복되는 '츠츠츠' 소음 원인 */
-  // spring water (spatial)
-  {const src=ctx.createBufferSource();src.buffer=AU.noise;src.loop=true;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1400;bp.Q.value=.7;const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=500;const g=ctx.createGain();g.gain.value=.35;
-   const lfo=ctx.createOscillator();lfo.frequency.value=7;const lg=ctx.createGain();lg.gain.value=.15;lfo.connect(lg).connect(g.gain);lfo.start();
-   const pn=panner(SPRING.x,1,SPRING.z,2.5,1.4);src.connect(bp).connect(hp).connect(g).connect(pn).connect(AU.master);src.start()}
+  /* 약수터 물소리 제거: 3초 노이즈 루프 + 7Hz 떨림이 '츠츠츠' 반복 소음의 원인 */
   // chant (독경) from the Buddha, spatial
   try{const r=await fetch('assets/sound/chant.m4a');if(r.ok){const buf=await ctx.decodeAudioData(await r.arrayBuffer());const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;const pn=panner(0,2.4,HALL.z-3,3.5,1.1);const g=ctx.createGain();g.gain.value=.9;src.connect(g).connect(pn).connect(AU.chantG);src.start(0,rand(0,buf.duration*.8));AU.hasChant=true}}catch(e){console.warn('no chant',e)}
   applyVolumes();
   applyTimeAudio();
   // 새소리: 아주 가끔, 작게
-  const birdPhrase=()=>{const s=TIMES[timeKey];const outdoor=heightAt(P.x,P.z)<.2&&!['달빛전','요사채','공양간','차담실','식당'].includes(curArea);if(weather==='clear'&&s.birds>0&&P.mode!=='sleep'&&outdoor){const t=ctx.currentTime,v=s.birds*rand(.08,.14),hold=rand(3.5,7);AU.birds.gain.cancelScheduledValues(t);AU.birds.gain.setValueAtTime(AU.birds.gain.value,t);AU.birds.gain.linearRampToValueAtTime(v,t+2.2);AU.birds.gain.setValueAtTime(v,t+2.2+hold);AU.birds.gain.linearRampToValueAtTime(0,t+5.5+hold)}setTimeout(birdPhrase,rand(35000,90000))};setTimeout(birdPhrase,rand(12000,25000));
+  const birdPhrase=()=>{const s=TIMES[timeKey];const outdoor=heightAt(P.x,P.z)<.2&&!['달빛전','요사채','공양간','차담실','식당'].includes(curArea);if(weather==='clear'&&s.birds>0&&P.mode!=='sleep'&&outdoor){const t=ctx.currentTime,v=s.birds*rand(.08,.14),hold=rand(3.5,7);AU.birds.gain.cancelScheduledValues(t);AU.birds.gain.setValueAtTime(AU.birds.gain.value,t);AU.birds.gain.linearRampToValueAtTime(v,t+2.2);AU.birds.gain.setValueAtTime(v,t+2.2+hold);AU.birds.gain.linearRampToValueAtTime(0,t+5.5+hold)}setTimeout(birdPhrase,rand(90000,180000))};setTimeout(birdPhrase,rand(40000,70000));
 }
 const VOL=Object.assign({master:40,nature:80,bell:80,chant:10,mok:10,mute:false},JSON.parse(localStorage.getItem('dalbit_vol')||'{}'));if(!localStorage.getItem('dalbit_chant_v3')){VOL.chant=10;VOL.mok=10;localStorage.setItem('dalbit_chant_v3','1')}
 function applyVolumes(){if(!AU.ctx)return;const t=AU.ctx.currentTime;const k=v=>Math.pow(v/100,1.6);
