@@ -73,6 +73,11 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
 #branchFx .leaf{width:12px;height:10px;border-radius:60% 0 60% 0;opacity:.85}
 #branchFx .snow{width:6px;height:6px;border-radius:50%;background:#fff;opacity:.9;box-shadow:0 0 4px rgba(255,255,255,.8)}
 @keyframes fxfall{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(-40px,55vh) rotate(200deg)}100%{transform:translate(10px,110vh) rotate(380deg)}}
+#aHealing{right:14px;top:calc(67px + env(safe-area-inset-top));padding:8px 13px;color:#fff;border:1px solid #ffffff33;font:inherit;font-size:13px;cursor:pointer;z-index:11}
+#sharedStats{bottom:calc(182px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:92vw;font-size:11.5px;color:#eee;text-align:center;line-height:1.5;text-shadow:0 1px 5px #000;pointer-events:none;background:#17202b55;padding:5px 9px;border-radius:14px}
+#liveN{display:none!important}#bPeople{max-width:165px}#people{font-size:12px}#roomList .btn{font-size:14px}#quietList{display:grid;grid-template-columns:1fr 1fr;gap:7px}#quietList .btn{margin:0;padding:12px 5px;font-size:14px}
+.matmode #sharedStats{display:none}.matmode #aHealing{opacity:.6}
+@media(max-width:520px){#topL{padding:8px;font-size:13px}#topL b{font-size:14px}#topR{gap:0}#topR button{padding:7px 6px}#bPeople{max-width:136px}#sharedStats{bottom:172px}}
 /* chat */
 #chLog{display:flex;flex-direction:column;gap:7px;max-height:240px;min-height:120px;overflow:auto;padding:10px;background:#f3ecdf;border-radius:16px}
 #chLog .cl{max-width:80%;padding:8px 12px;border-radius:14px;font-size:14.5px;line-height:1.45}
@@ -156,7 +161,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
 
 <div id="topL" class="ui glass"><b>달빛암자</b><span id="area">일주문</span><em id="liveN"></em></div>
 <div id="topR" class="ui glass">
-  <button id="bPeople">👥 <span id="people">23</span></button>
+  <button id="bPeople" title="실제 접속 인원 · 방 선택"><span id="people">연결 중</span></button>
   <button id="bWeather"><span id="wIc">🌤️</span><span class="tx" id="wTx">맑음</span></button>
   <button id="bTime"><span id="timeIc">🌙</span><span class="tx" id="timeTx">밤</span></button>
   <button id="bSound">🔊</button>
@@ -172,6 +177,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
   <button id="aTea"><span class="i">🍵</span>차담</button>
   <button id="aMat"><span class="i">🧺</span>돗자리</button>
 </div>
+<button id="aHealing" class="ui glass" title="마음 카드·오늘의 한 줄·공동 연등">쉼 기록</button><div id="sharedStats" class="ui" aria-live="polite">이 방 오늘 기록 · 연결 중</div>
 <div id="joy" class="ui"><i></i></div>
 <button id="stopWalk" class="ui">⏸ 멈추기</button>
 <div id="snd" class="ui glass">
@@ -237,6 +243,11 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
   <div class="row" style="margin-top:10px"><input id="chIn" maxlength="30" style="flex:1;min-width:0" placeholder="30자 이내로 말을 걸어보세요" autocomplete="off"><button class="btn pink" id="chSend" style="flex:none;width:auto;padding:0 18px;margin:0;white-space:nowrap">보내기</button></div>
   <button class="btn ghost" data-close>대화 마치기</button>
 </div></div>
+<div class="modal" id="mRoom"><div class="sheet"><h3>함께 쉬는 방</h3><p class="s">인원은 실제 접속자만 셉니다. 같은 방 링크로 만나세요.</p><div id="roomList"></div><div class="row"><input id="roomInput" type="number" min="1" max="299" value="1" aria-label="방 번호"><button id="roomGo" class="btn pink">이 방으로</button></div><button id="roomLink" class="btn ghost">같은 방 링크 복사</button><button class="btn ghost" data-close>닫기</button></div></div>
+<div class="modal" id="mQuiet"><div class="sheet"><h3>조용한 한마디</h3><p class="s">자유 대화는 두 분 모두 차담실 안에서만 열립니다.</p><div id="quietList"></div><button class="btn ghost" data-close>닫기</button></div></div>
+<div class="modal" id="mHealing"><div class="sheet"><h3>오늘의 쉼</h3><p class="s" id="dailyComfort"></p><p class="s" style="font-size:12px">일반 위로 문구입니다. 사주·일진 계산이나 생년 정보는 사용하지 않습니다.</p><button id="mindCapture" class="btn pink">현재 장면으로 마음 카드 만들기</button><button id="quietOpen" class="btn ghost">조용한 한마디</button><button id="jointOpen" class="btn ghost">밤 9시 함께 연등 켜기</button><a class="btn ghost" href="https://www.unmyung.kr/?utm_source=dalbit-amja&utm_content=daily_line" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">운신상담소에서 이야기 이어가기</a><button class="btn ghost" data-close>닫기</button></div></div>
+<div class="modal" id="mMindCard"><div class="sheet"><h3>오늘의 마음 카드</h3><canvas id="mindCv" width="1080" height="1350" style="width:100%;border-radius:16px"></canvas><p class="s" style="font-size:12px">닉네임·대화 내용은 카드에 넣지 않습니다.</p><div class="row"><button id="mindSave" class="btn pink">이미지 저장</button><button id="mindShare" class="btn ghost">이미지 공유</button></div><button class="btn ghost" data-close>닫기</button></div></div>
+<div class="modal" id="mJoint"><div class="sheet"><h3>밤 9시, 함께 켜는 연등</h3><p class="s" id="jointExplain"></p><p class="s">한국시간 21:00~21:30, 이 방에서 실제 켠 연등 108개가 모이면 함께 하늘로 띄워요. 시간 안에 모이지 않으면 그날은 띄우지 않고, 다음 날 새로 시작해요. 소원 글은 서버에 저장하지 않고 개수만 셉니다.</p><button id="jointLight" class="btn pink">달맞이 터에서 연등 하나 켜기</button><button class="btn ghost" data-close>닫기</button></div></div>
 <div class="modal" id="mInfo"><div class="sheet">
   <h3 id="iTitle"></h3><p class="s" id="iBody" style="margin-bottom:4px"></p>
   <div id="iBtns"></div>
@@ -876,7 +887,7 @@ function addNpc(i,{sit=null}={}){const n=makeDali(ROBES[i%ROBES.length]);scene.a
   const st={n,name,x:0,z:0,tx:0,tz:0,wait:rand(1,5),sit,yaw:0,bowT:rand(0,3)};
   if(sit){st.x=sit.x;st.z=sit.z;sit.taken=true;n.position.set(sit.x,sit.y,sit.z);n.rotation.y=Math.PI;st.yaw=Math.PI;n.userData.sit=1}
   else{const p=POI[i%POI.length];st.x=p[0]+rand(-1,1);st.z=p[1]+rand(-1,1);st.tx=st.x;st.tz=st.z}
-  const lab=document.createElement('div');lab.className='label talk';lab.textContent=name;lab.title=name+'님과 대화하기';lab.onclick=e=>{e.stopPropagation();openChat(st)};document.body.appendChild(lab);st.lab=lab;npcs.push(st);return st}
+  const lab=document.createElement('div');lab.className='label talk';lab.textContent=name;lab.title=name+' (안내 캐릭터, 인원 집계 제외)';lab.onclick=e=>{e.stopPropagation();openChat(st)};document.body.appendChild(lab);st.lab=lab;npcs.push(st);return st}
 for(let i=0;i<5;i++)addNpc(i);
 addNpc(6,{sit:CUSHIONS[1]});addNpc(7,{sit:CUSHIONS[8]});addNpc(8,{sit:CUSHIONS[12]});
 const meLab=document.createElement('div');meLab.className='label me';document.body.appendChild(meLab);
@@ -1103,7 +1114,7 @@ let bellSwing=0;
 function ringBell(){if(bellSwing>0)return;bellSwing=1;setTimeout(()=>{strikeBell(1);status('데엥… 범종 소리가 산을 건너가요');shake=.35},620)}
 let shake=0;
 // greet
-$('#aGreet').onclick=()=>{player.userData.greet=1.4;say(player,'🙏');status(nick+'님이 합장으로 인사했어요')};
+$('#aGreet').onclick=()=>quietReact('bow');
 // sit / meditate
 let mediStart=0;
 $('#aSit').onclick=()=>{if(P.mode==='sit'){standUp();return}if(P.mode!=='walk')return;
@@ -1115,7 +1126,7 @@ let bowlT=0;$('#bowlBtn').onclick=e=>{e.stopPropagation();const n=performance.no
 $('#ctx2').onclick=e=>{e.stopPropagation();petDog()};
 $('#dineServe').onclick=serveDine;$('#dineEat').onclick=startDineEat;
 $('#stopWalk').onclick=e=>{e.stopPropagation();stopAuto()};
-$('#sitBow').onclick=e=>{e.stopPropagation();if(P.mode!=='sit'||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);sitBows++;$('#sitBowN').textContent=` · ${sitBows}배`;if(navigator.vibrate)navigator.vibrate(10);
+$('#sitBow').onclick=e=>{e.stopPropagation();if(P.mode!=='sit'||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);sitBows++;sendRitual('bow');$('#sitBowN').textContent=` · ${sitBows}배`;if(navigator.vibrate)navigator.vibrate(10);
   const m={1:'부처님께 정성껏 절을 올렸어요 🙏',3:'삼배를 올렸어요. 마음이 한결 차분해져요',7:'한 배 한 배, 마음이 가벼워져요',21:'스물한 배. 오늘의 나를 칭찬해 주세요'}[sitBows];if(m)status(m,3200)};
 function standUp(){P.mode='walk';player.userData.sit=0;$('#sitBar').style.display='none';if(P.sitRock){P.sitRock=false;P.x=MOONSPOT.x+1.6;P.z=MOONSPOT.z-1.4}$('#sitBow').style.display='none';if(P.sitCushion){P.sitCushion.taken=false;P.sitCushion=null;P.z+=.9;cam.targetDist=6.2}$('#medi').style.display='none';$('#bar').style.opacity=1}
 $('#aTea').onclick=()=>{if(curArea==='차담실'){openTea();return}info('차담실로 갈까요?','오른쪽 아래 정자에서 달이 스님이 차를 내어드려요.',[['차담실로 이동','pink',()=>teleport(TEA.x-.2,TEA.z+2.6,Math.PI)],['둘러볼게요','ghost']])};
@@ -1131,7 +1142,7 @@ function beginBow(){const w=$('#wText').value.trim();if(!w){$('#wText').focus();
     $('#bowHud').style.display='flex';$('#bar').style.display='none';$('#ctx').classList.remove('on');bowState.active=true;bowState.n=0;updBow();status('“'+w+'”');strikeBell(.35)},700)}
 const bowMsgs={9:'숨을 천천히 쉬어요. 한 배에 한 번',27:'벌써 4분의 1이에요',54:'절반 왔어요. 연등이 하나둘 켜져요',81:'조금만 더. 소원이 달님께 닿고 있어요',100:'마지막 여덟 배, 가장 정성스럽게'};
 function updBow(){$('#bowN').textContent=bowState.n;$('#bowBar').style.width=(bowState.n/108*100)+'%';const lit=Math.floor(bowState.n/12);hallLanterns.forEach((m,i)=>m.emissiveIntensity=i<lit?2.2:.05);if(bowMsgs[bowState.n])$('#bowMsg').textContent=bowMsgs[bowState.n]}
-function bowOnce(){if(!bowState.active||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);bowState.n++;updBow();if(navigator.vibrate)navigator.vibrate(10);if(bowState.n>=108){clearInterval(bowState.auto);bowState.auto=null;bowState.active=false;setTimeout(finishBow,1300)}}
+function bowOnce(){if(!bowState.active||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);bowState.n++;sendRitual('bow');updBow();if(navigator.vibrate)navigator.vibrate(10);if(bowState.n>=108){clearInterval(bowState.auto);bowState.auto=null;bowState.active=false;setTimeout(finishBow,1300)}}
 $('#bowOne').onclick=bowOnce;
 $('#bowAuto').onclick=()=>{if(bowState.auto){clearInterval(bowState.auto);bowState.auto=null;$('#bowAuto').textContent='자동 절';return}bowState.auto=setInterval(bowOnce,1150);$('#bowAuto').textContent='멈추기'};
 $('#bowStop').onclick=()=>{clearInterval(bowState.auto);bowState.auto=null;endBow();status('언제든 다시 와서 이어가도 돼요')};
@@ -1220,7 +1231,7 @@ function firstGuide(){if(localStorage.getItem('dalbit_guided'))return;localStora
 /* 방석 클릭 착석 */
 function sitOnCushion(c){if(typeof stopAuto==='function')stopAuto();$('#fade').style.opacity=1;setTimeout(()=>{P.x=c.x;P.z=c.z;P.y=c.y;updateContext();$('#aSit').onclick();$('#fade').style.opacity=0},500)}
 /* 사람끼리 부딪힘 */
-const BUMP_R=.6;function bump(s){const n=performance.now();if(n-(s.bumpT||0)<6000)return;s.bumpT=n;say(player,'어이쿠. 지나가겠습니다 스님',2600);if(s.real){if(ws&&ws.readyState===1)ws.send(JSON.stringify({t:'chat',to:'',text:'어이쿠. 지나가겠습니다 스님'}));return}
+const BUMP_R=.6;function bump(s){const n=performance.now();if(n-(s.bumpT||0)<6000)return;s.bumpT=n;say(player,'어이쿠. 지나가겠습니다 스님',2600);if(s.real){return}
   setTimeout(()=>{say(s.n,['네~ 살펴 가세요 🙏','아이고, 괜찮아요 😊','네, 먼저 가세요 🙏'][Math.random()*3|0],2400);s.n.userData.greet=1.2},1000);
   if(!s.sit){const ax=s.x-P.x,az=s.z-P.z,l=Math.hypot(ax,az)||1;s.tx=s.x-az/l*1.3+ax/l*.4;s.tz=s.z+ax/l*1.3+az/l*.4;s.wait=2}}
 function npcBlock(x,z){for(const r of remotes.values()){const dn=Math.hypot(x-r.x,z-r.z);if(dn<BUMP_R&&dn<Math.hypot(P.x-r.x,P.z-r.z))return r}for(const s of npcs){const dNew=Math.hypot(x-s.x,z-s.z);if(dNew<BUMP_R&&dNew<Math.hypot(P.x-s.x,P.z-s.z))return s}if(Math.hypot(x-monk.position.x,z-monk.position.z)<.55)return null;return null}
@@ -1229,8 +1240,8 @@ let chatWith=null;
 const chatRules=[[/안녕|반가|하이|ㅎㅇ/,['안녕하세요! 반가워요 🙏','네, 반갑습니다. 편히 쉬다 가세요']],[/힘들|힘드|힘듬|지쳐|지친|지쳤|피곤|우울|속상|슬퍼|슬프|외로|괴로|아파|지침/,['많이 애쓰셨네요. 여기선 천천히 쉬어가요','오늘은 마음 내려놓고 푹 쉬다 가세요 🍵','토닥토닥… 다 잘 될 거예요']],[/고마|감사/,['저도 고마워요 😊','별말씀을요 🙏']],[/밥|공양|비빔밥|배고|떡/,['공양간 산채비빔밥 정말 맛있어요!','떡이랑 식혜도 꼭 드셔보세요 😋']],[/잠|하룻밤|요사채|졸려/,['요사채 온돌방 따끈해서 잠이 솔솔 와요']],[/소원|기도|돌탑/,['소원 돌탑에 돌 하나 올려보세요. 이뤄진 분들 많대요']],[/어디|사세|사는|왔어/,['저는 서울에서 바람 쐬러 왔어요 🍃','부산에서 왔어요. 여기 공기가 참 좋네요']],[/이름|누구/,[n=>'저는 '+n+'이에요 😊']],[/날씨|비|눈|달|하늘/,['오늘 하늘이 참 곱네요','달 뜨면 달맞이 터에 가보세요 🌕']]];
 const chatDefault=['그렇군요 😊','네~ 좋은 하루 보내세요','저도 그 마음 알 것 같아요','천천히 둘러보세요 🙏','여기 오니 마음이 편해지죠?'];
 function addChatLine(who,txt){const d=document.createElement('div');d.className='cl '+who;d.textContent=txt;$('#chLog').appendChild(d);$('#chLog').scrollTop=1e5}
-function openChat(s){if(!started)return;chatWith=s;s.chat=true;$('#chLog').innerHTML='';if(s.real){$('#chTitle').textContent='💬 '+s.name+'님과 대화';addChatLine('sys','지금 실제로 함께 있는 분이에요. 따뜻한 말 한마디 건네보세요 🙏');$('#chIn').value='';openM('#mChat');setTimeout(()=>$('#chIn').focus(),300);return}$('#chTitle').textContent='💬 '+s.name+'님과 대화';const hi=['안녕하세요, '+s.name+'이에요 🙏','어머, 반가워요! 처음 오셨어요?','좋은 저녁이에요… 아니 좋은 하루예요 😊'][Math.random()*3|0];setTimeout(()=>{addChatLine('you',hi);say(s.n,hi,2800)},350);$('#chIn').value='';openM('#mChat');setTimeout(()=>$('#chIn').focus(),300)}
-function sendChat(){const t=$('#chIn').value.trim().slice(0,30);if(!t||!chatWith)return;if(isBad(t)){addChatLine('sys','고운 말로 다시 적어주세요 🙏 (욕설은 보낼 수 없어요)');return}$('#chIn').value='';addChatLine('me',t);say(player,t,3200);const s=chatWith;
+function openChat(s){if(!started)return;if(curArea!=='차담실'||(s.real&&!inTea(s.x,s.z))){openQuiet();return}chatWith=s;s.chat=true;$('#chLog').innerHTML='';if(s.real){$('#chTitle').textContent='💬 '+s.name+'님과 대화';addChatLine('sys','지금 실제로 함께 있는 분이에요. 따뜻한 말 한마디 건네보세요 🙏');$('#chIn').value='';openM('#mChat');setTimeout(()=>$('#chIn').focus(),300);return}$('#chTitle').textContent='💬 '+s.name+'님과 대화';const hi=['안녕하세요, '+s.name+'이에요 🙏','어머, 반가워요! 처음 오셨어요?','좋은 저녁이에요… 아니 좋은 하루예요 😊'][Math.random()*3|0];setTimeout(()=>{addChatLine('you',hi);say(s.n,hi,2800)},350);$('#chIn').value='';openM('#mChat');setTimeout(()=>$('#chIn').focus(),300)}
+function sendChat(){if(curArea!=='차담실'||(chatWith?.real&&!inTea(chatWith.x,chatWith.z))){addChatLine('sys','차담실에서 함께 대화해요.');return}const t=$('#chIn').value.trim().slice(0,30);if(!t||!chatWith)return;if(isBad(t)){addChatLine('sys','고운 말로 다시 적어주세요 🙏 (욕설은 보낼 수 없어요)');return}$('#chIn').value='';addChatLine('me',t);say(player,t,3200);const s=chatWith;
   if(s.real){if(ws&&ws.readyState===1)ws.send(JSON.stringify({t:'chat',to:s.id,text:t}));else addChatLine('sys','연결이 잠시 끊겼어요. 잠시 후 다시 보내주세요');return}
   let pool=chatDefault;for(const [re,arr] of chatRules){if(re.test(t)){pool=arr;break}}let r=pool[Math.random()*pool.length|0];if(typeof r==='function')r=r(s.name);
   setTimeout(()=>{if(chatWith!==s)return;addChatLine('you',r);say(s.n,r,3200);s.n.userData.greet=.8},rand(1100,2000))}
@@ -1286,30 +1297,35 @@ $('#matUp').onclick=endMat;
 /* ================= 실시간 접속 (함께 있는 사람들) ================= */
 const BAD=["씨발","씹팔","씨팔","시발","씨바","시바","씨빨","씨벌","ㅅㅂ","ㅆㅂ","ㅅ ㅂ","씨8","시8","18","십팔","개새끼","개새","개색","개섀","개같","개갇","개좆","미친","미췬","미틴","ㅁㅊ","이자식","좃","좆","존나","졸라","ㅈㄴ","꺼져","꺼저","죽을래","뒤진다","뒤질래","뒤져","병신","븅신","ㅂㅅ","지랄","ㅈㄹ","닥쳐","엿먹","니애미","느금","애미","애비","새끼","썅","쌍년","년아","놈아","fuck","shit","bitch"];function isBad(s){const t=String(s||'').toLowerCase().normalize('NFKC').replace(/[\s\u200b-\u200f.,!?~^*_\-=+'"`·:;|/\\()\[\]{}<>@#$%&]+/g,'');return BAD.some(w=>t.includes(w.replace(/\s/g,'')))}
 const LIVE_URL='wss://dalbit-live.layoonjee.workers.dev/ws';
-const remotes=new Map();let ws=null,myId=null,liveRoom=1,liveTries=0,lastSent={x:0,z:0,yaw:0,mode:'',t:0};const myRobe=Math.random()*5|0;
+const remotes=new Map();let ws=null,myId=null,liveRoom=Math.max(1,Math.min(299,+new URLSearchParams(location.search).get('room')||1)),liveTries=0,lastSent={x:0,z:0,yaw:0,mode:'',t:0};const myRobe=Math.random()*5|0;
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function liveConnect(){try{ws=new WebSocket(LIVE_URL+'?room='+liveRoom)}catch(e){return}
+function liveConnect(){liveState='연결 중';updateLiveN();try{ws=new WebSocket(LIVE_URL+'?room='+liveRoom)}catch(e){return}
   ws.onopen=()=>{liveTries=0;ws.send(JSON.stringify({t:'hello',nick,x:+P.x.toFixed(2),z:+P.z.toFixed(2),yaw:+P.yaw.toFixed(2),robe:myRobe}))};
   ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}
     if(m.t==='full'){liveRoom++;ws.onclose=null;try{ws.close()}catch(_){}ws=null;if(liveRoom<300)setTimeout(liveConnect,200);return}
-    if(m.t==='welcome'){myId=m.id;m.peers.forEach(addRemote);updateLiveN();return}
-    if(m.t==='join'){addRemote(m);updateLiveN();status('🌿 '+m.nick+'님이 암자에 들어오셨어요',3000);return}
-    if(m.t==='leave'){removeRemote(m.id);updateLiveN();return}
+    if(m.t==='welcome'){myId=m.id;liveState='연결됨';serverPresence=m.count??(m.peers.length+1);m.peers.forEach(addRemote);if(m.stats)applySharedStats(m.stats);updateLiveN();history.replaceState(null,'',location.pathname+'?room='+liveRoom);return}
+    if(m.t==='join'){addRemote(m);return}
+    if(m.t==='leave'){removeRemote(m.id);return}
+    if(m.t==='presence'){serverPresence=m.count;updateLiveN();return}
+    if(m.t==='stats'){applySharedStats(m.stats);return}
+    if(m.t==='launch'){jointLaunch(m.day);return}
+    if(m.t==='emote'){const r=remotes.get(m.id);if(r){r.n.userData.greet=1.4;say(r.n,m.e,2400)}return}
+    if(m.t==='chatClosed'){addChatLine('sys','자유 대화는 두 분 모두 차담실 안에서만 가능합니다.');return}
     if(m.t==='pos'){const r=remotes.get(m.id);if(r){r.tx=m.x;r.tz=m.z;r.tyaw=m.yaw;r.mode=m.mode;r.seen=performance.now()}return}
     if(m.t==='chat'){const rr=remotes.get(m.id);if(rr)rr.seen=performance.now();onLiveChat(m)}if(m.t==='blocked'&&chatWith)addChatLine('sys','고운 말로 다시 적어주세요 🙏')};
-  ws.onclose=()=>{ws=null;myId=null;[...remotes.keys()].forEach(removeRemote);updateLiveN();if(liveTries++<8)setTimeout(liveConnect,3000*liveTries)};
-  ws.onerror=()=>{}}
+  ws.onclose=()=>{ws=null;myId=null;liveState='연결 끊김';serverPresence=0;$('#sharedStats').textContent=roomName()+' · 기록 연결 끊김';[...remotes.keys()].forEach(removeRemote);updateLiveN();if(liveTries++<8)setTimeout(liveConnect,3000*liveTries)};
+  ws.onerror=()=>{liveState='연결 끊김';updateLiveN()}}
 function addRemote(p){if(!p||remotes.has(p.id)||p.id===myId)return;const n=makeDali(ROBES[(p.robe||0)%ROBES.length]);if(P.mode==='mat')n.visible=false;n.position.set(p.x,0,p.z);scene.add(n);
   const lab=document.createElement('div');lab.className='label talk real';lab.innerHTML='<b class="dot">●</b> '+esc(isBad(p.nick)?'고운 손님':p.nick);lab.title=p.nick+'님과 대화하기 (실제 방문객)';
   const st={seen:performance.now(),id:p.id,real:true,name:p.nick,n,lab,x:p.x,z:p.z,y:0,tx:p.x,tz:p.z,yaw:p.yaw||0,tyaw:p.yaw||0,mode:p.mode||'walk',sit:false};lab.onclick=e=>{e.stopPropagation();openChat(st)};document.body.appendChild(lab);remotes.set(p.id,st)}
 function removeRemote(id){const r=remotes.get(id);if(!r)return;scene.remove(r.n);r.lab.remove();remotes.delete(id);if(chatWith===r)addChatLine('sys','대화 상대가 암자를 떠났어요')}
-function updateLiveN(){const el=$('#liveN');if(el)el.textContent=remotes.size?'함께 '+(remotes.size+1)+'명':''}
+function updateLiveN(){const el=$('#people');if(el)el.textContent=roomName()+' · '+(myId?(serverPresence+'명'):liveState);$('#liveN').textContent='';}
 function liveSend(){if(!ws||ws.readyState!==1||!myId)return;const n=performance.now();const mode=P.mode;const moved=Math.hypot(P.x-lastSent.x,P.z-lastSent.z)>.08||Math.abs(P.yaw-lastSent.yaw)>.2||mode!==lastSent.mode;
   if((moved&&n-lastSent.t>450)||n-lastSent.t>25000){ws.send(JSON.stringify({t:'pos',x:+P.x.toFixed(2),z:+P.z.toFixed(2),yaw:+P.yaw.toFixed(2),mode}));lastSent={x:P.x,z:P.z,yaw:P.yaw,mode,t:n}}}
-function updateRemotes(dt){const now=performance.now();for(const [id,r] of remotes){if(now-r.seen>70000){removeRemote(id);updateLiveN()}}remotes.forEach(r=>{const dx=r.tx-r.x,dz=r.tz-r.z,d=Math.hypot(dx,dz);const mv=d>.05;if(d>6){r.x=r.tx;r.z=r.tz}else{r.x+=dx*Math.min(1,dt*3.5);r.z+=dz*Math.min(1,dt*3.5)}
+function updateRemotes(dt){remotes.forEach(r=>{const dx=r.tx-r.x,dz=r.tz-r.z,d=Math.hypot(dx,dz);const mv=d>.05;if(d>6){r.x=r.tx;r.z=r.tz}else{r.x+=dx*Math.min(1,dt*3.5);r.z+=dz*Math.min(1,dt*3.5)}
   let dy=r.tyaw-r.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));r.yaw+=dy*Math.min(1,dt*6);const n=r.n,u=n.userData;u.sit=(r.mode==='sit'||r.mode==='eat')?1:0;u.lie=(r.mode==='sleep'||r.mode==='mat')?1:0;
   r.y+=(heightAtR(r.x,r.z)-r.y)*Math.min(1,dt*10);n.position.set(r.x,r.y+(u.lie?.3:0),r.z);n.rotation.y=u.lie?0:r.yaw;n.rotation.x=u.lie?-Math.PI/2:0;animDali(n,dt,mv&&!u.sit&&!u.lie,.62)})}
-function onLiveChat(m){if(m.id===myId||isBad(m.text))return;const r=remotes.get(m.id);if(!r)return;say(r.n,m.text,3800);if(m.to&&m.to===myId){if(chatWith!==r)openChat(r);addChatLine('you',m.text)}}
+function onLiveChat(m){if(m.id===myId||isBad(m.text)||curArea!=='차담실')return;const r=remotes.get(m.id);if(!r)return;say(r.n,m.text,3800);if(m.to&&m.to===myId){if(chatWith!==r)openChat(r);addChatLine('you',m.text)}}
 
 /* ================= 백구 (하얀 진돗개 아기) ================= */
 let __dogSeed=3;function R2(){__dogSeed=(__dogSeed*16807)%2147483647;return __dogSeed/2147483647}
@@ -1368,7 +1384,7 @@ function placeStone(wish){let c=cairns[0],bd=1e9;cairns.forEach(k=>{const d=Math
   s.position.set(P.x+(c.x-P.x)*.35,P.y+1.4,P.z+(c.z-P.z)*.35);scene.add(s);const from=s.position.clone();const t0=performance.now();
   (function anim(){const k=Math.min(1,(performance.now()-t0)/1400);const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;s.position.set(lerp(from.x,sx,e),lerp(from.y,ty,e)+Math.sin(k*Math.PI)*.6,lerp(from.z,sz,e));
     if(k<1){requestAnimationFrame(anim);return}s.position.set(sx,ty,sz);c.top+=s.userData.h*2;c.n++;stoneClick(.25,2400);setTimeout(()=>stoneClick(.12,3100),90);
-    myStones.push({w:wish.slice(0,60),d:Date.now()});localStorage.setItem('dalbit_stones',JSON.stringify(myStones.slice(-50)));
+    myStones.push({w:wish.slice(0,60),d:Date.now()});sendRitual('stone');localStorage.setItem('dalbit_stones',JSON.stringify(myStones.slice(-50)));
     status('돌 하나에 소원을 담았어요. 무너지지 않게 마음을 모아요 🙏',3800);setTimeout(()=>{player.userData.greet=1.4;say(player,'🙏')},500);
     setTimeout(()=>{drawCard(wish,'돌탑 소원',myStones.length+'번째 소원 돌');openM('#mCard')},2600)})()}
 
@@ -1378,7 +1394,7 @@ function startLantern(){if(timeKey!=='night'&&timeKey!=='sunset'&&timeKey!=='daw
   $('#wGo').textContent='시작하기';$('#wTitle').textContent='달님께 소원등 띄우기';const ph=moonAge()/29.53;const pct=Math.round((1-Math.cos(2*Math.PI*ph))/2*100);const toFull=Math.round(((14.77-moonAge())+29.53)%29.53);
   $('#wSub').innerHTML=pct>=97?'🌕 <b>오늘은 보름밤!</b> 오늘 띄운 소원등은 달님께 곧장 닿는대요.':`지금 달은 ${pct}% 차올랐어요. 보름달까지 약 ${toFull}일. 보름밤엔 다 함께 소원등을 띄워요.`;
   $('#wText').value='';$('#wGo').onclick=()=>{const w=$('#wText').value.trim();if(!w)return;closeM('#mWish');releaseLantern(w,true)};openM('#mWish')}
-function releaseLantern(text,mine){const g=new THREE.Group();const paper=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.5,12,1,true),new THREE.MeshStandardMaterial({color:0xffd9b0,emissive:0xff9a5a,emissiveIntensity:2.4,side:THREE.DoubleSide,transparent:true,opacity:.95}));g.add(paper);
+function releaseLantern(text,mine){if(mine)sendRitual('lantern');const g=new THREE.Group();const paper=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.5,12,1,true),new THREE.MeshStandardMaterial({color:0xffd9b0,emissive:0xff9a5a,emissiveIntensity:2.4,side:THREE.DoubleSide,transparent:true,opacity:.95}));g.add(paper);
   const fl=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex('255,170,100'),blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));fl.scale.setScalar(1.6);g.add(fl);
   const sx=mine?P.x:MOONSPOT.x+rand(-6,6),sz=mine?P.z:MOONSPOT.z+rand(-4,4);g.position.set(sx,(mine?P.y:0)+1.3,sz);scene.add(g);
   lanterns.push({g,t:0,dir:moonDir.clone().add(new THREE.Vector3(rand(-.08,.08),0,rand(-.08,.08))).normalize(),sway:rand(0,6)});
@@ -1408,6 +1424,37 @@ function showTea(){const w=$('#teaBtns');w.innerHTML='';const mk=(t,c,fn)=>{cons
   $('#teaT').textContent=teaLines[teaI];
   if(teaI<teaLines.length-1){const b=document.createElement('button');b.className='btn ghost';b.textContent='네 ▸';b.onclick=()=>{teaI++;showTea()};w.appendChild(b)}
   else{const a=document.createElement('a');a.href='landing.html';a.style.textDecoration='none';a.innerHTML='<button class="btn pink">🍵 차담 신청하러 가기</button>';w.appendChild(a);const u=document.createElement('a');u.href='https://www.unmyung.kr/?utm_source=dalbit-amja&utm_medium=tea';u.target='_blank';u.rel='noopener';u.style.textDecoration='none';u.innerHTML='<button class="btn" style="background:linear-gradient(135deg,#2b2f5c,#4a3f7a);color:#f6e7b8">🌙 달빛암자 운신상담소 바로가기</button>';w.appendChild(u);const b=document.createElement('button');b.className='btn ghost';b.textContent='조금 더 머물게요';b.onclick=()=>closeM('#mTea');w.appendChild(b)}}
+
+
+/* TOP5: real rooms, calm connection, a private souvenir */
+let serverPresence=0,liveState='연결 중',sharedDay=null,lastReaction=0,launchedDay='',jointMeshes=[],sharedStoneMeshes=[],sharedStoneDay='',sharedStoneTop=.05;
+const quietPhrases=['쉬어 가요','고마워요','편히 주무세요','오늘도 수고했어요','함께여서 좋아요','좋은 하루 보내세요','마음이 편안해지길','소원이 이루어지길'];
+function roomName(n=liveRoom){return '연화방 '+n}
+function inTea(x,z){return Math.hypot(x-TEA.x,z-TEA.z)<4.5}
+function koreanDate(){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
+function comfortLine(){const d=koreanDate();let k=0;for(const c of d)k+=c.charCodeAt(0);return mindLines[k%mindLines.length]}
+function openQuiet(){const w=$('#quietList');w.innerHTML='';quietPhrases.forEach(t=>{const b=document.createElement('button');b.className='btn ghost';b.textContent=t;b.onclick=()=>{quietReact(t);closeM('#mQuiet')};w.appendChild(b)});openM('#mQuiet')}
+function quietReact(t){const now=Date.now();if(now-lastReaction<4000)return;lastReaction=now;player.userData.greet=1.4;say(player,t==='bow'?'🙏':t,2400);if(ws?.readyState===1)ws.send(JSON.stringify({t:'emote',e:t}))}
+function sendRitual(kind){if(!ws||ws.readyState!==1||!myId)return;const id=crypto.randomUUID();ws.send(JSON.stringify({t:'pos',x:+P.x.toFixed(2),z:+P.z.toFixed(2),yaw:P.yaw,mode:P.mode}));ws.send(JSON.stringify({t:'ritual',kind,id}))}
+async function openRoomPicker(){openM('#mRoom');$('#roomInput').value=liveRoom;const list=$('#roomList');list.textContent='실제 인원 확인 중…';const nums=[...new Set([liveRoom,1,2,3,4,5])];const rows=await Promise.all(nums.map(async n=>{try{const r=await fetch('https://dalbit-live.layoonjee.workers.dev/count?room='+n);if(!r.ok)throw Error();const j=await r.json();return [n,j.online]}catch{return [n,null]}}));list.innerHTML='';rows.forEach(([n,count])=>{const b=document.createElement('button');b.className='btn ghost';b.textContent=roomName(n)+' · '+(count===null?'연결 확인 불가':count+'명');b.onclick=()=>goRoom(n);list.appendChild(b)})}
+function goRoom(n){n=Math.max(1,Math.min(299,Math.floor(+n||1)));location.href=location.pathname+'?room='+n}
+$('#roomGo').onclick=()=>goRoom($('#roomInput').value);$('#roomLink').onclick=async()=>{try{await navigator.clipboard.writeText('https://dalbit-amja.pages.dev/?room='+liveRoom);status('같은 방 링크를 복사했어요')}catch{status('https://dalbit-amja.pages.dev/?room='+liveRoom,6000)}};
+$('#aHealing').onclick=()=>{$('#dailyComfort').textContent=koreanDate()+' · '+comfortLine();openM('#mHealing')};$('#quietOpen').onclick=()=>{closeM('#mHealing');openQuiet()};
+function applySharedStats(s){if(!s)return;if(sharedDay&&sharedDay.day!==s.day){launchedDay='';jointMeshes.forEach((m,i)=>{m.userData.raise=0;m.userData.done=false;m.position.y=.8+Math.floor(i/12)*.3})}if(sharedStoneDay!==s.day){sharedStoneMeshes.forEach(m=>scene.remove(m));sharedStoneMeshes=[];sharedStoneTop=.05;sharedStoneDay=s.day}while(sharedStoneMeshes.length<Math.min(24,s.stones)){const m=makeStone(.13);m.position.set(CAIRN.x+1.1,sharedStoneTop+m.userData.h,CAIRN.z-1.7);sharedStoneTop+=m.userData.h*2;scene.add(m);sharedStoneMeshes.push(m)}sharedDay=s;$('#sharedStats').textContent=roomName()+' · 오늘 소원등 '+s.lanterns+'개 · 절 '+s.bows+'배 · 돌 '+s.stones+'개';$('#jointExplain').textContent=s.launched?'오늘 108개 연등을 함께 띄웠어요.':s.window?'공동 점등 중 · 실제 켠 연등 '+s.night+'/108개':s.ended?'오늘 점등 시간 종료 · '+s.night+'/108개. 다음 날 21시에 다시 만나요.':'오늘 밤 9시~9시30분 · 이 방에서 함께 108개를 모아요.';$('#jointLight').disabled=!s.window||s.launched;renderJoint(s);}
+function renderJoint(s){if(!jointMeshes.length){for(let i=0;i<108;i++){const mat=new THREE.MeshBasicMaterial({color:0xffcf84,transparent:true,opacity:.13});const m=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6),mat);m.position.set(MOONSPOT.x-2.4+(i%12)*.44,.8+Math.floor(i/12)*.3,MOONSPOT.z-2.5);scene.add(m);jointMeshes.push(m)}}jointMeshes.forEach((m,i)=>{m.visible=(s.window||s.launched)&&timeKey==='night'&&!m.userData.done;if(!m.userData.raise&&!m.userData.done)m.material.opacity=i<s.night?.85:.13})}
+function jointLaunch(day){if(launchedDay===day)return;launchedDay=day;setTime('night');for(let i=0;i<108;i++){const m=jointMeshes[i];if(m){m.userData.raise=1;m.userData.baseY=m.position.y}}status('이 방에서 실제 켠 108개 연등을 함께 하늘로 띄워요',5000)}
+function updateJoint(dt){jointMeshes.forEach((m,i)=>{if(m.userData.raise){m.position.y+=dt*(.28+i%7*.016);m.material.opacity=Math.max(0,m.material.opacity-dt*.018);if(m.material.opacity<=0){m.userData.raise=0;m.userData.done=true;m.visible=false}}});}
+$('#jointOpen').onclick=()=>{closeM('#mHealing');openM('#mJoint');if(sharedDay)applySharedStats(sharedDay)};
+$('#jointLight').onclick=()=>{if(!sharedDay?.window||sharedDay.launched)return;closeM('#mJoint');teleport(MOONSPOT.x+1.5,MOONSPOT.z-1,Math.atan2(moonDir.x,moonDir.z));setTimeout(()=>{setTime('night');releaseLantern('',true)},1000)};
+setInterval(()=>{if(ws?.readyState===1&&myId)ws.send(JSON.stringify({t:'state'}));else{$('#sharedStats').textContent=roomName()+' · 기록 연결 끊김';updateLiveN()}},30000);
+/* Capture only WebGL, no HTML nicknames or free-chat overlays */
+function paintMindCard(dataURL){const cv=$('#mindCv'),x=cv.getContext('2d');return new Promise((resolve,reject)=>{const im=new Image();im.onerror=reject;im.onload=()=>{x.fillStyle='#f6f0e3';x.fillRect(0,0,1080,1350);x.fillStyle='#263440';x.textAlign='center';x.font='bold 54px "Gowun Batang",serif';x.fillText('달빛암자 · 오늘의 마음',540,93);
+ const h=900,w=1040,sc=Math.min(w/im.width,h/im.height);x.fillStyle='#0d1830';x.fillRect(20,145,w,h);x.drawImage(im,20+(w-im.width*sc)/2,145+(h-im.height*sc)/2,im.width*sc,im.height*sc);
+ x.font='26px Pretendard,sans-serif';x.fillStyle='#726958';x.fillText(roomName()+' · '+koreanDate()+' · '+TIMES[timeKey].tx,540,1100);x.fillStyle='#3a463b';x.font='30px "Gowun Batang",serif';wrapText(x,comfortLine(),540,1160,990,42);x.fillStyle='#8b806e';x.font='24px Pretendard,sans-serif';x.fillText('dalbit-amja.pages.dev',540,1310);resolve()};im.src=dataURL})}
+$('#mindCapture').onclick=async()=>{closeM('#mHealing');try{const data=await new Promise(resolve=>requestAnimationFrame(()=>{composer.render();resolve(canvas.toDataURL('image/png'))}));await paintMindCard(data);openM('#mMindCard')}catch(e){status('장면 저장이 어려워요. 다시 눌러주세요')}};
+function mindBlob(){return new Promise(resolve=>$('#mindCv').toBlob(resolve,'image/png'))}
+async function saveMind(){const b=await mindBlob();if(!b)return;const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='달빛암자_오늘의마음_'+koreanDate()+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),30000)}
+$('#mindSave').onclick=saveMind;$('#mindShare').onclick=async()=>{const b=await mindBlob();const f=new File([b],'달빛암자_오늘의마음_'+koreanDate()+'.png',{type:'image/png'});try{if(navigator.canShare?.({files:[f]}))await navigator.share({title:'달빛암자 오늘의 마음',files:[f]});else await saveMind()}catch(e){if(e.name!=='AbortError')await saveMind()}};
 
 /* ================= input ================= */
 const keys={};addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;keys[e.code]=true;if(e.code==='Space'&&bowState.active){bowOnce();e.preventDefault()}if(e.code==='Space'&&mokState.on){mokHit();e.preventDefault()}});addEventListener('keyup',e=>keys[e.code]=false);
@@ -1442,7 +1489,7 @@ $('#bSound').onclick=e=>{e.stopPropagation();$('#snd').classList.toggle('on')};
 ['Master','Nature','Bell','Chant'].forEach(n=>{const el=$('#v'+n);const key=n.toLowerCase();el.value=VOL[key];el.oninput=()=>{VOL[key]=+el.value;if(key==='master'&&VOL.mute&&+el.value>0)VOL.mute=false;applyVolumes()}});
 $('#vMute').onclick=()=>{VOL.mute=!VOL.mute;applyVolumes()};
 canvas.addEventListener('pointerdown',()=>$('#snd').classList.remove('on'));
-$('#bPeople').onclick=()=>status('지금 '+$('#people').textContent+'명이 함께 머물고 있어요');
+$('#bPeople').onclick=openRoomPicker;
 
 /* ================= intro ================= */
 const ADJ=['고요한','포근한','맑은','다정한','은은한','따스한','조용한','느린','푸른','하얀'],NOUN=['달빛','구름','바람','연꽃','풍경','햇살','이슬','소나무','별','목련'];
@@ -1513,7 +1560,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   // lanterns
   for(let i=lanterns.length-1;i>=0;i--){const L=lanterns[i];L.t+=dt;const up=L.dir.clone().multiplyScalar(L.t*L.t*.35+L.t*.9);L.g.position.y+=dt*(.6+L.t*.15);L.g.position.x+=L.dir.x*dt*(.4+L.t*.2)+Math.sin(t+L.sway)*dt*.2;L.g.position.z+=L.dir.z*dt*(.4+L.t*.2);
     if(L.t>26){scene.remove(L.g);lanterns.splice(i,1)}}
-  if(started&&(timeKey==='night')&&Math.random()<dt*.06)releaseLantern('',false);
+
   // npcs
   npcs.forEach(s=>{const n=s.n;if(s.sit){s.bowT-=dt;if(s.bowT<0){n.userData.bow=1;s.bowT=rand(2.2,4)}animDali(n,dt,false,1);return}
     const dx=s.tx-s.x,dz=s.tz-s.z,d=Math.hypot(dx,dz);let mv=false;
@@ -1533,8 +1580,8 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   if(started){remotes.forEach(r=>proj(r.n,1.6,r.lab));proj(dog,.85,dogLab);if(P.mode==='sleep'||P.mode==='mat')meLab.style.display='none';else proj(player,1.45,meLab);npcs.forEach(s=>proj(s.n,1.45,s.lab));proj(monk,1.25,monkLab)}
   for(let i=bubbles.length-1;i>=0;i--){const b=bubbles[i];if(performance.now()>b.until){b.b.remove();bubbles.splice(i,1);continue}proj(b.obj,1.85,b.b)}
   if(autoDir&&P.mode!=='walk')stopAuto();
-  if(chatWith&&!$('#mChat').classList.contains('on')){chatWith.chat=false;chatWith=null}updateClouds(dt);
-  updateRemotes(dt);liveSend();updateDog(dt,t);updateDineEat(dt);
+  if(chatWith&&chatWith.real&&(curArea!=='차담실'||!inTea(chatWith.x,chatWith.z))){closeM('#mChat');chatWith.chat=false;chatWith=null}if(chatWith&&!$('#mChat').classList.contains('on')){chatWith.chat=false;chatWith=null}updateClouds(dt);
+  updateJoint(dt);updateRemotes(dt);liveSend();updateDog(dt,t);updateDineEat(dt);
   updateWeather(dt,t);updateWisps(dt,t);updateMist(dt,t);updateBreath();updateIdle(dt);
   {const indoorP=heightAt(P.x,P.z)>.2||curArea==='달빛전';const pc=player.userData.chorong;if(pc)pc.visible=chorongOn&&!indoorP&&P.mode!=='bow'&&P.mode!=='mok'&&P.mode!=='sleep'&&P.mode!=='eat'&&P.mode!=='mat';
    npcs.forEach(s=>{const c=s.n.userData.chorong;if(c)c.visible=chorongOn&&heightAt(s.x,s.z)<.2})
@@ -1543,10 +1590,8 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   if(started)updateContext();updateListener();
   composer.render()}
 tick();
-window.__d={npcs,scene,renderer,sun,hemi,sky,M,setTime,setWeather,camera,P,cam,bloom,composer,TIMES};
-// fake presence
-setInterval(()=>{const el=$('#people');el.textContent=Math.max(12,+el.textContent+Math.round(rand(-1,1)))},15000);
-setInterval(()=>{if(!started||Math.random()<.5||P.mode==='sleep')return;const n=npcs[Math.random()*npcs.length|0];const r=Math.random();if(r<.5){n.n.userData.greet=1.4;status(n.name+'님이 합장으로 인사했어요')}else if(r<.75)status(n.name+'님이 소원등을 띄웠어요 🏮');else status(n.name+'님이 108배를 시작했어요')},50000);
+window.__d={get sharedDay(){return sharedDay},get liveRoom(){return liveRoom},get serverPresence(){return serverPresence},sendRitual,openRoomPicker,openQuiet,quietReact,get ws(){return ws},npcs,scene,renderer,sun,hemi,sky,M,setTime,setWeather,camera,P,cam,bloom,composer,TIMES};
+// Actual server presence replaces simulated numbers.
 // roof transparency for main hall when inside
 setInterval(()=>{const inside=curArea==='달빛전';const r=roofs[0].grp;r.userData.mats.forEach(m=>{if(inside&&!m.material.__cl){m.material=m.material.clone();m.material.__cl=true}m.material.transparent=inside;m.material.opacity=inside?.12:1;m.material.depthWrite=!inside})},200);
 </script>
