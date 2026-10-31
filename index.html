@@ -933,7 +933,7 @@ async function initAudio(){const ctx=new (window.AudioContext||window.webkitAudi
   AU.wind=await loop('assets/sound/wind.mp3',.5);AU.birds=await loop('assets/sound/birds.mp3',.0);
   // crickets (night)
   AU.crk=ctx.createGain();AU.crk.gain.value=0;AU.crk.connect(AU.amb);
-  setInterval(()=>{if(!AU.ctx||AU.crk.gain.value<.01||Math.random()<.7)return;const t=ctx.currentTime;const f=rand(4200,4700);for(let k=0;k<3;k++){const o=ctx.createOscillator();o.frequency.value=f;const g=ctx.createGain();g.gain.value=0;const st=t+k*.07;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(.016,st+.01);g.gain.linearRampToValueAtTime(0,st+.045);const pan=ctx.createStereoPanner();pan.pan.value=rand(-.9,.9);o.connect(g).connect(pan).connect(AU.crk);o.start(st);o.stop(st+.06)}},620);
+  /* 귀뚜라미 소리 제거: 반복되는 '츠츠츠' 소음 원인 */
   // spring water (spatial)
   {const src=ctx.createBufferSource();src.buffer=AU.noise;src.loop=true;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1400;bp.Q.value=.7;const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=500;const g=ctx.createGain();g.gain.value=.35;
    const lfo=ctx.createOscillator();lfo.frequency.value=7;const lg=ctx.createGain();lg.gain.value=.15;lfo.connect(lg).connect(g.gain);lfo.start();
@@ -945,7 +945,7 @@ async function initAudio(){const ctx=new (window.AudioContext||window.webkitAudi
   // 새소리: 아주 가끔, 작게
   const birdPhrase=()=>{const s=TIMES[timeKey];const outdoor=heightAt(P.x,P.z)<.2&&!['달빛전','요사채','공양간','차담실','식당'].includes(curArea);if(weather==='clear'&&s.birds>0&&P.mode!=='sleep'&&outdoor){const t=ctx.currentTime,v=s.birds*rand(.08,.14),hold=rand(3.5,7);AU.birds.gain.cancelScheduledValues(t);AU.birds.gain.setValueAtTime(AU.birds.gain.value,t);AU.birds.gain.linearRampToValueAtTime(v,t+2.2);AU.birds.gain.setValueAtTime(v,t+2.2+hold);AU.birds.gain.linearRampToValueAtTime(0,t+5.5+hold)}setTimeout(birdPhrase,rand(35000,90000))};setTimeout(birdPhrase,rand(12000,25000));
 }
-const VOL=Object.assign({master:40,nature:80,bell:80,chant:70,mute:false},JSON.parse(localStorage.getItem('dalbit_vol')||'{}'));
+const VOL=Object.assign({master:40,nature:80,bell:80,chant:0,mute:false},JSON.parse(localStorage.getItem('dalbit_vol')||'{}'));if(!localStorage.getItem('dalbit_chant_v2')){VOL.chant=0;localStorage.setItem('dalbit_chant_v2','1')}
 function applyVolumes(){if(!AU.ctx)return;const t=AU.ctx.currentTime;const k=v=>Math.pow(v/100,1.6);
   AU.master.gain.cancelScheduledValues(t);AU.master.gain.setTargetAtTime(VOL.mute?0:k(VOL.master),t,.15);
   AU.amb.gain.setTargetAtTime(k(VOL.nature)*1.25,t,.15);AU.bellBus.gain.setTargetAtTime(k(VOL.bell)*1.25,t,.15);AU.chantG.gain.setTargetAtTime(k(VOL.chant)*1.3,t,.15);
@@ -1082,7 +1082,7 @@ function snowStep(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n
   n.connect(bp).connect(lp).connect(g).connect(AU.master);n.start(t,rand(0,2));n.stop(t+.26);
   const o=ctx.createOscillator();o.frequency.value=110;const og=ctx.createGain();og.gain.setValueAtTime(.12,t);og.gain.exponentialRampToValueAtTime(.001,t+.12);o.connect(og).connect(AU.master);o.start(t);o.stop(t+.13)}
 function rainStep(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=rand(700,1100);bp.Q.value=.8;const g=ctx.createGain();g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.16);n.connect(bp).connect(g).connect(AU.master);n.start(t,rand(0,2));n.stop(t+.18)}
-function updateWeather(dt,t){const cx=camera.position.x,cz=camera.position.z;const inside=curArea==='달빛전';
+function updateWeather(dt,t){const cx=camera.position.x,cz=camera.position.z;const inside=curArea==='달빛전';const roofed=['달빛전','요사채','공양간','차담실'].includes(curArea);if(weather==='rain'||weather==='snow'){rain.visible=weather==='rain'&&!roofed;snow.visible=weather==='snow'&&!roofed}
   if(rain.visible){updateRain(dt,t);dropMat.opacity=inside?.16:.5;splMat.opacity=inside?0:.9}
   if(snow.visible){const p=snowGeo.attributes.position.array;for(let i=0;i<SNOW_N;i++){const k=i*3;p[k+1]-=dt*(.9+Math.sin(snowPh[i])*.3);p[k]+=Math.sin(t*.8+snowPh[i])*dt*.35;p[k+2]+=Math.cos(t*.6+snowPh[i])*dt*.25;
       if(p[k+1]<0||Math.abs(p[k]-cx)>30||Math.abs(p[k+2]-cz)>30){p[k+1]=rand(14,25);p[k]=cx+rand(-30,30);p[k+2]=cz+rand(-30,30)}}snowGeo.attributes.position.needsUpdate=true}
