@@ -1,6 +1,7 @@
 /* 달빛암자 토스 미니앱용 보정: 외부 이동·후원·설치 유도 숨김 */
 (function(){
   window.__TOSS__=true;
+  window.__TEA_CTA__=[];
   var HIDE=['공양미','기와장','홈 화면에 추가','카톡','친구 초대','Add offering','Roof tile'];
   function sweep(root){
     try{
