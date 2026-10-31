@@ -716,7 +716,7 @@ let dineSel=[],dineState='idle',dineEatT=0,dineEatN=0;
 function openDine(){if(P.mode!=='walk')return;dineSel=[];const m=$('#dineMenu');m.innerHTML='';DINE_MENU.forEach((f,i)=>{const b=document.createElement('button');b.className='dish';b.innerHTML='<div class="e">'+f.e+'</div><b>'+f.n+'</b>';b.onclick=()=>{const k=dineSel.indexOf(i);if(k>-1){dineSel.splice(k,1);b.classList.remove('sel')}else if(dineSel.length<9){dineSel.push(i);b.classList.add('sel')}$('#dineServe').disabled=!dineSel.length;$('#dineServe').style.opacity=dineSel.length?1:.5};m.appendChild(b)});$('#dineServe').disabled=true;$('#dineServe').style.opacity=.5;openM('#mDine')}
 function serveDine(){closeM('#mDine');dineMeshes.forEach(d=>dineTbl.remove(d));dineMeshes.length=0;
   const n=dineSel.length;dineSel.forEach((di,k)=>{const f=DINE_MENU[di];const mesh=makeDishMesh(f);mesh.userData.food=f;const ang=n===1?-Math.PI/2:k/n*Math.PI*2-Math.PI/2;const r=n===1?0:.62;mesh.position.set(Math.cos(ang)*r,.57,Math.sin(ang)*r);dineTbl.add(mesh);dineMeshes.push(mesh)});
-  const seat={x:DINE.x,z:DINE.z+1.5};$('#fade').style.opacity=1;setTimeout(()=>{P.x=seat.x;P.z=seat.z;P.y=heightAt(seat.x,seat.z);P.yaw=Math.PI;cam.yaw=-.6;cam.pitch=.78;cam.targetDist=3.6;player.userData.sit=1;P.mode='dine';$('#bar').style.display='none';$('#ctx').classList.remove('on');$('#dineEat').style.display='block';$('#fade').style.opacity=0;status('절밥상을 받았어요. 음식을 눌러 소개를 읽어보세요 🥢',4200)},600)}
+  const seat={x:DINE.x,z:DINE.z+1.5};$('#fade').style.opacity=1;setTimeout(()=>{P.x=seat.x;P.z=seat.z;P.y=heightAt(seat.x,seat.z);P.yaw=Math.PI;cam.yaw=-.6;cam.pitch=.6;player.userData.sit=1;P.mode='dine';$('#bar').style.display='none';$('#ctx').classList.remove('on');$('#dineEat').style.display='block';$('#fade').style.opacity=0;status('절밥상을 받았어요. 음식을 눌러 소개를 읽어보세요 🥢',4200)},600)}
 function sighSound(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.setValueAtTime(900,t);bp.frequency.exponentialRampToValueAtTime(380,t+1.1);bp.Q.value=1.2;const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+.15);g.gain.linearRampToValueAtTime(.12,t+.5);g.gain.exponentialRampToValueAtTime(.001,t+1.3);n.connect(bp).connect(g).connect(AU.master);n.start(t);n.stop(t+1.4)}
 function startDineEat(){if(dineState==='eat')return;dineState='eat';dineEatT=0;dineEatN=0;player.userData.eat=1;$('#dineEat').style.display='none';say(player,'잘 먹겠습니다 🙏',2000)}
 function updateDineEat(dt){if(dineState!=='eat')return;dineEatT+=dt;const total=Math.max(4,dineMeshes.length*1.1);const gone=Math.floor(dineEatT/total*dineMeshes.length);
@@ -1123,7 +1123,7 @@ function animMok(dt){if(!mokState.on)return;mokState.hit=Math.max(0,mokState.hit
   const u=player.userData;u.arms[0].rotation.set(-1.1,0,-.35);u.arms[1].rotation.set(-1.2-k*.5,0,.2)}
 
 /* ================= UI helpers ================= */
-function status(t,ms=3200){const d=document.createElement('div');d.className='glass';d.textContent=t;$('#status').appendChild(d);setTimeout(()=>d.remove(),ms);while($('#status').children.length>2)$('#status').firstChild.remove()}
+function status(t,ms=3200){if(['sit','bow'].includes(P.mode))return;const d=document.createElement('div');d.className='glass';d.textContent=t;$('#status').appendChild(d);setTimeout(()=>d.remove(),ms);while($('#status').children.length>2)$('#status').firstChild.remove()}
 function openM(id){$(id).classList.add('on')}function closeM(id){$(id).classList.remove('on')}
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
 function info(title,body,btns){$('#iTitle').textContent=title;$('#iBody').innerHTML=body;const w=$('#iBtns');w.innerHTML='';btns.forEach(([t,cls,fn])=>{const b=document.createElement('button');b.className='btn '+cls;b.textContent=t;b.onclick=()=>{closeM('#mInfo');fn&&fn()};w.appendChild(b)});openM('#mInfo')}
@@ -1151,9 +1151,9 @@ $('#aGreet').onclick=()=>quietReact('bow');
 // sit / meditate
 let mediStart=0;
 $('#aSit').onclick=()=>{if(P.mode==='sit'){standUp();return}if(P.mode!=='walk')return;
-  if(curArea==='달빛전'){let best=null,bd=1e9;CUSHIONS.forEach(c=>{if(c.taken)return;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c}});if(best){P.x=best.x;P.z=best.z;P.y=best.y;P.sitCushion=best;best.taken=true}P.yaw=Math.PI;cam.yaw=0;cam.targetDist=3.3;cam.pitch=.5;$('#sitBow').style.display='block';$('#sitBowN').textContent=sitBows?` · ${sitBows}배`:''}
+  if(curArea==='달빛전'){let best=null,bd=1e9;CUSHIONS.forEach(c=>{if(c.taken)return;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c}});if(best){P.x=best.x;P.z=best.z;P.y=best.y;P.sitCushion=best;best.taken=true}P.yaw=Math.PI;cam.yaw=0;$('#sitBow').style.display='block';$('#sitBowN').textContent=sitBows?` · ${sitBows}배`:''}
   if(curArea==='달맞이 터'){P.x=MOONSPOT.x+.2;P.z=MOONSPOT.z-.1;P.sitRock=true;P.yaw=Math.atan2(moonDir.x,moonDir.z);cam.yaw=P.yaw+Math.PI;cam.pitch=.08;status(TIMES[timeKey].night?'달이 참 밝아요. 오늘 하루를 천천히 돌아봐요 🌕':'밤이 되면 이 자리에서 달이 가장 잘 보여요',4500)}
-  P.mode='sit';player.userData.sit=1;mediStart=performance.now();mindNext=60;$('#sitBar').style.display='flex';$('#medi').style.display='block';$('#bar').style.opacity=.35};
+  P.mode='sit';player.userData.sit=1;mediStart=performance.now();mindNext=60;$('#sitBar').style.display='flex';$('#medi').style.display='none';$('#bar').style.opacity=.35};
 let sitBows=0;
 let bowlT=0;$('#bowlBtn').onclick=e=>{e.stopPropagation();const n=performance.now();if(n-bowlT<1500)return;bowlT=n;singingBowl(.05);status('🔔 맑은 울림이 천천히 퍼져요',2600);const b=$('#bowlBtn');b.style.opacity=.55;setTimeout(()=>b.style.opacity=1,1500)};
 $('#ctx2').onclick=e=>{e.stopPropagation();petDog()};
@@ -1171,9 +1171,9 @@ const bowState={active:false,n:0,auto:null,wish:'',done:false,cushion:null};
 function startWish(){$('#wGo').textContent='시작하기';$('#wTitle').textContent='108배 소원빌기';$('#wSub').textContent='소원을 하나 적고, 방석에 앉아 108배를 올려요.';$('#wText').value='';$('#wGo').onclick=beginBow;openM('#mWish')}
 function beginBow(){const w=$('#wText').value.trim();if(!w){$('#wText').focus();return}bowState.wish=w;closeM('#mWish');
   let best=null,bd=1e9;CUSHIONS.forEach(c=>{if(c.taken)return;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c}});bowState.cushion=best;best.taken=true;
-  $('#fade').style.opacity=1;setTimeout(()=>{P.x=best.x;P.z=best.z;P.y=best.y;P.yaw=Math.PI;cam.yaw=0;cam.targetDist=3.3;cam.pitch=.5;P.mode='bow';player.userData.sit=0;$('#fade').style.opacity=0;
+  $('#fade').style.opacity=1;setTimeout(()=>{P.x=best.x;P.z=best.z;P.y=best.y;P.yaw=Math.PI;cam.yaw=0;P.mode='bow';player.userData.sit=0;$('#fade').style.opacity=0;
     $('#bowHud').style.display='flex';$('#bar').style.display='none';$('#ctx').classList.remove('on');bowState.active=true;bowState.n=0;updBow();status('“'+w+'”');strikeBell(.35)},700)}
-const bowMsgs={9:'숨을 천천히 쉬어요. 한 배에 한 번',27:'벌써 4분의 1이에요',54:'절반 왔어요. 연등이 하나둘 켜져요',81:'조금만 더. 소원이 달님께 닿고 있어요',100:'마지막 여덟 배, 가장 정성스럽게'};
+const bowMsgs={};
 function updBow(){$('#bowN').textContent=bowState.n;$('#bowBar').style.width=(bowState.n/108*100)+'%';const lit=Math.floor(bowState.n/12);hallLanterns.forEach((m,i)=>m.emissiveIntensity=i<lit?2.2:.05);if(bowMsgs[bowState.n])$('#bowMsg').textContent=bowMsgs[bowState.n]}
 function bowOnce(){if(!bowState.active||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);bowState.n++;sendRitual('bow');updBow();if(navigator.vibrate)navigator.vibrate(10);if(bowState.n>=108){clearInterval(bowState.auto);bowState.auto=null;bowState.active=false;setTimeout(finishBow,1300)}}
 $('#bowOne').onclick=bowOnce;
@@ -1221,7 +1221,7 @@ $('#sleepWake').onclick=wakeUp;
 let eatS=null;
 function eatMeal(kind){closeM('#mFood');BOWLS.forEach(f=>f.visible=false);const g=kind==='bib'?MEAL.bib:MEAL.tteok;const parts=kind==='bib'?MEAL.tops:MEAL.cakes;parts.forEach(p=>{p.visible=true;p.scale.set(p.userData.s0x??(p.userData.s0x=p.scale.x),p.userData.s0y??(p.userData.s0y=p.scale.y),p.userData.s0z??(p.userData.s0z=p.scale.z))});g.visible=true;
   teleport(KIT.x-1.35,KIT.z,Math.PI/2);status(kind==='bib'?'산채비빔밥 한 그릇 받았어요. 잘 먹겠습니다 🙏':'따끈한 떡 한 접시와 식혜예요. 잘 먹겠습니다 🙏',3600);
-  setTimeout(()=>{P.mode='eat';player.userData.sit=1;cam.yaw=P.yaw-.75;cam.pitch=.6;cam.targetDist=3.4;BOWLS.forEach(f=>f.parent.visible=false);player.userData.greet=1.2;eatS={kind,g,parts,t:0,dur:kind==='bib'?9:7,n:0}},1000)}
+  setTimeout(()=>{P.mode='eat';player.userData.sit=1;cam.yaw=P.yaw-.75;cam.pitch=.6;BOWLS.forEach(f=>f.parent.visible=false);player.userData.greet=1.2;eatS={kind,g,parts,t:0,dur:kind==='bib'?9:7,n:0}},1000)}
 function updateEat(dt){if(!eatS)return;eatS.t+=dt;const k=eatS.t/eatS.dur;player.userData.eat=1;
   const gone=Math.floor(k*eatS.parts.length);eatS.parts.forEach((p,i)=>{if(i<gone){p.scale.multiplyScalar(Math.max(0,1-dt*3));if(p.scale.x<.02)p.visible=false}});
   if(Math.floor(eatS.t/1.1)>eatS.n){eatS.n++;spoonClink()}
@@ -1250,7 +1250,7 @@ function updateBreath(){if(P.mode!=='sit'){breathPh=-1;return}const s=(performan
   if(s>mindNext){mindNext=s+90;status('🍃 '+mindLines[mindI++%mindLines.length],6500)}}
 /* 가만히 두면 천천히 둘러보기 (멍 모드) */
 let lastAct=performance.now(),idleOn=false;['keydown','pointerdown','wheel','touchstart'].forEach(ev=>addEventListener(ev,()=>{lastAct=performance.now();if(idleOn){idleOn=false;cam.targetDist=6.2;$('#bar').style.opacity=1}},{passive:true}));
-function updateIdle(dt){if(!started||P.mode!=='walk'||document.querySelector('.modal.on')||joy.id!=null)return;const idle=performance.now()-lastAct>30000;
+function updateIdle(dt){return;if(!started||P.mode!=='walk'||document.querySelector('.modal.on')||joy.id!=null)return;const idle=performance.now()-lastAct>30000;
   if(idle&&!idleOn){idleOn=true;cam.targetDist=9.5;$('#bar').style.opacity=.35;status('가만히 바라보는 시간도 좋아요 🍃',4000)}
   if(idleOn){cam.yaw+=dt*.03;cam.pitch+=(.22-cam.pitch)*Math.min(1,dt*.3)}}
 /* 약수 한 모금 */
@@ -1913,7 +1913,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   if(sleepS.on){const sk=((performance.now()-sleepS.t0)/7000|0)%sleepLines.length;const el=$('#sleepT');if(el.textContent!==sleepLines[sk])el.textContent=sleepLines[sk]}fillL.position.set(camera.position.x*.5+P.x*.5,P.y+2.2,camera.position.z*.5+P.z*.5);animDali(player,dt,moving,.62);animMok(dt);
   // camera
   cam.dist+=(cam.targetDist-cam.dist)*Math.min(1,dt*4);
-  if(P.mode==='sit'){cam.yaw+=dt*.05;const s=(performance.now()-mediStart)/1000|0;$('#mediT').textContent=`${s/60|0}:${String(s%60).padStart(2,'0')} · 화면을 누르면 일어나요`+(P.sitCushion?' · 아래 버튼으로 절을 올려요':'')}
+  if(P.mode==='sit'){const s=(performance.now()-mediStart)/1000|0;$('#mediT').textContent=`${s/60|0}:${String(s%60).padStart(2,'0')} · 화면을 누르면 일어나요`+(P.sitCushion?' · 아래 버튼으로 절을 올려요':'')}
   const inside=curArea==='달빛전';const dist=inside?Math.min(cam.dist,4.2):cam.dist;
   const tgt=tmpV.set(P.x,P.y+1.05+(P.mode==='sit'&&curArea==='달맞이 터'?1.4:0),P.z);let lim=dist;{const ux=Math.sin(cam.yaw)*Math.cos(cam.pitch),uz=Math.cos(cam.yaw)*Math.cos(cam.pitch);for(let s=.45;s<=dist;s+=.15){if(cameraBlocked(tgt.x+ux*s,tgt.z+uz*s)&&Math.hypot(tgt.x+ux*s,tgt.z+uz*s)<COURT+5){lim=Math.max(.9,s-.3);break}}}
   cam.cd=cam.cd??dist;cam.cd+=(lim-cam.cd)*Math.min(1,dt*(lim<cam.cd?14:2.5));const dist2=Math.min(dist,cam.cd);
