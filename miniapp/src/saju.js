@@ -16,11 +16,10 @@ const css=`#sj{position:fixed;inset:0;z-index:90;background:rgba(10,10,20,.55);d
 #sj .pil{display:flex;gap:8px;margin:10px 0}#sj .pil div{flex:1;text-align:center;border-radius:12px;background:#f6f4ff;padding:10px 0}#sj .pil b{display:block;font-size:22px;color:#1c1650}#sj .pil small{color:#6b7280}
 #sj .sec{margin:16px 0;padding:14px;border-radius:14px;background:#faf9ff}#sj .sec h3{margin:0 0 8px;font-size:16px;color:#1c1650}#sj .sec .b{white-space:pre-wrap;line-height:1.75;font-size:14.5px;color:#374151}
 #sj .tags span{display:inline-block;margin:3px 4px 3px 0;padding:5px 10px;border-radius:999px;background:#f1eeff;color:#5B3DF5;font-size:13px}`;
-const st=document.createElement("style");st.textContent=css;document.head.appendChild(st);
-const root=document.createElement("div");root.id="sj";root.innerHTML='<div class="box"></div>';document.body.appendChild(root);
-const box=$(".box",root);let busy=false;
-function close(){root.classList.remove("on")}
-root.addEventListener("click",e=>{if(e.target===root&&!busy)close()});
+const st=document.createElement("style");st.textContent=css;(document.head||document.documentElement).appendChild(st);
+let root=null,box=null,busy=false;
+function ensureRoot(){if(root)return;root=document.createElement("div");root.id="sj";root.innerHTML='<div class="box"></div>';document.body.appendChild(root);box=$(".box",root);root.addEventListener("click",e=>{if(e.target===root&&!busy)close()})}
+function close(){if(root)root.classList.remove("on")}
 function api(path,body){return fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(j.message||"요청에 실패했어요.");e.status=r.status;throw e}return j})}
 let form={gender:"F",calendar:"solar"};
 function showForm(msg){
@@ -56,7 +55,7 @@ function startPay(){
 function pillar(l,p){const s=p&&p.stem||"?",b=p&&p.branch||"?";return '<div><small>'+l+'</small><b>'+esc(s)+'</b><b>'+esc(b)+'</b></div>'}
 function luckyHtml(l){if(!l||typeof l!=="object")return"";return '<div class="tags">'+Object.entries(l).filter(([k,v])=>v&&typeof v!=="object").map(([k,v])=>'<span>'+esc(k)+' · '+esc(v)+'</span>').join("")+'</div>'}
 async function runAnalysis(prof,orderId){
-  busy=true;box.innerHTML='<h2>사주를 풀고 있어요</h2><p class="s">'+esc(prof.name)+'님의 사주 원국을 살펴보고 있어요. 1분 정도 걸려요.</p>';root.classList.add("on");
+  ensureRoot();busy=true;box.innerHTML='<h2>사주를 풀고 있어요</h2><p class="s">'+esc(prof.name)+'님의 사주 원국을 살펴보고 있어요. 1분 정도 걸려요.</p>';root.classList.add("on");
   try{
     const data=await api("/api/saju/analyze",{productId:"saju-analysis",profile:prof,orderId});
     const p=(data.summary&&data.summary.pillars)||{};
@@ -70,6 +69,6 @@ async function runAnalysis(prof,orderId){
   busy=false;
 }
 async function recover(){try{const o=JSON.parse(localStorage.getItem("dalbit_saju_order")||"null");if(IAP.getPendingOrders&&IAP.getPendingOrders.isSupported&&IAP.getPendingOrders.isSupported()){const r=await IAP.getPendingOrders();for(const po of (r&&r.orders)||[]){if(po.sku!==SKU)continue;try{const c=await confirmOrder(po.orderId);await IAP.completeProductGrant({params:{orderId:po.orderId}});const pend=JSON.parse(localStorage.getItem("dalbit_saju_pending")||"null");if(pend&&pend.profile){form={...form,name:pend.profile.name,gender:pend.profile.gender,birthDate:pend.profile.birthDate,calendar:pend.profile.calendar};runAnalysis(pend.profile,c.orderId)}return}catch(e){}}}}catch(e){}}
-function openSaju(){busy=false;showForm("");root.classList.add("on");recover()}
+function openSaju(){ensureRoot();busy=false;showForm("");root.classList.add("on");recover()}
 window.openSaju=openSaju;
 window.__TEA_CTA__=[["🔮 사주풀이 신청하기",openSaju]];
