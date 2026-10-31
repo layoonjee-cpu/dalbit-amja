@@ -2239,6 +2239,17 @@ $('#candleLight').onclick=()=>{const w=$('#candleWish').value.trim();if(!w){$('#
  setTimeout(()=>{player.userData.greet=2.2;say(player,'초가 켜졌어요. 소원이 이루어지기를',3600);status('소원초 하나를 켰어요 🕯️ 소원글은 저장하거나 보내지 않아요',4200)},1300)};
 
 addMoreButton('노천탕 · 산을 보며 온천',()=>openBath());
+/* 메뉴 정리: 하단 2줄 바 + 더보기 간소화 */
+{const bar=$('#bar');const row1=document.createElement('div');row1.className='brow';[...bar.children].forEach(c=>row1.appendChild(c));const row2=document.createElement('div');row2.className='brow row2';bar.appendChild(row1);bar.appendChild(row2);
+ const w=$('#moreActions');const byText=t=>[...w.children].find(b=>b.textContent.trim()===t);
+ const goDine=()=>{if(P.mode!=='walk'){status('지금 하던 쉼을 마친 뒤에 가주세요');return}if(Math.hypot(P.x-DINE.x,P.z-DINE.z)>5){info('식당으로 갈까요?','공양간 오른쪽 열린 식당에서 절밥을 먹을 수 있어요.',[['식당으로 가기','pink',()=>{teleport(DINE.x+1.5,DINE.z+2.4,Math.PI);setTimeout(openDine,1100)}],['나중에','ghost']])}else openDine()};
+ const mk=(ic,tx,fn)=>{const b=document.createElement('button');b.innerHTML='<span class="i">'+ic+'</span>'+tx;b.onclick=fn;row2.appendChild(b)};
+ const tea=$('#aTea'),bath=byText('노천탕 · 산을 보며 온천'),egg=byText('노천탕 달걀 할머니');
+ mk('🍵','차담',()=>tea.click());mk('🍲','식당',goDine);mk('♨️','노천탕',()=>bath.click());mk('🥚','달걀',()=>egg.click());
+ const keep=['말씀뽑기','말씀 주머니','사진 · 폴라로이드','내 곁으로 친구 초대 · 카톡 공유','친구와 함께 기념사진 찍기','돗자리','목탁','함께 있는 사람 · 곁에 가기','근심 흘려보내기','반려견 동반 / 변경','오늘의 일진 · 무료 한 줄','공양미 보태기','나의 암자 기록','나가기'];
+ const all=[...w.children];all.forEach(b=>{const t=b.textContent.trim();const lab=b.id==='aMok'?'목탁':b.id==='aMat'?'돗자리':t;if(!keep.includes(lab)){b.style.display='none'}b.dataset.lab=lab});
+ const vis=all.filter(b=>b.style.display!=='none').sort((a,b)=>keep.indexOf(a.dataset.lab)-keep.indexOf(b.dataset.lab));vis.forEach(b=>w.appendChild(b));
+ document.head.insertAdjacentHTML('beforeend','<style>#bar{flex-direction:column!important;gap:3px!important;padding:5px 6px!important}#bar .brow{display:flex;gap:3px;justify-content:center}#bar button{width:56px!important;min-height:38px!important;font-size:10.5px!important;padding:3px 0!important}#bar button .i{font-size:17px!important}#bar .row2 button{min-height:34px!important;font-size:10px!important}#bar .row2 button .i{font-size:15px!important;margin-right:2px}#moreActions{display:grid!important;grid-template-columns:1fr 1fr;gap:7px}#moreActions .btn{min-height:42px;font-size:13.5px;padding:6px 4px;margin:0!important;line-height:1.25}#chatSwitch{font-size:13.5px;min-height:42px;margin-bottom:8px}#mMore .sheet{max-height:86vh;overflow:auto}</style>')}
 tick();
 window.__d={get sharedDay(){return sharedDay},get liveRoom(){return liveRoom},get serverPresence(){return serverPresence},sendRitual,openRoomPicker,openQuiet,quietReact,get ws(){return ws},npcs,scene,renderer,sun,hemi,sky,M,setTime,setWeather,camera,P,cam,bloom,composer,TIMES};
 // Actual server presence replaces simulated numbers.
