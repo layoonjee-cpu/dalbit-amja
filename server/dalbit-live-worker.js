@@ -1,0 +1,34 @@
+const BAD=["씨발","씹팔","씨팔","시발","씨바","시바","씨빨","씨벌","ㅅㅂ","ㅆㅂ","ㅅ ㅂ","씨8","시8","18","십팔","개새끼","개새","개색","개섀","개같","개갇","개좆","미친","미췬","미틴","ㅁㅊ","이자식","좃","좆","존나","졸라","ㅈㄴ","꺼져","꺼저","죽을래","뒤진다","뒤질래","뒤져","병신","븅신","ㅂㅅ","지랄","ㅈㄹ","닥쳐","엿먹","니애미","느금","애미","애비","새끼","썅","쌍년","년아","놈아","fuck","shit","bitch"];function isBad(s){const t=String(s||'').toLowerCase().normalize('NFKC').replace(/[\s\u200b-\u200f.,!?~^*_\-=+'"`·:;|/\\()\[\]{}<>@#$%&]+/g,'');return BAD.some(w=>t.includes(w.replace(/\s/g,'')))}
+
+export const PRESETS=['쉬어 가요','고마워요','편히 주무세요','오늘도 수고했어요','함께여서 좋아요','좋은 하루 보내세요','마음이 편안해지길','소원이 이루어지길'];
+export function koreaClock(now=Date.now()){const d=new Date(now+32400000);return {day:d.toISOString().slice(0,10),min:d.getUTCHours()*60+d.getUTCMinutes()}}
+export function cleanDay(old,now=Date.now()){const k=koreaClock(now);return old?.day===k.day?old:{day:k.day,bows:0,lanterns:0,stones:0,night:0,launched:false,ids:{}}}
+export function countEvent(old,e,now=Date.now()){const s=cleanDay(old,now),k=koreaClock(now);if(!['bow','lantern','stone'].includes(e.kind)||typeof e.id!=='string'||e.id.length>80||s.ids[e.id])return {s,accepted:false,launch:false};s.ids[e.id]=true;const key={bow:'bows',lantern:'lanterns',stone:'stones'}[e.kind];s[key]++;let launch=false;if(e.kind==='lantern'&&k.min>=1260&&k.min<1290&&!s.launched){s.night=Math.min(108,s.night+1);if(s.night===108){s.launched=true;launch=true}}return {s,accepted:true,launch}}
+export function publicStats(s,now=Date.now()){const k=koreaClock(now);return {day:s.day,bows:s.bows,lanterns:s.lanterns,stones:s.stones,night:s.night,launched:s.launched,window:k.min>=1260&&k.min<1290,ended:k.min>=1290,serverTime:now}}
+const cors={'access-control-allow-origin':'*','content-type':'application/json','cache-control':'no-store'};
+const tea=a=>Math.hypot(a.x-11,a.z-13)<4.5;
+export class Room{
+ constructor(state,env){this.state=state;this.env=env}
+ alive(){const now=Date.now();return this.state.getWebSockets().filter(w=>{const a=w.deserializeAttachment();if(w.readyState!==1||!a?.nick)return false;if(now-(a.seen||0)>75000){try{w.close(4001,'idle')}catch{}return false}return true})}
+ bc(from,o){const s=JSON.stringify(o);for(const w of this.alive())if(w!==from)try{w.send(s)}catch{}}
+ presence(){this.bc(null,{t:'presence',count:this.alive().length})}
+ async stats(){const old=await this.state.storage.get('today');const s=cleanDay(old);if(old?.day!==s.day)await this.state.storage.put('today',s);return publicStats(s)}
+ async schedule(){const now=Date.now(),base=Date.parse(koreaClock(now).day+'T00:00:00+09:00');const times=[base+75600000,base+77400000,base+86400000];await this.state.storage.setAlarm(times.find(t=>t>now+1000)||base+86400000)}
+ async alarm(){this.bc(null,{t:'stats',stats:await this.stats()});await this.schedule()}
+ async fetch(req){const u=new URL(req.url);if(u.pathname==='/count')return new Response(JSON.stringify({online:this.alive().length,scope:'room',stats:await this.stats()}),{headers:cors});
+ const pair=new WebSocketPair();const [c,s]=Object.values(pair);this.state.acceptWebSocket(s);if(this.alive().length>=40){s.send(JSON.stringify({t:'full'}));s.close(4000,'full');return new Response(null,{status:101,webSocket:c})}
+ s.serializeAttachment({id:crypto.randomUUID().slice(0,8),nick:'',x:0,z:21,yaw:0,mode:'walk',robe:0,last:0,lastChat:0,lastReact:0,lastEvent:0,seen:Date.now()});await this.schedule();return new Response(null,{status:101,webSocket:c})}
+ async webSocketMessage(w,msg){if(typeof msg!=='string'||msg.length>1500)return;let d;try{d=JSON.parse(msg)}catch{return}const a=w.deserializeAttachment();if(!a)return;const now=Date.now();a.seen=now;
+ if(d.t==='hello'){if(a.nick)return;a.nick=String(d.nick||'손님').slice(0,10);if(isBad(a.nick))a.nick='고운 손님';a.x=Math.max(-36,Math.min(36,+d.x||0));a.z=Math.max(-36,Math.min(36,+d.z||0));a.yaw=+d.yaw||0;a.robe=(+d.robe||0)%8;w.serializeAttachment(a);const peers=this.alive().filter(o=>o!==w).map(o=>{const p=o.deserializeAttachment();return {id:p.id,nick:p.nick,x:p.x,z:p.z,yaw:p.yaw,mode:p.mode,robe:p.robe}});w.send(JSON.stringify({t:'welcome',id:a.id,peers,count:peers.length+1,stats:await this.stats()}));this.bc(w,{t:'join',id:a.id,nick:a.nick,x:a.x,z:a.z,yaw:a.yaw,robe:a.robe});this.presence();return}
+ if(!a.nick)return;
+ if(d.t==='pos'){if(now-a.last<150)return;a.last=now;a.x=Math.max(-36,Math.min(36,+d.x||0));a.z=Math.max(-36,Math.min(36,+d.z||0));a.yaw=+d.yaw||0;a.mode=String(d.mode||'walk').slice(0,8);w.serializeAttachment(a);this.bc(w,{t:'pos',id:a.id,x:a.x,z:a.z,yaw:a.yaw,mode:a.mode});return}
+ if(d.t==='state'){w.serializeAttachment(a);w.send(JSON.stringify({t:'stats',stats:await this.stats()}));this.presence();return}
+ if(d.t==='chat'){if(now-a.lastChat<1500)return;const to=String(d.to||'').slice(0,8),other=this.alive().find(o=>o.deserializeAttachment()?.id===to);if(!tea(a)||!other||!tea(other.deserializeAttachment())){w.send(JSON.stringify({t:'chatClosed'}));return}const text=String(d.text||'').trim().slice(0,30);if(!text||isBad(text)){w.send(JSON.stringify({t:'blocked'}));return}a.lastChat=now;w.serializeAttachment(a);const out=JSON.stringify({t:'chat',id:a.id,nick:a.nick,to,text});other.send(out);w.send(out);return}
+ if(d.t==='emote'){if(now-a.lastReact<4000)return;const text=d.e==='bow'?'🙏':PRESETS.includes(d.e)?d.e:null;if(!text)return;a.lastReact=now;w.serializeAttachment(a);this.bc(w,{t:'emote',id:a.id,e:text});return}
+ if(d.t==='ritual'){const kind=d.kind;if(kind==='bow'&&!(a.x>-7&&a.x<7&&a.z>-19.5&&a.z<-10.5))return;if(kind==='lantern'&&Math.hypot(a.x+9,a.z-15)>6)return;if(kind==='stone'&&Math.hypot(a.x+17,a.z-8)>6)return;const cd=kind==='bow'?900:1500;if(now-a.lastEvent<cd)return;
+ let out;await this.state.storage.transaction(async tx=>{const old=await tx.get('today');out=countEvent(old,d,now);if(out.accepted)await tx.put('today',out.s)});if(out.accepted){a.lastEvent=now;w.serializeAttachment(a);this.bc(null,{t:'stats',stats:publicStats(out.s,now)});if(out.launch)this.bc(null,{t:'launch',day:out.s.day})}return}
+ }
+ webSocketClose(w){const a=w.deserializeAttachment();try{w.close()}catch{}if(a?.nick)this.bc(w,{t:'leave',id:a.id});this.presence()}
+ webSocketError(w){this.webSocketClose(w)}
+}
+export default{async fetch(req,env){const u=new URL(req.url);if(req.method==='OPTIONS')return new Response(null,{headers:cors});if(u.pathname==='/ws'||u.pathname==='/count'){const room=(u.searchParams.get('room')||'1').replace(/[^0-9a-z-]/gi,'').slice(0,12)||'1';if(u.pathname==='/ws'&&req.headers.get('Upgrade')!=='websocket')return new Response('websocket only',{status:426});const r=await env.ROOM.get(env.ROOM.idFromName('room-'+room)).fetch(req);if(u.pathname==='/count'){const j=await r.json();return new Response(JSON.stringify({...j,room}),{headers:cors})}return r}return new Response('dalbit-amja live ok',{headers:{'access-control-allow-origin':'*'}})}};
