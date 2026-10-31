@@ -191,7 +191,8 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
   <label>전체 <input type="range" id="vMaster" min="0" max="100" value="80"></label>
   <label>자연 소리 (바람·새·비) <input type="range" id="vNature" min="0" max="100" value="80"></label>
   <label>종·풍경·목탁 <input type="range" id="vBell" min="0" max="100" value="80"></label>
-  <label>독경 (법당 불경 소리) <input type="range" id="vChant" min="0" max="100" value="70"></label>
+  <label>독경 (법당 불경 소리) <input type="range" id="vChant" min="0" max="100" value="10"></label>
+  <label>목탁 (은은한 배경) <input type="range" id="vMok" min="0" max="100" value="10"></label>
   <button class="mute" id="vMute">🔇 음소거</button>
 </div>
 <div id="mokHud" class="ui">
@@ -925,12 +926,12 @@ async function initAudio(){const ctx=new (window.AudioContext||window.webkitAudi
   AU.master=ctx.createGain();AU.master.gain.value=0;const comp=ctx.createDynamicsCompressor();AU.master.connect(comp).connect(ctx.destination);
   AU.master.gain.linearRampToValueAtTime(1,ctx.currentTime+3);
   AU.rev=ctx.createConvolver();AU.rev.buffer=makeIR(ctx,5,2.6);AU.revGain=ctx.createGain();AU.revGain.gain.value=.55;AU.rev.connect(AU.revGain).connect(AU.master);
-  AU.bellBus=ctx.createGain();AU.bellBus.connect(AU.master);AU.bellBus.connect(AU.rev);
+  AU.bellBus=ctx.createGain();AU.bellBus.connect(AU.master);AU.bellBus.connect(AU.rev);AU.mokBus=ctx.createGain();AU.mokBus.connect(AU.master);AU.mokBus.connect(AU.rev);
   AU.chantG=ctx.createGain();AU.chantG.connect(AU.master);
   AU.amb=ctx.createGain();AU.ambLP=ctx.createBiquadFilter();AU.ambLP.type='lowpass';AU.ambLP.frequency.value=18000;AU.amb.connect(AU.ambLP).connect(AU.master);
   AU.noise=makeNoise(ctx,3);
   const loop=async(url,vol)=>{try{const r=await fetch(url);const buf=await ctx.decodeAudioData(await r.arrayBuffer());const s=ctx.createBufferSource();s.buffer=buf;s.loop=true;s.loopStart=.5;s.loopEnd=buf.duration-.5;const g=ctx.createGain();g.gain.value=vol;s.connect(g).connect(AU.amb);s.start(0,rand(0,buf.duration-2));return g}catch(e){console.warn(e);return ctx.createGain()}};
-  AU.wind=await loop('assets/sound/wind.mp3',.5);AU.birds=await loop('assets/sound/birds.mp3',.0);
+  AU.wind=ctx.createGain();/* 바람 소리 제거: 기계음처럼 들린다는 피드백 */AU.birds=await loop('assets/sound/birds.mp3',.0);
   // crickets (night)
   AU.crk=ctx.createGain();AU.crk.gain.value=0;AU.crk.connect(AU.amb);
   /* 귀뚜라미 소리 제거: 반복되는 '츠츠츠' 소음 원인 */
@@ -945,10 +946,10 @@ async function initAudio(){const ctx=new (window.AudioContext||window.webkitAudi
   // 새소리: 아주 가끔, 작게
   const birdPhrase=()=>{const s=TIMES[timeKey];const outdoor=heightAt(P.x,P.z)<.2&&!['달빛전','요사채','공양간','차담실','식당'].includes(curArea);if(weather==='clear'&&s.birds>0&&P.mode!=='sleep'&&outdoor){const t=ctx.currentTime,v=s.birds*rand(.08,.14),hold=rand(3.5,7);AU.birds.gain.cancelScheduledValues(t);AU.birds.gain.setValueAtTime(AU.birds.gain.value,t);AU.birds.gain.linearRampToValueAtTime(v,t+2.2);AU.birds.gain.setValueAtTime(v,t+2.2+hold);AU.birds.gain.linearRampToValueAtTime(0,t+5.5+hold)}setTimeout(birdPhrase,rand(35000,90000))};setTimeout(birdPhrase,rand(12000,25000));
 }
-const VOL=Object.assign({master:40,nature:80,bell:80,chant:0,mute:false},JSON.parse(localStorage.getItem('dalbit_vol')||'{}'));if(!localStorage.getItem('dalbit_chant_v2')){VOL.chant=0;localStorage.setItem('dalbit_chant_v2','1')}
+const VOL=Object.assign({master:40,nature:80,bell:80,chant:10,mok:10,mute:false},JSON.parse(localStorage.getItem('dalbit_vol')||'{}'));if(!localStorage.getItem('dalbit_chant_v3')){VOL.chant=10;VOL.mok=10;localStorage.setItem('dalbit_chant_v3','1')}
 function applyVolumes(){if(!AU.ctx)return;const t=AU.ctx.currentTime;const k=v=>Math.pow(v/100,1.6);
   AU.master.gain.cancelScheduledValues(t);AU.master.gain.setTargetAtTime(VOL.mute?0:k(VOL.master),t,.15);
-  AU.amb.gain.setTargetAtTime(k(VOL.nature)*1.25,t,.15);AU.bellBus.gain.setTargetAtTime(k(VOL.bell)*1.25,t,.15);AU.chantG.gain.setTargetAtTime(k(VOL.chant)*1.3,t,.15);
+  AU.amb.gain.setTargetAtTime(k(VOL.nature)*1.25,t,.15);AU.bellBus.gain.setTargetAtTime(k(VOL.bell)*1.25,t,.15);AU.chantG.gain.setTargetAtTime(k(VOL.chant)*1.3,t,.15);AU.mokBus.gain.setTargetAtTime(k(VOL.mok)*2.5,t,.15);
   localStorage.setItem('dalbit_vol',JSON.stringify(VOL));$('#bSound').textContent=VOL.mute||VOL.master==0?'🔇':'🔊';$('#vMute').textContent=VOL.mute?'🔊 소리 켜기':'🔇 음소거'}
 function panner(x,y,z,ref=3,roll=1.2){const p=AU.ctx.createPanner();p.panningModel='HRTF';p.distanceModel='inverse';p.refDistance=ref;p.rolloffFactor=roll;p.maxDistance=200;
   if(p.positionX){p.positionX.value=x;p.positionY.value=y;p.positionZ.value=z}else p.setPosition(x,y,z);return p}
@@ -959,10 +960,11 @@ function strikeBell(gain=1,x=BELL.x,z=BELL.z){if(!AU.ctx)return;const ctx=AU.ctx
 function windBell(pos,vol=.5){if(!AU.ctx)return;const ctx=AU.ctx;const f0=[1318,1397,1480,1568][Math.random()*4|0];const pn=panner(pos.x,pos.y,pos.z,2.5,1.1);const out=ctx.createGain();out.gain.value=vol;out.connect(pn);pn.connect(AU.bellBus);
   const hits=1+(Math.random()*3|0);for(let h=0;h<hits;h++){const t=ctx.currentTime+h*rand(.18,.38);const a=h?rand(.25,.5):1;
     [[1,1,3.2],[2.32,.45,2.2],[4.25,.25,1.3],[6.63,.12,.8]].forEach(([m,amp,d])=>{const o=ctx.createOscillator();o.type='sine';o.frequency.value=f0*m*(1+rand(-.002,.002));const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(amp*a*.18,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(out);o.start(t);o.stop(t+d+.05)})}}
-function moktak(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const o=ctx.createOscillator();o.frequency.setValueAtTime(820,t);o.frequency.exponentialRampToValueAtTime(690,t+.06);const g=ctx.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.55,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.16);
+function moktak(bus){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const o=ctx.createOscillator();o.frequency.setValueAtTime(820,t);o.frequency.exponentialRampToValueAtTime(690,t+.06);const g=ctx.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.55,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.16);
   const o2=ctx.createOscillator();o2.frequency.value=1850;const g2=ctx.createGain();g2.gain.setValueAtTime(.12,t);g2.gain.exponentialRampToValueAtTime(.0001,t+.05);
-  const out=ctx.createGain();out.gain.value=.55;o.connect(g).connect(out);o2.connect(g2).connect(out);out.connect(AU.bellBus);o.start(t);o.stop(t+.2);o2.start(t);o2.stop(t+.08)}
+  const out=ctx.createGain();out.gain.value=.55;o.connect(g).connect(out);o2.connect(g2).connect(out);out.connect(bus&&bus.gain?bus:AU.bellBus);o.start(t);o.stop(t+.2);o2.start(t);o2.stop(t+.08)}
 function footstep(onWood){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=onWood?420:rand(1600,2400);bp.Q.value=onWood?3:.9;const g=ctx.createGain();g.gain.setValueAtTime(onWood?.35:.16,t);g.gain.exponentialRampToValueAtTime(.001,t+(onWood?.07:.11));n.connect(bp).connect(g).connect(AU.master);n.start(t,rand(0,2));n.stop(t+.13)}
+let mokAmbT=0;function mokAmbient(){if(!AU.ctx)return;const calm=P.mode!=='mat'&&P.mode!=='sleep'&&!VOL.mute&&VOL.mok>0;if(calm){for(let i=0;i<8;i++)setTimeout(()=>moktak(AU.mokBus),i*880)}setTimeout(mokAmbient,calm?rand(22000,34000):12000)}
 function chimeTick(){if(!AU.ctx)return;if(P.mode==='mat'||P.mode==='sleep'){setTimeout(chimeTick,20000);return}const c=chimes[Math.random()*chimes.length|0];const gust=windAmt();windBell(c.pos,.12+gust*.12);c.kick=1;setTimeout(chimeTick,rand(18000,45000)/(.6+gust*.6))}
 function windAmt(){return .5+.5*Math.sin(clock.elapsedTime*.13)*Math.sin(clock.elapsedTime*.051+1)}
 function updateListener(){if(!AU.ctx)return;const L=AU.ctx.listener;const p=camera.position;const f=new THREE.Vector3();camera.getWorldDirection(f);
@@ -1515,7 +1517,7 @@ if(isTouch){const J=$('#joy');J.style.display='block';const knob=J.querySelector
 /* ================= top buttons ================= */
 const ORDER=['dawn','day','sunset','night'];$('#bTime').onclick=()=>{setTime(ORDER[(ORDER.indexOf(timeKey)+1)%4]);status({dawn:'새벽',day:'낮',sunset:'노을 지는 저녁',night:'밤'}[timeKey]+'이 되었어요')};
 $('#bSound').onclick=e=>{e.stopPropagation();$('#snd').classList.toggle('on')};
-['Master','Nature','Bell','Chant'].forEach(n=>{const el=$('#v'+n);const key=n.toLowerCase();el.value=VOL[key];el.oninput=()=>{VOL[key]=+el.value;if(key==='master'&&VOL.mute&&+el.value>0)VOL.mute=false;applyVolumes()}});
+['Master','Nature','Bell','Chant','Mok'].forEach(n=>{const el=$('#v'+n);const key=n.toLowerCase();el.value=VOL[key];el.oninput=()=>{VOL[key]=+el.value;if(key==='master'&&VOL.mute&&+el.value>0)VOL.mute=false;applyVolumes()}});
 $('#vMute').onclick=()=>{VOL.mute=!VOL.mute;applyVolumes()};
 canvas.addEventListener('pointerdown',()=>$('#snd').classList.remove('on'));
 $('#bPeople').onclick=openRoomPicker;
@@ -1529,7 +1531,7 @@ setTimeout(()=>{if($('#enter').disabled){$('#enterSilent').disabled=false;$('#en
 $('#enter').onclick=async()=>{nick=($('#nick').value.trim()||rndNick()).slice(0,10);if(isBad(nick))nick=rndNick();localStorage.setItem('dalbit_nick',nick);meLab.innerHTML='<i>나</i>'+nick;
   $('#intro').style.transition='opacity 1.4s';$('#intro').style.opacity=0;setTimeout(()=>$('#intro').remove(),1500);
   try{await initAudio()}catch(e){console.warn(e)}
-  setTimeout(()=>{strikeBell(.45);status('달빛암자에 오신 것을 환영해요 🌙',3800)},900);setTimeout(chimeTick,3000);
+  setTimeout(()=>{strikeBell(.45);status('달빛암자에 오신 것을 환영해요 🌙',3800)},900);setTimeout(chimeTick,3000);setTimeout(mokAmbient,2500);
   setTimeout(()=>status('천천히 걸어 올라가 보세요. 법당과 범종각, 공양간, 요사채, 소원 돌탑이 있어요',4500),5200);setTimeout(()=>{status('🔊 모든 소리는 원하는 대로 조정하세요',4500);const sb=$('#bSound');sb.classList.remove('blink');void sb.offsetWidth;sb.classList.add('blink');setTimeout(()=>sb.classList.remove('blink'),4200)},2600);
   started=true;setTimeout(liveConnect,1500)};
 let started=false;
