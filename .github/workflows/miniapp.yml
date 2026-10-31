@@ -1,0 +1,27 @@
+name: miniapp-build
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'miniapp/**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        working-directory: miniapp
+        run: npm install
+      - name: Build
+        working-directory: miniapp
+        run: npm run build
+      - name: List outputs
+        run: find miniapp -maxdepth 2 -name "*.ait" -not -path "*/node_modules/*"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dalbit-amja-ait
+          path: miniapp/*.ait
+          if-no-files-found: error
