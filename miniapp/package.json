@@ -1,0 +1,12 @@
+{
+  "name": "dalbit-amja-miniapp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs && ait build"
+  },
+  "dependencies": {
+    "@apps-in-toss/web-framework": "3.0.4"
+  }
+}
