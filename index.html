@@ -30,6 +30,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
 #bar button:hover{background:rgba(255,255,255,.12)}
 #ctx{bottom:calc(98px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:none;padding:13px 24px;font-size:15.5px;font-weight:700;border:none;color:#3a2730;background:linear-gradient(135deg,#fde2e6,#f2a9b5);border-radius:999px;box-shadow:0 8px 24px rgba(242,169,181,.45);cursor:pointer;animation:pop .3s ease;white-space:nowrap}
 #ctx.on{display:block}
+#dineEat{left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);display:none;padding:15px 34px;font:inherit;font-size:17px;font-weight:700;border:none;color:#3a2730;background:linear-gradient(135deg,#fde2e6,#f2a9b5);border-radius:999px;box-shadow:0 8px 24px rgba(242,169,181,.45);cursor:pointer;z-index:12}
 #ctx2{bottom:calc(150px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:none;padding:12px 22px;font-size:15px;font-weight:700;border:1px solid rgba(255,255,255,.3);color:#fff;background:rgba(22,24,34,.55);backdrop-filter:blur(12px);border-radius:999px;cursor:pointer;white-space:nowrap}
 #ctx2.on{display:block}
 .label{position:fixed;z-index:5;transform:translate(-50%,-100%);pointer-events:none;font-size:12px;padding:3px 9px;border-radius:999px;background:rgba(20,22,30,.45);backdrop-filter:blur(6px);white-space:nowrap;color:#fff}
@@ -189,6 +190,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
   <div class="pb"><i id="bowBar"></i></div>
   <div class="row"><button class="btn pink" id="bowOne">🙏 한 배 올리기</button><button class="btn ghost" id="bowAuto" style="flex:.6">자동 절</button><button class="btn ghost" id="bowStop" style="flex:.45">그만</button></div>
 </div>
+<button id="dineEat" class="ui">🥢 먹기</button>
 <div id="sitBar" class="ui"><button id="sitBow">🙏 절하기<span id="sitBowN"></span></button><button id="bowlBtn">🔔 싱잉볼</button></div>
 <div id="medi" class="ui"><div id="breath"></div><div class="t" id="mediBr">숨을 천천히 들이쉬고, 내쉬어요</div><div class="c" id="mediT">0:00 · 화면을 누르면 일어나요</div></div>
 <div id="sleepHud" class="ui"><div class="t" id="sleepT">오늘 하루, 정말 애쓰셨어요</div><div class="c">이불 속이 따뜻해요 · 1분 뒤 새벽에 깨워드려요</div><button class="btn ghost" id="sleepWake">☀️ 아침에 일어나기</button></div>
@@ -221,6 +223,12 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
   <div class="talk"><img src="assets/img/char.jpg" alt="달이 스님"><div><b class="serif">달이 스님</b><div class="t" id="teaT"></div></div></div>
   <div id="teaBtns"></div>
   <p class="note">달이 스님은 달빛암자의 안내 캐릭터예요.<br>상담과 풀이는 명리심리상담사 <b>운명론자</b>가 직접 해요.</p>
+</div></div>
+<div class="modal" id="mDine"><div class="sheet">
+  <h3>🍲 절밥상 차리기</h3><p class="s">드시고 싶은 절음식을 골라주세요. 상에 가득 차려드려요. (최대 9가지)</p>
+  <div class="menu" id="dineMenu"></div>
+  <button class="btn pink" id="dineServe" disabled style="opacity:.5">상 차리기</button>
+  <button class="btn ghost" data-close>닫기</button>
 </div></div>
 <div class="modal" id="mChat"><div class="sheet">
   <h3 id="chTitle">대화</h3><div id="chLog"></div>
@@ -625,6 +633,52 @@ hanok({x:TEA.x,z:TEA.z,W:5,D:5,plat:.32,walls:false,doors:false,stairs:false,nam
  colliders.push({x1:TEA.x-.75,x2:TEA.x+.75,z1:TEA.z-.5,z2:TEA.z+.5});
  const cup=new THREE.Mesh(new THREE.CylinderGeometry(.07,.05,.08,16),new THREE.MeshStandardMaterial({color:0xe9efe6,roughness:.3}));cup.position.set(TEA.x+.3,.32+.43,TEA.z+.15);scene.add(cup);
  const pot=new THREE.Mesh(new THREE.SphereGeometry(.13,16,12),new THREE.MeshStandardMaterial({color:0x6d4b3a,roughness:.4}));pot.scale.y=.8;pot.position.set(TEA.x-.3,.32+.48,TEA.z);scene.add(pot)}
+// 식당 (절밥상)
+const DINE={x:17,z:7};
+{const g=new THREE.Group();g.position.set(DINE.x,0,DINE.z);scene.add(g);const W=4.6,D=4.4,plat=.3,wallH=3.0;
+ const base=box(W+1.6,plat,D+1.6,M.stone,0,plat/2,0,g);setUVScale(base,(W+1.6)/3,(D+1.6)/3);
+ const cap=box(W+1.7,.12,D+1.7,M.granite,0,plat+.01,0,g);
+ const fl=new THREE.Mesh(uv2(new THREE.PlaneGeometry(W+1.2,D+1.2)),M.floor);fl.rotation.x=-Math.PI/2;fl.position.y=plat+.075;fl.receiveShadow=true;setUVScale(fl,(W+1.2)/3,(D+1.2)/3);g.add(fl);
+ [[-W/2,-D/2],[W/2,-D/2],[-W/2,D/2],[W/2,D/2]].forEach(([px,pz])=>{const p=new THREE.Mesh(uv2(new THREE.CylinderGeometry(.18,.2,wallH,14)),M.pillar);p.position.set(px,plat+wallH/2,pz);p.castShadow=true;g.add(p);
+   const st=new THREE.Mesh(new THREE.CylinderGeometry(.28,.32,.2,10),M.granite);st.position.set(px,plat+.1,pz);g.add(st)});
+ const beamY=plat+wallH+.05;[[W,0,-D/2],[W,0,D/2]].forEach(([l,bx,bz])=>{const b=box(l,.4,.3,M.dan,bx,beamY,bz,g);setUVScale(b,l/4,1)});[[-W/2],[W/2]].forEach(([bx])=>box(.3,.4,D,M.dan,bx,beamY,0,g));
+ box(W+.6,.3,.26,M.danGreen,0,beamY+.4,D/2+.05,g);box(W+.6,.3,.26,M.danGreen,0,beamY+.4,-D/2-.05,g);
+ const roof=makeRoof(W,D,2.3,1.6);roof.position.y=beamY+.3;g.add(roof);roofs.push({grp:roof,x:DINE.x,z:DINE.z,W,D,rot:0,name:'식당'});
+ platforms.push({x1:DINE.x-(W+1.6)/2,x2:DINE.x+(W+1.6)/2,z1:DINE.z-(D+1.6)/2,z2:DINE.z+(D+1.6)/2,h:plat});
+ [[-W/2,-D/2],[W/2,-D/2],[-W/2,D/2],[W/2,D/2]].forEach(([px,pz])=>colliders.push({x1:DINE.x+px-.25,x2:DINE.x+px+.25,z1:DINE.z+pz-.25,z2:DINE.z+pz+.25}))}
+const dineTbl=new THREE.Group();dineTbl.position.set(DINE.x,.3,DINE.z);scene.add(dineTbl);
+{const top=new THREE.Mesh(new THREE.CylinderGeometry(1.15,1.1,.1,32),M.floor);top.position.y=.52;top.castShadow=top.receiveShadow=true;dineTbl.add(top);
+ const rim=new THREE.Mesh(new THREE.TorusGeometry(1.12,.04,8,36),M.wood);rim.rotation.x=Math.PI/2;rim.position.y=.57;dineTbl.add(rim);
+ for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4;box(.1,.46,.1,M.wood,Math.cos(a)*.85,.24,Math.sin(a)*.85,dineTbl)}
+ const cg=new RoundedBoxGeometry(.7,.13,.7,3,.06);[[0,1.5],[0,-1.5]].forEach(([cx,cz],i)=>{const m=new THREE.Mesh(cg,new THREE.MeshStandardMaterial({color:i?0x6d3b3b:0x4f5d4a,roughness:.95}));m.position.set(cx,.37,cz);m.receiveShadow=true;dineTbl.add(m)});
+ const c=document.createElement('canvas');c.width=320;c.height=120;const x=c.getContext('2d');const draw=()=>{x.fillStyle='#6e4a32';x.fillRect(0,0,320,120);x.strokeStyle='#3e2a1c';x.lineWidth=7;x.strokeRect(4,4,312,112);x.fillStyle='#f6e7c8';x.font='bold 52px "Gowun Batang",serif';x.textAlign='center';x.textBaseline='middle';x.fillText('절 밥 상',160,64)};draw();
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const sg=new THREE.Group();sg.position.set(DINE.x-2.2,0,DINE.z+1.4);sg.rotation.y=.6;scene.add(sg);box(.08,1.0,.08,M.wood,0,.5,0,sg);const pl=new THREE.Mesh(new THREE.PlaneGeometry(.85,.32),new THREE.MeshStandardMaterial({map:t,roughness:.9}));pl.position.set(0,.98,.05);sg.add(pl);document.fonts?.ready.then(()=>{draw();t.needsUpdate=true});
+ colliders.push({x1:DINE.x-1.2,x2:DINE.x+1.2,z1:DINE.z-1.2,z2:DINE.z+1.2})}
+const DINE_INFO={'산채비빔밥':'산에서 난 나물을 정성껏 무쳐 고슬고슬한 밥에 비벼요. 고기도 오신채도 없이, 재료 본연의 맛만으로 깊고 담백하지요.','된장찌개':'직접 담근 된장을 풀어 두부와 애호박을 끓였어요. 구수한 한 숟갈에 속이 편안해져요.','두부조림':'담백한 두부를 간장에 조렸어요. 수행자의 단백질이자, 소박한 밥상의 중심이에요.','버섯전골':'표고와 느타리를 맑게 끓인 전골이에요. 고기 없이도 깊은 감칠맛이 우러나요.','도라지나물':'쌉싸래한 도라지를 조물조물 무쳤어요. 쓴맛 끝에 남는 단맛이, 삶과 닮았지요.','시금치나물':'살짝 데친 시금치에 참기름 한 방울. 푸른 봄기운을 그대로 담았어요.','연근조림':'아삭한 연근을 간장에 조렸어요. 구멍 숭숭 뚫린 연근처럼, 마음도 비우고 가세요.','표고전':'도톰한 표고에 옷을 입혀 부쳤어요. 기름기 적어 담백하고 쫄깃해요.','도토리묵':'산에서 주운 도토리로 쑨 묵이에요. 심심한 듯 고소한 맛이 마음을 가라앉혀요.','연잎밥':'연잎에 찹쌀과 견과를 싸 쪄냈어요. 은은한 연잎 향이 밥알마다 배어 있어요.','떡':'쌀을 쪄 빚은 소박한 떡이에요. 귀한 손님께 내는 절집의 정이지요.','식혜':'엿기름으로 삭힌 달큰한 식혜예요. 밥 뒤에 한 모금, 입안이 개운해져요.'};
+const DINE_MENU=[{n:'산채비빔밥',e:'🥗',c:0xd08a3a},{n:'된장찌개',e:'🍲',c:0x8a5a2a},{n:'두부조림',e:'🧈',c:0xe8dcc0,box:1},{n:'버섯전골',e:'🍄',c:0x6b4330},{n:'도라지나물',e:'🥬',c:0xe6e0d0,heap:1},{n:'시금치나물',e:'🌿',c:0x3f7a2e,heap:1},{n:'연근조림',e:'🪷',c:0x9a6a3a,heap:1},{n:'표고전',e:'🥘',c:0xb5702e,box:1},{n:'도토리묵',e:'🟫',c:0x7a5a40,box:1},{n:'연잎밥',e:'🍙',c:0x4a6b3a},{n:'떡',e:'🍡',c:0xf1e4e6,heap:1},{n:'식혜',e:'🥛',c:0xe9d7a8,cup:1}];
+const dineMeshes=[];
+function makeDishMesh(f){const g=new THREE.Group();
+  if(f.cup){const cup=new THREE.Mesh(new THREE.CylinderGeometry(.11,.09,.14,16),new THREE.MeshStandardMaterial({color:0x6b3e2a,roughness:.4}));cup.position.y=.07;g.add(cup);const liq=new THREE.Mesh(new THREE.CircleGeometry(.1,16),new THREE.MeshStandardMaterial({color:f.c,roughness:.2}));liq.rotation.x=-Math.PI/2;liq.position.y=.14;g.add(liq);return g}
+  const bowl=new THREE.Mesh(new THREE.LatheGeometry([[0,0],[.16,0],[.17,.03],[.19,.12],[.195,.15]].map(p=>new THREE.Vector2(p[0],p[1])),20),new THREE.MeshStandardMaterial({color:0xc9a14a,metalness:.7,roughness:.4,side:THREE.DoubleSide}));bowl.castShadow=true;g.add(bowl);
+  const fm=new THREE.MeshStandardMaterial({color:f.c,roughness:.85});
+  if(f.box){const b=new THREE.Mesh(new THREE.BoxGeometry(.16,.07,.16),fm);b.position.y=.1;b.rotation.y=.4;g.add(b)}
+  else if(f.heap){for(let i=0;i<5;i++){const s=new THREE.Mesh(new THREE.SphereGeometry(.05,8,6),fm);s.position.set(rand(-.07,.07),.11+rand(0,.03),rand(-.07,.07));s.scale.y=.6;g.add(s)}}
+  else{const d=new THREE.Mesh(new THREE.SphereGeometry(.15,16,10,0,Math.PI*2,0,Math.PI/2),fm);d.scale.y=.6;d.position.y=.1;g.add(d)}
+  return g}
+let dineSel=[],dineState='idle',dineEatT=0,dineEatN=0;
+function openDine(){if(P.mode!=='walk')return;dineSel=[];const m=$('#dineMenu');m.innerHTML='';DINE_MENU.forEach((f,i)=>{const b=document.createElement('button');b.className='dish';b.innerHTML='<div class="e">'+f.e+'</div><b>'+f.n+'</b>';b.onclick=()=>{const k=dineSel.indexOf(i);if(k>-1){dineSel.splice(k,1);b.classList.remove('sel')}else if(dineSel.length<9){dineSel.push(i);b.classList.add('sel')}$('#dineServe').disabled=!dineSel.length;$('#dineServe').style.opacity=dineSel.length?1:.5};m.appendChild(b)});$('#dineServe').disabled=true;$('#dineServe').style.opacity=.5;openM('#mDine')}
+function serveDine(){closeM('#mDine');dineMeshes.forEach(d=>dineTbl.remove(d));dineMeshes.length=0;
+  const n=dineSel.length;dineSel.forEach((di,k)=>{const f=DINE_MENU[di];const mesh=makeDishMesh(f);mesh.userData.food=f;const ang=n===1?-Math.PI/2:k/n*Math.PI*2-Math.PI/2;const r=n===1?0:.62;mesh.position.set(Math.cos(ang)*r,.57,Math.sin(ang)*r);dineTbl.add(mesh);dineMeshes.push(mesh)});
+  const seat={x:DINE.x,z:DINE.z+1.5};$('#fade').style.opacity=1;setTimeout(()=>{P.x=seat.x;P.z=seat.z;P.y=heightAt(seat.x,seat.z);P.yaw=Math.PI;cam.yaw=-.6;cam.pitch=.62;cam.targetDist=2.9;player.userData.sit=1;P.mode='dine';$('#bar').style.display='none';$('#ctx').classList.remove('on');$('#dineEat').style.display='block';$('#fade').style.opacity=0;status('절밥상을 받았어요. 음식을 눌러 소개를 읽어보세요 🥢',4200)},600)}
+function sighSound(){if(!AU.ctx)return;const ctx=AU.ctx,t=ctx.currentTime;const n=ctx.createBufferSource();n.buffer=AU.noise;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.setValueAtTime(900,t);bp.frequency.exponentialRampToValueAtTime(380,t+1.1);bp.Q.value=1.2;const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+.15);g.gain.linearRampToValueAtTime(.12,t+.5);g.gain.exponentialRampToValueAtTime(.001,t+1.3);n.connect(bp).connect(g).connect(AU.master);n.start(t);n.stop(t+1.4)}
+function startDineEat(){if(dineState==='eat')return;dineState='eat';dineEatT=0;dineEatN=0;player.userData.eat=1;$('#dineEat').style.display='none';say(player,'잘 먹겠습니다 🙏',2000)}
+function updateDineEat(dt){if(dineState!=='eat')return;dineEatT+=dt;const total=Math.max(4,dineMeshes.length*1.1);const gone=Math.floor(dineEatT/total*dineMeshes.length);
+  dineMeshes.forEach((m,i)=>{if(i<gone){m.scale.multiplyScalar(Math.max(0,1-dt*4));if(m.scale.x<.03)m.visible=false}});
+  if(Math.floor(dineEatT/1.0)>dineEatN){dineEatN++;spoonClink()}
+  if(dineEatT>total){dineState='idle';dineMeshes.forEach(m=>{dineTbl.remove(m)});dineMeshes.length=0;player.userData.eat=0;say(player,'휴우~ 잘 먹었다 😌',2600);sighSound();
+    setTimeout(()=>{P.mode='walk';player.userData.sit=0;cam.pitch=.32;cam.targetDist=6.2;P.z+=1;
+      info('🍵 차 한 잔 하실래요?','든든하게 드셨으니, 이제 따뜻한 차 한 잔 어떠세요?<br>달이 스님이 차담실에서 차를 내어드려요.',[['차 마시러 가기','pink',()=>{teleport(TEA.x-.2,TEA.z+2.6,Math.PI);setTimeout(openTea,1200)}],['괜찮아요, 더 쉴게요','ghost']])},2600)}}
+
 // 일주문 (gate)
 {const gz=25;const g=new THREE.Group();g.position.set(0,0,gz);scene.add(g);
  [-2.4,2.4].forEach(px=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(.32,.34,5.2,16),M.pillar);p.position.set(px,2.6,0);p.castShadow=true;g.add(p);box(.9,.5,.9,M.granite,px,.25,0,g);colliders.push({x1:px-.4,x2:px+.4,z1:gz-.4,z2:gz+.4})});
@@ -722,7 +776,7 @@ function placeTrees(list,variants,mat){variants.forEach((v,vi)=>{const items=lis
   const o=new THREE.Object3D();items.forEach((it,i)=>{o.position.set(it.x,it.y,it.z);o.rotation.y=it.r;o.scale.setScalar(it.s);o.updateMatrix();tI.setMatrixAt(i,o.matrix);fI.setMatrixAt(i,o.matrix)});scene.add(tI,fI)})}
 {const near=[],far=[];
  const avoid=(x,z)=>(Math.abs(x)<7&&z>16)||[[0,-15,12],[-14,-2,5],[15,-3,7],[11,13,5],[0,24,4],[-17,-11,3],[-9,15,3]].some(([a,b,r])=>Math.hypot(x-a,z-b)<r)||Math.abs(x)<3&&z>-8;
- const specials=[[12,-11],[-13,8],[19,8],[-20,7],[-9,22],[9,22],[22,-12],[-22,-14],[-12,-21],[12,-22]];
+ const specials=[[12,-11],[-13,8],[23,11],[-20,7],[-9,22],[9,22],[22,-12],[-22,-14],[-12,-21],[12,-22]];
  specials.forEach(([x,z])=>near.push({x,y:0,z,r:rand(0,6),s:rand(.9,1.2)}));
  for(let i=0;i<70;i++){const a=rand(0,Math.PI*2),r=rand(COURT-2,COURT+14);const x=Math.cos(a)*r,z=Math.sin(a)*r;if(avoid(x,z))continue;near.push({x,y:heightAt(x,z),z,r:rand(0,6),s:rand(.8,1.25)})}
  for(let i=0;i<(isTouch?260:420);i++){const a=rand(0,Math.PI*2),r=rand(COURT+14,150);const x=Math.cos(a)*r,z=Math.sin(a)*r;far.push({x,y:terrainH(x,z)-.3,z,r:rand(0,6),s:rand(1,1.6)})}
@@ -745,7 +799,7 @@ function scatter(path,list,scale=1){gltf.load(path,g=>{const src=g.scene;src.tra
 {const grass=[],fern=[],rocks=[];for(let i=0;i<70;i++){const a=rand(0,6.28),r=rand(COURT-6,COURT+6);grass.push([Math.cos(a)*r,Math.sin(a)*r,rand(0,6),rand(.8,1.4)])}
  [[-6,-12],[6,-12],[-10,-6],[10,-7],[-18,-8],[-15,-13],[16,8],[-12,18],[4,20],[-3,21],[20,-6],[-21,-4],[13,-11],[-5,-19]].forEach(([x,z])=>grass.push([x,z,rand(0,6),rand(.7,1.1)]));
  for(let i=0;i<26;i++){const a=rand(0,6.28),r=rand(COURT-3,COURT+4);fern.push([Math.cos(a)*r,Math.sin(a)*r,rand(0,6),rand(1,1.6)])}
- [[-18.5,-10],[-15.6,-12.4],[ -11,16.5],[ -7.5,16.8],[17,10],[-22,12.5],[20,-9],[8,-20]].forEach(([x,z])=>rocks.push([x,z,rand(0,6),rand(.8,1.3)]));
+ [[-18.5,-10],[-15.6,-12.4],[ -11,16.5],[ -7.5,16.8],[25,15],[-22,12.5],[20,-9],[8,-20]].forEach(([x,z])=>rocks.push([x,z,rand(0,6),rand(.8,1.3)]));
  scatter('assets/models/grass_medium_01/grass_medium_01.gltf',grass,1.2);scatter('assets/models/fern_02/fern_02.gltf',fern,1.3);scatter('assets/models/rock_moss_set_01/rock_moss_set_01.gltf',rocks,1)}
 
 /* ================= wind chimes (풍경) ================= */
@@ -760,7 +814,7 @@ function addChime(x,y,z){const g=new THREE.Group();g.position.set(x,y,z);scene.a
 
 /* ================= character (달이) ================= */
 const skinM=new THREE.MeshStandardMaterial({color:0xd9a98b,roughness:.88,envMapIntensity:.15});
-const eyeM=new THREE.MeshPhysicalMaterial({color:0x1a1215,roughness:.08,clearcoat:1});
+const eyeM=new THREE.MeshStandardMaterial({color:0x241a18,roughness:.62,metalness:0,envMapIntensity:.08});
 const whiteM=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.3,envMapIntensity:.2});
 const blushM=new THREE.MeshStandardMaterial({color:0xd98a8f,transparent:true,opacity:.55,roughness:.9});
 const sashM=new THREE.MeshStandardMaterial({color:0xc98f97,roughness:.9,envMapIntensity:.15});
@@ -779,8 +833,7 @@ function makeDali(robe=0x5f6470,{monk=false}={}){
   const hd=new THREE.Mesh(new THREE.SphereGeometry(.33,40,30),skinM);hd.scale.set(1,.96,.95);hd.castShadow=true;head.add(hd);
   [-1,1].forEach(s=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.07,14,10),skinM);e.position.set(s*.32,-.02,0);e.scale.set(.6,1,.8);head.add(e);
     const ey=new THREE.Mesh(new THREE.SphereGeometry(.072,20,14),eyeM);ey.position.set(s*.12,-.04,.285);ey.scale.set(.9,1.1,.5);head.add(ey);
-    const hl=new THREE.Mesh(new THREE.SphereGeometry(.022,8,6),whiteM);hl.position.set(s*.12+.025,0,.32);head.add(hl);
-    const hl2=new THREE.Mesh(new THREE.SphereGeometry(.01,6,4),whiteM);hl2.position.set(s*.12-.02,-.07,.322);head.add(hl2);
+    const hl=new THREE.Mesh(new THREE.SphereGeometry(.011,8,6),new THREE.MeshBasicMaterial({color:0xd8d2cc,transparent:true,opacity:.4}));hl.position.set(s*.12+.02,.012,.318);head.add(hl);
     const bl=new THREE.Mesh(new THREE.CircleGeometry(.055,16),blushM);bl.position.set(s*.2,-.13,.255);bl.rotation.y=s*.55;head.add(bl)});
   const mouth=new THREE.Mesh(new THREE.TorusGeometry(.025,.007,6,12,Math.PI),new THREE.MeshBasicMaterial({color:0xb4566a}));mouth.position.set(0,-.15,.31);mouth.rotation.z=Math.PI;head.add(mouth);
   const cres=new THREE.Mesh(new THREE.TorusGeometry(.05,.016,8,20,Math.PI*1.3),M.gold);cres.position.set(0,.22,.24);cres.rotation.set(-.6,0,-.9);head.add(cres);
@@ -853,7 +906,7 @@ async function initAudio(){const ctx=new (window.AudioContext||window.webkitAudi
   applyVolumes();
   applyTimeAudio();
   // 새소리: 아주 가끔, 작게
-  const birdPhrase=()=>{const s=TIMES[timeKey];const outdoor=heightAt(P.x,P.z)<.2&&!['달빛전','요사채','공양간','차담실'].includes(curArea);if(weather==='clear'&&s.birds>0&&P.mode!=='sleep'&&outdoor){const t=ctx.currentTime,v=s.birds*rand(.08,.14),hold=rand(3.5,7);AU.birds.gain.cancelScheduledValues(t);AU.birds.gain.setValueAtTime(AU.birds.gain.value,t);AU.birds.gain.linearRampToValueAtTime(v,t+2.2);AU.birds.gain.setValueAtTime(v,t+2.2+hold);AU.birds.gain.linearRampToValueAtTime(0,t+5.5+hold)}setTimeout(birdPhrase,rand(35000,90000))};setTimeout(birdPhrase,rand(12000,25000));
+  const birdPhrase=()=>{const s=TIMES[timeKey];const outdoor=heightAt(P.x,P.z)<.2&&!['달빛전','요사채','공양간','차담실','식당'].includes(curArea);if(weather==='clear'&&s.birds>0&&P.mode!=='sleep'&&outdoor){const t=ctx.currentTime,v=s.birds*rand(.08,.14),hold=rand(3.5,7);AU.birds.gain.cancelScheduledValues(t);AU.birds.gain.setValueAtTime(AU.birds.gain.value,t);AU.birds.gain.linearRampToValueAtTime(v,t+2.2);AU.birds.gain.setValueAtTime(v,t+2.2+hold);AU.birds.gain.linearRampToValueAtTime(0,t+5.5+hold)}setTimeout(birdPhrase,rand(35000,90000))};setTimeout(birdPhrase,rand(12000,25000));
 }
 const VOL=Object.assign({master:40,nature:80,bell:80,chant:70,mute:false},JSON.parse(localStorage.getItem('dalbit_vol')||'{}'));
 function applyVolumes(){if(!AU.ctx)return;const t=AU.ctx.currentTime;const k=v=>Math.pow(v/100,1.6);
@@ -1033,15 +1086,15 @@ const bubbles=[];function say(obj,text,ms=2600){const b=document.createElement('
 
 /* ================= areas & context ================= */
 function areaOf(x,z){if(x>HALL.x-HALL.W/2&&x<HALL.x+HALL.W/2&&z>HALL.z-HALL.D/2&&z<HALL.z+HALL.D/2)return'달빛전';
-  if(Math.hypot(x-BELL.x,z-BELL.z)<4.5)return'범종각';if(Math.hypot(x-KIT.x,z-KIT.z)<5.5)return'공양간';if(Math.hypot(x-TEA.x,z-TEA.z)<4.5)return'차담실';
+  if(Math.hypot(x-BELL.x,z-BELL.z)<4.5)return'범종각';if(Math.hypot(x-KIT.x,z-KIT.z)<5.5)return'공양간';if(Math.hypot(x-TEA.x,z-TEA.z)<4.5)return'차담실';if(Math.hypot(x-DINE.x,z-DINE.z)<3.4)return'식당';
   if(Math.hypot(x-SPRING.x,z-SPRING.z)<3.5)return'약수터';if(Math.hypot(x-MOONSPOT.x,z-MOONSPOT.z)<5)return'달맞이 터';if(Math.hypot(x-CAIRN.x,z-CAIRN.z)<4.6)return'돌탑 기도터';if(x>YOSA.x-YOSA.D/2-1.2&&x<YOSA.x+YOSA.D/2+.6&&z>YOSA.z-YOSA.W/2-.4&&z<YOSA.z+YOSA.W/2+.4)return'요사채';if(z>21)return'일주문';return'마당'}
 let curArea='',ctxAction=null;
 function updateContext(){const a=areaOf(P.x,P.z);if(a!==curArea){curArea=a;$('#area').textContent=a;onEnterArea(a)}
-  let act=null;if(P.mode==='walk'){if(a==='범종각')act=['🔔 범종 치기',ringBell];else if(a==='달빛전')act=['🪷 108배 소원빌기',startWish];else if(a==='공양간')act=['🍚 공양하기',()=>openFood()];else if(a==='차담실')act=['🍵 스님과 차담하기',openTea];else if(a==='요사채')act=['🌙 하룻밤 묵어가기',askSleep];else if(a==='돌탑 기도터')act=['🪨 돌 올리고 소원빌기',startStone];else if(a==='약수터')act=['💧 약수 한 모금',drinkWater];else if(a==='달맞이 터')act=['🏮 달님께 소원등 띄우기',startLantern]}
+  let act=null;if(P.mode==='walk'){if(a==='범종각')act=['🔔 범종 치기',ringBell];else if(a==='달빛전')act=['🪷 108배 소원빌기',startWish];else if(a==='공양간')act=['🍚 공양하기',()=>openFood()];else if(a==='차담실')act=['🍵 스님과 차담하기',openTea];else if(a==='식당')act=['🍲 절밥상 받기',openDine];else if(a==='요사채')act=['🌙 하룻밤 묵어가기',askSleep];else if(a==='돌탑 기도터')act=['🪨 돌 올리고 소원빌기',startStone];else if(a==='약수터')act=['💧 약수 한 모금',drinkWater];else if(a==='달맞이 터')act=['🏮 달님께 소원등 띄우기',startLantern]}
   const nearDog=P.mode==='walk'&&!D.food&&D.state!=='pet'&&Math.hypot(P.x-D.x,P.z-D.z)<2.6;if(nearDog)act=['🍙 백구 밥주기',feedDog];$('#ctx2').classList.toggle('on',nearDog);
   const el=$('#ctx');if(act){if(ctxAction?.[0]!==act[0]){el.textContent=act[0];el.onclick=act[1]}el.classList.add('on')}else el.classList.remove('on');ctxAction=act;
   if(AU.ctx){const inside=a==='달빛전';AU.ambLP.frequency.setTargetAtTime(inside?1400:18000,AU.ctx.currentTime,.4)}}
-const greeted={};function onEnterArea(a){if(AU.ctx&&['달빛전','요사채','공양간','차담실'].includes(a)){AU.birds.gain.cancelScheduledValues(AU.ctx.currentTime);AU.birds.gain.setTargetAtTime(0,AU.ctx.currentTime,.8)}if(greeted[a])return;greeted[a]=1;const msg={'달빛전':'달빛전이에요. 방석에 앉아 108배를 올려보세요','범종각':'범종각이에요. 당목을 당겨 종을 울려보세요','공양간':'공양간이에요. 절밥 한 그릇 드시고 가세요','차담실':'차담실이에요. 달이 스님이 차를 내어주세요','약수터':'졸졸, 약수가 흘러요','달맞이 터':'달이 가장 잘 보이는 자리예요','요사채':'요사채예요. 따뜻한 온돌방에 이불을 깔아두었어요','돌탑 기도터':'소원 돌탑이에요. 여기서 소원 빌고 결혼한 분, 딸 낳은 분 있어요 😊'}[a];if(msg)status(msg)}
+const greeted={};function onEnterArea(a){if(AU.ctx&&['달빛전','요사채','공양간','차담실','식당'].includes(a)){AU.birds.gain.cancelScheduledValues(AU.ctx.currentTime);AU.birds.gain.setTargetAtTime(0,AU.ctx.currentTime,.8)}if(greeted[a])return;greeted[a]=1;const msg={'달빛전':'달빛전이에요. 방석에 앉아 108배를 올려보세요','범종각':'범종각이에요. 당목을 당겨 종을 울려보세요','공양간':'공양간이에요. 절밥 한 그릇 드시고 가세요','차담실':'차담실이에요. 달이 스님이 차를 내어주세요','식당':'식당이에요. 드시고 싶은 절음식을 골라 상을 차려보세요','약수터':'졸졸, 약수가 흘러요','달맞이 터':'달이 가장 잘 보이는 자리예요','요사채':'요사채예요. 따뜻한 온돌방에 이불을 깔아두었어요','돌탑 기도터':'소원 돌탑이에요. 여기서 소원 빌고 결혼한 분, 딸 낳은 분 있어요 😊'}[a];if(msg)status(msg)}
 
 /* ================= interactions ================= */
 let bellSwing=0;
@@ -1058,6 +1111,7 @@ $('#aSit').onclick=()=>{if(P.mode==='sit'){standUp();return}if(P.mode!=='walk')r
 let sitBows=0;
 let bowlT=0;$('#bowlBtn').onclick=e=>{e.stopPropagation();const n=performance.now();if(n-bowlT<1500)return;bowlT=n;singingBowl(.05);const b=$('#bowlBtn');b.style.opacity=.55;setTimeout(()=>b.style.opacity=1,1500)};
 $('#ctx2').onclick=e=>{e.stopPropagation();petDog()};
+$('#dineServe').onclick=serveDine;$('#dineEat').onclick=startDineEat;
 $('#stopWalk').onclick=e=>{e.stopPropagation();stopAuto()};
 $('#sitBow').onclick=e=>{e.stopPropagation();if(P.mode!=='sit'||player.userData.bow>0)return;player.userData.bow=1;setTimeout(moktak,380);sitBows++;$('#sitBowN').textContent=` · ${sitBows}배`;if(navigator.vibrate)navigator.vibrate(10);
   const m={1:'부처님께 정성껏 절을 올렸어요 🙏',3:'삼배를 올렸어요. 마음이 한결 차분해져요',7:'한 배 한 배, 마음이 가벼워져요',21:'스물한 배. 오늘의 나를 칭찬해 주세요'}[sitBows];if(m)status(m,3200)};
@@ -1361,7 +1415,8 @@ canvas.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return
 canvas.addEventListener('pointerup',e=>{if(drag&&drag.moved<8&&performance.now()-drag.t<400)tapMove(e);drag=null});
 canvas.addEventListener('wheel',e=>{cam.targetDist=clamp(cam.targetDist+e.deltaY*.005,2.5,14)},{passive:true});
 const ray=new THREE.Raycaster();let moveTarget=null;const groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
-function tapMove(e){if(P.mode!=='walk')return;const v=new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(v,camera);
+function tapMove(e){const v0=new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(v0,camera);if(dineMeshes.length){const dh=ray.intersectObjects(dineMeshes,true)[0];if(dh){let o=dh.object;while(o.parent&&!o.userData.food)o=o.parent;if(o.userData.food){const f=o.userData.food;info(f.e+' '+f.n,DINE_INFO[f.n]||'',[['맛있게 먹을게요 🙏','pink']]);return}}}
+  if(P.mode!=='walk')return;const v=new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(v,camera);
   {const ch=ray.intersectObjects(CUSHIONS.map(c=>c.m))[0];if(ch){const c=CUSHIONS.find(c=>c.m===ch.object);if(c.taken){status('다른 분이 앉아 계신 방석이에요');return}sitOnCushion(c);return}}
   const npcHit=ray.intersectObjects([cat,monk,dog],true)[0];if(npcHit){let o=npcHit.object;while(o.parent&&o!==cat&&o!==monk&&o!==dog)o=o.parent;if(o===dog){say(dog,'왈! 🐾',1600);dog.userData.wag=2.5;return}if(o===cat){say(cat,'야옹~ 🐾');cat.userData.wag=2;return}if(o===monk){if(curArea==='차담실')openTea();else moveTarget=new THREE.Vector3(TEA.x-.2,0,TEA.z+2.2);return}}
   groundPlane.constant=-P.y;const p=new THREE.Vector3();if(ray.ray.intersectPlane(groundPlane,p)){const dx=p.x-P.x,dz=p.z-P.z,l=Math.hypot(dx,dz);if(l>.3){autoDir={x:dx/l,z:dz/l};moveTarget=null;$('#stopWalk').style.display='block'}}}
@@ -1469,7 +1524,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   for(let i=bubbles.length-1;i>=0;i--){const b=bubbles[i];if(performance.now()>b.until){b.b.remove();bubbles.splice(i,1);continue}proj(b.obj,1.85,b.b)}
   if(autoDir&&P.mode!=='walk')stopAuto();
   if(chatWith&&!$('#mChat').classList.contains('on')){chatWith.chat=false;chatWith=null}updateClouds(dt);
-  updateRemotes(dt);liveSend();updateDog(dt,t);
+  updateRemotes(dt);liveSend();updateDog(dt,t);updateDineEat(dt);
   updateWeather(dt,t);updateWisps(dt,t);updateMist(dt,t);updateBreath();updateIdle(dt);
   {const indoorP=heightAt(P.x,P.z)>.2||curArea==='달빛전';const pc=player.userData.chorong;if(pc)pc.visible=chorongOn&&!indoorP&&P.mode!=='bow'&&P.mode!=='mok'&&P.mode!=='sleep'&&P.mode!=='eat'&&P.mode!=='mat';
    npcs.forEach(s=>{const c=s.n.userData.chorong;if(c)c.visible=chorongOn&&heightAt(s.x,s.z)<.2})
