@@ -2050,7 +2050,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
    const lr=weather==='rain';leafFor(player).visible=lr&&!indoorP&&P.mode!=='sleep'&&P.mode!=='bow';npcs.forEach(s=>{if(s.sit)return;leafFor(s.n).visible=lr&&heightAt(s.x,s.z)<.2})}
   [player,...npcs.map(s=>s.n)].forEach(n=>{const c=n.userData.chorong;if(c&&c.visible){c.userData.hang.rotation.x=Math.sin(t*3+n.id)*.12*(n===player&&moving?1.6:.6);c.userData.hang.rotation.z=Math.cos(t*2.3+n.id)*.08}});
   if(started)updateContext();updateListener();
-  updateExtras(dt,t);updateBath(dt,t);updateEgg(dt,t);updateFortune(dt,t);updateTea(dt,t);updateCandles(dt,t);updateSB(dt,t);updatePond(dt,t);composer.render()}
+  updateExtras(dt,t);updateBath(dt,t);updateEgg(dt,t);updateFortune(dt,t);updateTea(dt,t);updateCandles(dt,t);try{updateSB(dt,t)}catch(e){console.warn(e)}try{updatePond(dt,t)}catch(e){console.warn(e)}composer.render()}
 
 /* ================= 싱잉볼룸 (침묵의 방) ================= */
 const SB={x:400,z:0,W:14,D:14,H:5.2};
@@ -2100,7 +2100,7 @@ box(.3,SB.H,16,sbWall,-SB.W/2-.15,SB.H/2,1,sbG);box(.3,SB.H,16,sbWall,SB.W/2+.15
 for(let i=-2;i<=2;i++)box(.25,.3,16,sbWood,i*3,SB.H-.15,0,sbG,false);
 colliders.push({x1:SB.x-SB.W/2-2,x2:SB.x+SB.W/2+2,z1:SB.z-SB.D/2-2,z2:SB.z-SB.D/2+.5},{x1:SB.x-SB.W/2-2,x2:SB.x+SB.W/2+2,z1:SB.z+8.6,z2:SB.z+11},{x1:SB.x-SB.W/2-2,x2:SB.x-SB.W/2+.5,z1:SB.z-SB.D/2-2,z2:SB.z+11},{x1:SB.x+SB.W/2-.5,x2:SB.x+SB.W/2+2,z1:SB.z-SB.D/2-2,z2:SB.z+11});
 /* 큰 모니터 */
-const sbCv=document.createElement('canvas');sbCv.width=1024;sbCv.height=576;const sbCx=sbCv.getContext('2d');
+const sbCv=document.createElement('canvas');sbCv.width=640;sbCv.height=360;const sbCx=sbCv.getContext('2d');sbCx.setTransform(.625,0,0,.625,0,0);const sbVig=(()=>{const c=document.createElement('canvas');c.width=256;c.height=144;const x=c.getContext('2d');const g=x.createRadialGradient(128,72,50,128,72,155);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(2,4,10,.55)');x.fillStyle=g;x.fillRect(0,0,256,144);return c})();
 const sbTex=new THREE.CanvasTexture(sbCv);sbTex.colorSpace=THREE.SRGBColorSpace;
 const sbImgs=[1,2,3].map(n=>{const im=new Image();im.src='assets/img/sb-'+n+'.jpg';return im});
 box(8.7,4.95,.14,sbDark,0,2.75,-SB.D/2+.1,sbG);
@@ -2117,9 +2117,9 @@ function sbBowlMesh(col,sc=1){const g=new THREE.Group();const pr=[[0,0],[.1,0],[
 box(8,.45,.9,sbWood,0,.225,-SB.D/2+1,sbG);
 SB_BOWLS.forEach((b,i)=>{const m=sbBowlMesh(b.c,.8);m.position.set(-3.3+i*1.1,.45,-SB.D/2+1);sbG.add(m)});
 /* 초 */
-const sbGlassM=new THREE.MeshPhysicalMaterial({color:0xdff3ff,transparent:true,opacity:.22,roughness:.05,metalness:0,side:THREE.DoubleSide,depthWrite:false});const sbWaterM=new THREE.MeshStandardMaterial({color:0x7cc0de,transparent:true,opacity:.6,roughness:.15,emissive:0x16384a,emissiveIntensity:.5});
+const sbGlassM=new THREE.MeshStandardMaterial({color:0xdff3ff,transparent:true,opacity:.24,roughness:.1,metalness:0,side:THREE.DoubleSide,depthWrite:false});const sbWaterM=new THREE.MeshStandardMaterial({color:0x7cc0de,transparent:true,opacity:.6,roughness:.15,emissive:0x16384a,emissiveIntensity:.5});
 function sbCandle(x,z,y=0,h=.14){const r=y>0?.15:.24,hh=r*.62;const g=new THREE.Group();g.position.set(x,y,z);sbG.add(g);
- const pr=[[r*.55,0],[r*.85,.01*hh],[r,hh*.45],[r*1.04,hh],[r*1.0,hh*1.0+.004],[r*.96,hh*.96]].map(([a,b])=>new THREE.Vector2(a,b));const bowl=new THREE.Mesh(new THREE.LatheGeometry(pr,32),sbGlassM);bowl.renderOrder=2;g.add(bowl);
+ const pr=[[r*.55,0],[r*.85,.01*hh],[r,hh*.45],[r*1.04,hh],[r*1.0,hh*1.0+.004],[r*.96,hh*.96]].map(([a,b])=>new THREE.Vector2(a,b));const bowl=new THREE.Mesh(new THREE.LatheGeometry(pr,20),sbGlassM);bowl.renderOrder=2;g.add(bowl);
  const w=new THREE.Mesh(new THREE.CylinderGeometry(r*.97,r*.9,hh*.62,32),sbWaterM);w.position.y=hh*.34;w.renderOrder=1;g.add(w);
  const fl=new THREE.Group();fl.position.set((Math.random()-.5)*r*.3,hh*.65,(Math.random()-.5)*r*.3);g.add(fl);
  const c=new THREE.Mesh(new THREE.CylinderGeometry(.035,.04,.07,10),new THREE.MeshStandardMaterial({color:0xf3e6c8,roughness:.7,emissive:0x331f08,emissiveIntensity:.4}));c.position.y=.035;fl.add(c);
@@ -2170,7 +2170,7 @@ function sbRefresh(force){const room=curArea==='싱잉볼룸';const yoga=!!playe
 function sbBarBuild(row1,row2,mk){sbRefresh();if(!sb.barDirty&&row1.childElementCount)return;sb.barDirty=false;row1.innerHTML='';row2.innerHTML='';row2.style.display='none';(sb.btns||[]).forEach(([ic,tx,fn])=>{const hold=typeof fn!=='function';const b=mk(ic,tx,hold?()=>{}:fn);if(hold){b.onclick=null;b.onpointerdown=e=>{e.preventDefault();fn.down()};const up=()=>fn.up();b.onpointerup=up;b.onpointerleave=up;b.onpointercancel=up;b.oncontextmenu=e=>e.preventDefault()}row1.appendChild(b)})}
 window.sbBarBuild=sbBarBuild;
 function sbName(){const e=sbEl('sbName');let t='';if(player.userData.yoga)t=SB_POSES[player.userData.yoga].i+' '+SB_POSES[player.userData.yoga].n+' · '+SB_POSES[player.userData.yoga].s;else if(sb.bowl>=0&&P.mode==='sit')t='🔔 '+SB_BOWLS[sb.bowl].n;e.textContent=t;e.style.display=t?'block':'none'}
-function sbSit(){if(P.mode!=='walk')return;let best=null,bd=1e9;sbCush.forEach(c=>{if(c.taken)return;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c}});if(!best)return;P.x=best.x;P.z=best.z;P.y=best.y;P.sitCushion=best;best.taken=true;P.yaw=Math.PI;cam.yaw=.5;cam.pitch=.5;cam.targetDist=4.6;P.mode='sit';player.userData.sit=1;mediStart=performance.now();$('#sitBar').style.display='none';$('#medi').style.display='none';sbRefresh();if(sb.bowl>=0)sbShowBowl()}
+function sbSit(){if(P.mode!=='walk')return;let best=null,bd=1e9;sbCush.forEach(c=>{if(c.taken)return;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c}});if(!best)return;P.x=best.x;P.z=best.z;P.y=best.y;P.sitCushion=best;best.taken=true;P.yaw=Math.PI;cam.yaw=.5;cam.pitch=.5;cam.targetDist=4.6;P.mode='sit';player.userData.sit=1;mediStart=performance.now();$('#sitBar').style.display='none';$('#medi').style.display='none';if(sb.bowl<0)sb.bowl=1;sbShowBowl();sbRefresh(true)}
 function sbShowBowl(){if(sb.bowlMesh){scene.remove(sb.bowlMesh);sb.bowlMesh=null}if(sb.mallet){scene.remove(sb.mallet);sb.mallet=null}if(sb.bowl<0)return;const b=SB_BOWLS[sb.bowl];const g=sbBowlMesh(b.c,1.3);const an=P.sitCushion||{x:P.x,z:P.z};g.position.set(an.x,.0,an.z-1.3);scene.add(g);sb.bowlMesh=g;
  const m=new THREE.Group();const st=new THREE.Mesh(new THREE.CylinderGeometry(.016,.02,.3,8),new THREE.MeshStandardMaterial({color:0x6a4a2a,roughness:.8}));st.position.y=.15;m.add(st);const tip=new THREE.Mesh(new THREE.SphereGeometry(.04,12,10),new THREE.MeshStandardMaterial({color:0x8a2f3f,roughness:1}));m.add(tip);scene.add(m);sb.mallet=m;sb.strikeT=-1;sbMallet(0)}
 function sbMallet(k){if(!sb.mallet||!sb.bowlMesh)return;const h=k<0?0:Math.max(0,1-Math.abs(k-.35)/.35);const bp=sb.bowlMesh.position;sb.mallet.position.set(bp.x+.6-.265*h,.4-.14*h,bp.z+.02);sb.mallet.rotation.set(0,0,-1.0)}
@@ -2192,13 +2192,14 @@ function sbDrawMon(t,dt){const ctx=sbCx;const cyc=16,k=t/cyc,i=Math.floor(k)%3,j
  dr(sbImgs[i],1,f);dr(sbImgs[j],fade,0);ctx.globalAlpha=1;
  if(Math.random()<dt/4.5)sb.rip.push({x:512+(Math.random()-.5)*420,y:400+(Math.random()-.5)*70,t:0,s:.35});
  for(let q=sb.rip.length-1;q>=0;q--){const r=sb.rip[q];r.t+=dt;if(r.t<0)continue;if(r.t>7){sb.rip.splice(q,1);continue}const a=(1-r.t/7)*.55*r.s;for(let w=0;w<3;w++){const rr=Math.max(0,r.t*70-w*22);if(rr<=0)continue;ctx.strokeStyle='rgba(200,235,255,'+(a*(1-w*.25))+')';ctx.lineWidth=2.2-w*.5;ctx.beginPath();ctx.ellipse(r.x,r.y,rr,rr*.3,0,0,7);ctx.stroke()}}
- const g=ctx.createRadialGradient(512,288,200,512,288,620);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(2,4,10,.55)');ctx.fillStyle=g;ctx.fillRect(0,0,1024,576);sbTex.needsUpdate=true}
-function updateSB(dt,t){const inR=curArea==='싱잉볼룸';
- if(inR!==sb.in){sb.in=inR;document.body.classList.toggle('sbroom',inR);sbEl('sbRule').style.display=inR?'block':'none';if(inR){sbAmbStart();sbRefresh(true)}else{sbAmbStop();sbRubStop();sb.hudKey='';sbHudSet([]);sbEl('sbName').style.display='none';sbEl('mSB').classList.remove('on');if(sb.bowlMesh){scene.remove(sb.bowlMesh);sb.bowlMesh=null}if(sb.mallet){scene.remove(sb.mallet);sb.mallet=null}sbMatClear();if(player.userData.yoga)yogaStop(player.userData);sbCush.forEach(c=>c.taken=false)}}
+ ctx.drawImage(sbVig,0,0,1024,576);sbTex.needsUpdate=true}
+let sbWake=null;async function sbWakeOn(){try{if('wakeLock' in navigator&&!sbWake){sbWake=await navigator.wakeLock.request('screen');sbWake.addEventListener('release',()=>{sbWake=null})}}catch(e){}}function sbWakeOff(){try{if(sbWake){sbWake.release();sbWake=null}}catch(e){}}document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&curArea==='싱잉볼룸')sbWakeOn()});
+function updateSB(dt,t){if(!isFinite(cam.yaw)||!isFinite(cam.pitch)||!isFinite(cam.cd??0)||!isFinite(cam.targetDist)){cam.yaw=0;cam.pitch=.4;cam.targetDist=5;cam.cd=undefined}const inR=curArea==='싱잉볼룸';
+ if(inR!==sb.in){sb.in=inR;if(inR)sbWakeOn();else sbWakeOff();document.body.classList.toggle('sbroom',inR);sbEl('sbRule').style.display=inR?'block':'none';if(inR){sbAmbStart();sbRefresh(true)}else{sbAmbStop();sbRubStop();sb.hudKey='';sbHudSet([]);sbEl('sbName').style.display='none';sbEl('mSB').classList.remove('on');if(sb.bowlMesh){scene.remove(sb.bowlMesh);sb.bowlMesh=null}if(sb.mallet){scene.remove(sb.mallet);sb.mallet=null}sbMatClear();if(player.userData.yoga)yogaStop(player.userData);sbCush.forEach(c=>c.taken=false)}}
  if(inR)sbRefresh();
  const near=inR||Math.abs(P.x-SB.x)<30;if(!near)return;
  sb.flames.forEach(o=>{const s=1+Math.sin(t*9+o.ph)*.12+Math.sin(t*5.3+o.ph*2)*.08;o.f.scale.set(s*.9,1.8*s,s*.9)});sb.lights.forEach(o=>{o.L.intensity=o.b*(1+Math.sin(t*7+o.ph)*.07)});
- if(inR){sbMonT+=dt;sb.mon.acc+=dt;if(sb.mon.acc>.04){sbDrawMon(sbMonT,sb.mon.acc);sb.mon.acc=0}}
+ if(inR){sbMonT+=dt;sb.mon.acc+=dt;if(sb.mon.acc>.083){sbDrawMon(sbMonT,sb.mon.acc);sb.mon.acc=0}}
  sb.npcs.forEach(o=>{const u=o.n.userData;o.t+=dt;if(o.t>=(o.hold||8)){o.t=0;o.hold=7+Math.random()*3;o.i=(o.i+1)%o.seq.length;u.yoga=o.seq[o.i]}animDali(o.n,dt,false,1)});
  for(let q=sb.rings.length-1;q>=0;q--){const r=sb.rings[q];r.t+=dt;if(r.t<0)continue;if(r.t>4.5){if(r.m){scene.remove(r.m);r.m.geometry.dispose()}sb.rings.splice(q,1);continue}if(!r.m){r.m=new THREE.Mesh(new THREE.RingGeometry(.28,.31,48),new THREE.MeshBasicMaterial({color:0xcfe9ff,transparent:true,opacity:.4,depthWrite:false,blending:THREE.AdditiveBlending}));r.m.rotation.x=-Math.PI/2;r.m.position.set(r.x,.03,r.z);scene.add(r.m)}const k=r.t/4.5;r.m.scale.setScalar(1+k*8);r.m.material.opacity=(1-k)*.38}
  if(sb.strikeT>=0){sb.strikeT+=dt;const k=sb.strikeT/.7;sbMallet(k);if(k>=1){sb.strikeT=-1;sbMallet(-1)}}
@@ -2210,7 +2211,7 @@ function updateSB(dt,t){const inR=curArea==='싱잉볼룸';
 const POND={x:-8,z:5};
 window.__POND=POND;
 const pondG=new THREE.Group();pondG.position.set(POND.x,0,POND.z);scene.add(pondG);
-{const w=new THREE.Mesh(new THREE.CircleGeometry(3.05,56),new THREE.MeshPhysicalMaterial({color:0x0a2a36,roughness:.04,metalness:.1,clearcoat:1,clearcoatRoughness:.05,emissive:0x061c26,emissiveIntensity:.55,envMapIntensity:1.4,transparent:true,opacity:.94}));w.rotation.x=-Math.PI/2;w.position.y=.05;w.receiveShadow=true;pondG.add(w);
+{const w=new THREE.Mesh(new THREE.CircleGeometry(3.05,56),new THREE.MeshStandardMaterial({color:0x0a2a36,roughness:.06,metalness:.25,emissive:0x061c26,emissiveIntensity:.55,envMapIntensity:1.4,transparent:true,opacity:.94}));w.rotation.x=-Math.PI/2;w.position.y=.05;w.receiveShadow=true;pondG.add(w);
  const mud=new THREE.Mesh(new THREE.RingGeometry(2.9,3.7,56),new THREE.MeshStandardMaterial({color:0x3b2f24,roughness:1}));mud.rotation.x=-Math.PI/2;mud.position.y=.02;pondG.add(mud);}
 const pRipCv=document.createElement('canvas');pRipCv.width=pRipCv.height=256;const pRipX=pRipCv.getContext('2d');const pRipTex=new THREE.CanvasTexture(pRipCv);
 {const m=new THREE.Mesh(new THREE.CircleGeometry(3.0,48),new THREE.MeshBasicMaterial({map:pRipTex,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));m.rotation.x=-Math.PI/2;m.position.y=.058;pondG.add(m)}
@@ -2248,6 +2249,8 @@ function goPond(){if(P.mode==='sit')standUp();if(P.mode!=='walk'){status('지금
 function updatePond(dt,t){if(Math.abs(P.x-POND.x)>40||Math.abs(P.z-POND.z)>40)return;pondLanterns.forEach(o=>{if(o.launch>=0){o.launch+=dt;const k=Math.min(1,o.launch/3.4),e=1-Math.pow(1-k,3);o.r=2.85+(o.tr-2.85)*e;o.m.scale.setScalar(.2+.8*e);if(k>=1)o.launch=-1}else o.a+=o.sp*dt;o.m.position.set(Math.cos(o.a)*o.r,.06+Math.sin(t*1.1+o.ph)*.01,Math.sin(o.a)*o.r);o.m.rotation.y+=dt*.15});pondLeaves.forEach((l,i)=>{l.rotation.z+=dt*.02*(i%2?1:-1)});pondFlowers.forEach((f,i)=>{f.position.y=.06+Math.sin(t*.9+i)*.008});pondReeds.forEach((g,i)=>{g.rotation.z=Math.sin(t*.7+i)*.03;g.rotation.x=Math.cos(t*.6+i*1.3)*.025});pRipSpawn-=dt;if(pRipSpawn<=0){pRipSpawn=2.5+Math.random()*3;const a=Math.random()*6.28,d=Math.random()*2.3;pondRip(Math.cos(a)*d,Math.sin(a)*d,.5+Math.random()*.4)}pRipAcc+=dt;if(pRipAcc>.07){const dd=pRipAcc;pRipAcc=0;pRipX.clearRect(0,0,256,256);for(let q=pRips.length-1;q>=0;q--){const r=pRips[q];r.t+=dd;if(r.t>5.5){pRips.splice(q,1);continue}const a=(1-r.t/5.5)*.4*r.s;for(let w=0;w<3;w++){const rad=r.t*20-w*6;if(rad<=1)continue;pRipX.strokeStyle='rgba(200,230,245,'+(a*(1-w*.3)).toFixed(3)+')';pRipX.lineWidth=1.4-w*.3;pRipX.beginPath();pRipX.arc(r.x,r.y,rad,0,7);pRipX.stroke()}}pRipTex.needsUpdate=true}}
 
 
+/* 화면이 까맣게 멈추면(그래픽 컨텍스트 소실) 자동 복구 */
+{const cv=renderer.domElement;let lostT=0;cv.addEventListener('webglcontextlost',e=>{e.preventDefault();clearTimeout(lostT);lostT=setTimeout(()=>location.reload(),2500)});cv.addEventListener('webglcontextrestored',()=>{clearTimeout(lostT)})}
 /* ===== 30분마다 바뀌는 날씨 (모두 같은 시간대엔 같은 날씨) ===== */
 function wxSlot(){return Math.floor(Date.now()/1800000)}
 function wxFor(slot){let x=(slot*2654435761)>>>0;x^=x>>>15;x=Math.imul(x,2246822519)>>>0;x^=x>>>13;const r=x%100;return r<50?'clear':r<75?'rain':'snow'}
@@ -2608,7 +2611,7 @@ const TOUR_MSG={dine:['🍲 법당 다녀오셨네요. 식당에서 절밥 한 �
  bath:['♨️ 노천탕이랑 🥚 삶은 달걀 어때요?','노천탕 가기',run('노천탕 · 산을 보며 온천')],
  lantern:['🏮 연못에 작은 연등 하나 띄워볼까요?','연등체험 가기',()=>goPond()],
  tea:['🍵 여러 체험 즐기셨네요. 이제 스님과 차담 한 잔 어때요?','차담 가기',run('차담')]};
-document.head.insertAdjacentHTML('beforeend','<style>#tourCard{position:fixed;left:0;right:0;margin:0 auto;width:min(92vw,360px);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);display:none;flex-direction:column;gap:10px;padding:14px 16px;z-index:40;text-align:center;font-size:15px;line-height:1.5;color:#fff}#tourCard .r{display:flex;gap:8px;justify-content:center}#tourCard .btn{margin:0;width:auto;padding:10px 16px;font-size:14px}#tourCard .btn.ghost{background:rgba(22,24,34,.55);color:#fff}#menuTgl{position:fixed;top:66px;right:14px;z-index:30;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(18,16,28,.55);color:#fff;font-size:12.5px;backdrop-filter:blur(8px);cursor:pointer}body.barc #bar{display:none!important}body.barc #menuTgl{background:rgba(232,180,196,.85);color:#3a2730}</style>');
+document.head.insertAdjacentHTML('beforeend','<style>#tourCard{position:fixed;left:0;right:0;margin:0 auto;width:min(92vw,360px);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);display:none;flex-direction:column;gap:10px;padding:14px 16px;z-index:40;text-align:center;font-size:15px;line-height:1.5;color:#fff}#tourCard .r{display:flex;gap:8px;justify-content:center}#tourCard .btn{margin:0;width:auto;padding:10px 16px;font-size:14px}#tourCard .btn.ghost{background:rgba(22,24,34,.55);color:#fff}#menuTgl{position:fixed;top:66px;right:14px;z-index:30;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(18,16,28,.55);color:#fff;font-size:12.5px;backdrop-filter:blur(8px);cursor:pointer}body.barc #bar{display:none!important}#bar .brow{flex-wrap:nowrap}#bar button{width:min(48px,calc((100vw - 36px)/7))!important;min-width:0!important}body.barc #menuTgl{background:rgba(232,180,196,.85);color:#3a2730}</style>');
 document.body.insertAdjacentHTML('beforeend','<div id="tourCard" class="glass ui"><div id="tourTx"></div><div class="r"><button class="btn pink" id="tourGo"></button><button class="btn ghost" id="tourNo">다음에</button></div></div><button id="menuTgl" class="ui">☰ 메뉴</button>');
 {const tg=document.getElementById('menuTgl');const sync=()=>{tg.textContent=document.body.classList.contains('barc')?'☰ 메뉴 열기':'☰ 메뉴 접기'};try{if(localStorage.getItem('dalbit_barc')==='1')document.body.classList.add('barc')}catch(e){}sync();tg.onclick=e=>{e.stopPropagation();document.body.classList.toggle('barc');try{localStorage.setItem('dalbit_barc',document.body.classList.contains('barc')?'1':'0')}catch(err){}sync()}}
 let tourTimer=0;
