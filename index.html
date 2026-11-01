@@ -2050,7 +2050,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
    const lr=weather==='rain';leafFor(player).visible=lr&&!indoorP&&P.mode!=='sleep'&&P.mode!=='bow';npcs.forEach(s=>{if(s.sit)return;leafFor(s.n).visible=lr&&heightAt(s.x,s.z)<.2})}
   [player,...npcs.map(s=>s.n)].forEach(n=>{const c=n.userData.chorong;if(c&&c.visible){c.userData.hang.rotation.x=Math.sin(t*3+n.id)*.12*(n===player&&moving?1.6:.6);c.userData.hang.rotation.z=Math.cos(t*2.3+n.id)*.08}});
   if(started)updateContext();updateListener();
-  updateExtras(dt,t);updateBath(dt,t);updateEgg(dt,t);updateFortune(dt,t);updateTea(dt,t);updateCandles(dt,t);try{updateSB(dt,t)}catch(e){console.warn(e)}try{updatePond(dt,t)}catch(e){console.warn(e)}if(!window.__pauseRender)composer.render()}
+  updateExtras(dt,t);updateBath(dt,t);updateEgg(dt,t);updateFortune(dt,t);updateTea(dt,t);updateCandles(dt,t);try{updateSB(dt,t)}catch(e){console.warn(e)}try{updatePond(dt,t)}catch(e){console.warn(e)}try{updatePrints(dt,t)}catch(e){console.warn(e)}if(!window.__pauseRender)composer.render()}
 
 /* ================= 싱잉볼룸 (침묵의 방) ================= */
 const SB={x:400,z:0,W:14,D:14,H:5.2};
@@ -2293,6 +2293,26 @@ function sb2Close(){sb2.open=false;sbRubStop();sbAmbStop();sbWakeOff();window.__
 
 /* 화면이 까맣게 멈추면(그래픽 컨텍스트 소실) 자동 복구 */
 {const cv=renderer.domElement;let lostT=0;cv.addEventListener('webglcontextlost',e=>{e.preventDefault();clearTimeout(lostT);lostT=setTimeout(()=>location.reload(),2500)});cv.addEventListener('webglcontextrestored',()=>{clearTimeout(lostT)})}
+
+/* ===== 눈 위 발자국 (나, 백구, 반려견, 다른 방문객) ===== */
+const FP_N=260;
+const fpGeo=new THREE.CircleGeometry(.1,10);
+const fpMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
+const fpMesh=new THREE.InstancedMesh(fpGeo,fpMat,FP_N);fpMesh.frustumCulled=false;fpMesh.count=FP_N;scene.add(fpMesh);
+const fpDummy=new THREE.Object3D();fpDummy.rotation.order='YXZ';
+const fpT0=new Float32Array(FP_N).fill(-1e9);const fpCol=new THREE.Color();let fpI=0,fpAcc=0;
+{const z=new THREE.Matrix4().makeScale(0,0,0);for(let i=0;i<FP_N;i++){fpMesh.setMatrixAt(i,z);fpMesh.setColorAt(i,fpCol.setRGB(1,1,1))}fpMesh.instanceMatrix.needsUpdate=true;fpMesh.instanceColor.needsUpdate=true}
+function fpAdd(x,z,yaw,kind,side){const i=fpI;fpI=(fpI+1)%FP_N;const lat=kind==='foot'?.085:.05;const px=x+Math.cos(yaw)*lat*side,pz=z-Math.sin(yaw)*lat*side;fpDummy.position.set(px,Math.min(heightAt(px,pz),.8)+.05,pz);fpDummy.rotation.set(-Math.PI/2,yaw,0);if(kind==='foot')fpDummy.scale.set(.62,1.45,1);else fpDummy.scale.set(.5,.55,1);fpDummy.updateMatrix();fpMesh.setMatrixAt(i,fpDummy.matrix);fpT0[i]=performance.now()/1000;fpMesh.setColorAt(i,fpCol.setRGB(.56,.64,.76));fpMesh.instanceMatrix.needsUpdate=true;fpMesh.instanceColor.needsUpdate=true}
+const fpTrack=new Map();
+function fpWalker(key,x,z,kind,step,moving,indoors){let s=fpTrack.get(key);if(!s){s={x,z,d:0,side:1};fpTrack.set(key,s);return}const dx=x-s.x,dz=z-s.z,d=Math.hypot(dx,dz);if(d>3){s.x=x;s.z=z;s.d=0;return}if(d<.002)return;s.x=x;s.z=z;if(indoors||!moving)return;s.d+=d;if(s.d>=step){s.d=0;s.side=-s.side;fpAdd(x,z,Math.atan2(dx,dz),kind,s.side)}}
+function updatePrints(dt,t){const snowy=snowAcc>.3&&(weather==='snow'||snowAcc>.5);const out=!['달빛전','요사채','공양간','차담실','싱잉볼룸','식당'].includes(curArea);
+ if(snowy){const ok=out&&P.mode==='walk';fpWalker('me',P.x,P.z,'foot',.5,ok,!out);
+  if(typeof D!=='undefined'&&dog)fpWalker('dog',D.x,D.z,'paw',.34,true,!out&&false||(Math.hypot(D.x-P.x,D.z-P.z)>40));
+  if(myCompanion)fpWalker('pet',myCompanion.position.x,myCompanion.position.z,'paw',.3,true,!out);
+  remotes.forEach((r,id)=>{const ro=r.mode==='walk'&&r.x<300&&!['달빛전','요사채','공양간','차담실','식당'].includes(areaOf(r.x,r.z));fpWalker('r'+id,r.x,r.z,'foot',.5,ro,!ro)})}
+ fpAcc+=dt;if(fpAcc>.4){fpAcc=0;const now=performance.now()/1000;let ch=false;for(let i=0;i<FP_N;i++){const a=now-fpT0[i];if(a<0||a>90)continue;if(a>=89){fpDummy.scale.set(0,0,0);fpDummy.updateMatrix();fpMesh.setMatrixAt(i,fpDummy.matrix);continue}const k=Math.min(1,Math.max(0,(a-8)/80));fpMesh.setColorAt(i,fpCol.setRGB(.56+k*.4,.64+k*.33,.76+k*.22));ch=true}if(ch){fpMesh.instanceColor.needsUpdate=true;fpMesh.instanceMatrix.needsUpdate=true}}
+ if(!snowy&&snowAcc<.05){}}
+
 /* ===== 30분마다 바뀌는 날씨 (모두 같은 시간대엔 같은 날씨) ===== */
 function wxSlot(){return Math.floor(Date.now()/1800000)}
 function wxFor(slot){let x=(slot*2654435761)>>>0;x^=x>>>15;x=Math.imul(x,2246822519)>>>0;x^=x>>>13;const r=x%100;return r<50?'clear':r<75?'rain':'snow'}
