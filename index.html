@@ -2118,10 +2118,17 @@ function sbBowlMesh(col,sc=1){const g=new THREE.Group();const pr=[[0,0],[.1,0],[
 box(8,.45,.9,sbWood,0,.225,-SB.D/2+1,sbG);
 SB_BOWLS.forEach((b,i)=>{const m=sbBowlMesh(b.c,.8);m.position.set(-3.3+i*1.1,.45,-SB.D/2+1);sbG.add(m)});
 /* 초 */
-function sbCandle(x,z,y=0,h=.14){const c=new THREE.Mesh(new THREE.CylinderGeometry(.04,.045,h,10),new THREE.MeshStandardMaterial({color:0xf3e6c8,roughness:.7,emissive:0x331f08,emissiveIntensity:.4}));c.position.set(x,y+h/2,z);sbG.add(c);
- const f=new THREE.Mesh(new THREE.SphereGeometry(.028,8,6),new THREE.MeshBasicMaterial({color:0xffc566}));f.scale.set(1,1.8,1);f.position.set(x,y+h+.035,z);sbG.add(f);sb.flames.push({f,ph:Math.random()*6.3})}
+const sbGlassM=new THREE.MeshPhysicalMaterial({color:0xdff3ff,transparent:true,opacity:.22,roughness:.05,metalness:0,side:THREE.DoubleSide,depthWrite:false});const sbWaterM=new THREE.MeshStandardMaterial({color:0x7cc0de,transparent:true,opacity:.6,roughness:.15,emissive:0x16384a,emissiveIntensity:.5});
+function sbCandle(x,z,y=0,h=.14){const r=y>0?.15:.24,hh=r*.62;const g=new THREE.Group();g.position.set(x,y,z);sbG.add(g);
+ const pr=[[r*.55,0],[r*.85,.01*hh],[r,hh*.45],[r*1.04,hh],[r*1.0,hh*1.0+.004],[r*.96,hh*.96]].map(([a,b])=>new THREE.Vector2(a,b));const bowl=new THREE.Mesh(new THREE.LatheGeometry(pr,32),sbGlassM);bowl.renderOrder=2;g.add(bowl);
+ const w=new THREE.Mesh(new THREE.CylinderGeometry(r*.97,r*.9,hh*.62,32),sbWaterM);w.position.y=hh*.34;w.renderOrder=1;g.add(w);
+ const fl=new THREE.Group();fl.position.set((Math.random()-.5)*r*.3,hh*.65,(Math.random()-.5)*r*.3);g.add(fl);
+ const c=new THREE.Mesh(new THREE.CylinderGeometry(.035,.04,.07,10),new THREE.MeshStandardMaterial({color:0xf3e6c8,roughness:.7,emissive:0x331f08,emissiveIntensity:.4}));c.position.y=.035;fl.add(c);
+ const f=new THREE.Mesh(new THREE.SphereGeometry(.026,8,6),new THREE.MeshBasicMaterial({color:0xffc566}));f.scale.set(1,1.8,1);f.position.y=.1;fl.add(f);
+ if(r>.2){const c2=c.clone();c2.position.set(r*.45,.035,r*.2);const f2=f.clone();f2.position.set(r*.45,.1,r*.2);fl.add(c2,f2);sb.flames.push({f:f2,ph:Math.random()*6.3})}
+ sb.flames.push({f,ph:Math.random()*6.3})}
 for(let i=0;i<8;i++)sbCandle(-3.5+i*1,-SB.D/2+1.35,.45,i%2?.12:.2);
-for(let i=0;i<14;i++){const a=i/14*Math.PI*2;sbCandle(Math.cos(a)*3.9,1.3+Math.sin(a)*3.7,0,.1+(i%3)*.04)}
+for(let i=0;i<7;i++){const a=i/7*Math.PI*2+.3;sbCandle(Math.cos(a)*4.6,1.3+Math.sin(a)*4.4,0)}
 [[-6.3,-6],[6.3,-6],[-6.3,6],[6.3,6]].forEach(([x,z])=>{for(let k=0;k<4;k++)sbCandle(x+Math.cos(k*1.6)*.28,z+Math.sin(k*1.6)*.28,0,.1+k*.05)});
 [[-5.9,0],[5.9,0],[-3,-5.6],[3,-5.6]].forEach(([x,z])=>{sbCandle(x,z,0,.22)});
 [[-3,3.2,-3.5],[3,3.2,-3.5]].forEach(([x,y,z])=>{const L=new THREE.PointLight(0xffa84a,5,8,2);L.position.set(SB.x+x,.9,SB.z+z);scene.add(L);sb.lights.push({L,ph:Math.random()*6,b:5})});
