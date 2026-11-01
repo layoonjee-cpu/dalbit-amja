@@ -2205,7 +2205,7 @@ function sbDrawMon(t,dt){const ctx=sbCx;const cyc=16,k=t/cyc,i=Math.floor(k)%3,j
  for(let q=sb.rip.length-1;q>=0;q--){const r=sb.rip[q];r.t+=dt;if(r.t<0)continue;if(r.t>7){sb.rip.splice(q,1);continue}const a=(1-r.t/7)*.55*r.s;for(let w=0;w<3;w++){const rr=Math.max(0,r.t*70-w*22);if(rr<=0)continue;ctx.strokeStyle='rgba(200,235,255,'+(a*(1-w*.25))+')';ctx.lineWidth=2.2-w*.5;ctx.beginPath();ctx.ellipse(r.x,r.y,rr,rr*.3,0,0,7);ctx.stroke()}}
  ctx.drawImage(sbVig,0,0,1024,576);sbTex.needsUpdate=true}
 let sbWake=null;async function sbWakeOn(){try{if('wakeLock' in navigator&&!sbWake){sbWake=await navigator.wakeLock.request('screen');sbWake.addEventListener('release',()=>{sbWake=null})}}catch(e){}}function sbWakeOff(){try{if(sbWake){sbWake.release();sbWake=null}}catch(e){}}document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&curArea==='싱잉볼룸')sbWakeOn()});
-function updateSB(dt,t){if(!isFinite(cam.yaw)||!isFinite(cam.pitch)||!isFinite(cam.cd??0)||!isFinite(cam.targetDist)){cam.yaw=0;cam.pitch=.4;cam.targetDist=5;cam.cd=undefined}player.userData.matLift=sb.bed?.07:(sb.mat?.045:0);const inR=curArea==='싱잉볼룸';
+function updateSB(dt,t){{const u=player.userData;if(P.mode==='bath'||u.bathEye>0){sbEyes(u);u.bathEye=Math.max(0,Math.min(1,(u.bathEye||0)+(P.mode==='bath'?dt*2.5:-dt*3)));if(!u.yoga){u.eyes.forEach(e=>{e.scale.y=1.1*(1-.93*u.bathEye)});u.hl.forEach(h=>{h.visible=u.bathEye<.4})}if(P.mode==='bath')u.head.rotation.x=-.1}}if(!isFinite(cam.yaw)||!isFinite(cam.pitch)||!isFinite(cam.cd??0)||!isFinite(cam.targetDist)){cam.yaw=0;cam.pitch=.4;cam.targetDist=5;cam.cd=undefined}player.userData.matLift=sb.bed?.07:(sb.mat?.045:0);const inR=curArea==='싱잉볼룸';
  if(inR&&P.mode==='sit'&&P.sitCushion&&!player.userData.yoga){cam.yaw=0;cam.pitch=.36;cam.targetDist=4.2}
  if(inR&&!sb.roomT)sb.roomT=t;if(!inR)sb.roomT=0;if(inR&&sb.roomT&&t-sb.roomT>8){try{localStorage.removeItem('dalbit_roomtry')}catch(e){}}
  if(inR!==sb.in){sb.in=inR;if(!inR){try{localStorage.removeItem('dalbit_roomtry')}catch(e){}}if(inR)sbWakeOn();else sbWakeOff();document.body.classList.toggle('sbroom',inR);sbEl('sbRule').style.display=inR?'block':'none';if(inR){sbAmbStart();sbRefresh(true)}else{sbAmbStop();sbRubStop();sb.hudKey='';sbHudSet([]);sbEl('sbName').style.display='none';sbEl('mSB').classList.remove('on');if(sb.bowlMesh){scene.remove(sb.bowlMesh);sb.bowlMesh=null}if(sb.mallet){scene.remove(sb.mallet);sb.mallet=null}sbMatClear();sb.sleep=false;if(sb.bed){scene.remove(sb.bed);sb.bed=null}if(player.userData.yoga)yogaStop(player.userData);sbCush.forEach(c=>c.taken=false)}}
@@ -2533,8 +2533,7 @@ function updateBath(dt,t){
     if(player.userData.chorong)player.userData.chorong.visible=false;if(player.userData.leaf)player.userData.leaf.visible=false;
     // View from behind and above the bather, out toward the mountain panorama, not faces.
     const desired=s.desiredCamera;
-    desired.position.set(BATH.x+4.9+Math.sin(t*.075)*.025,BATH.waterLevel+2.05+Math.sin(t*.10)*.012,BATH.z+4.7);
-    desired.up.set(0,1,0);desired.lookAt(BATH.x-6,BATH.waterLevel+.9,BATH.z-5.5);
+    {const fx=Math.sin(BATH.yaw),fz=Math.cos(BATH.yaw);desired.position.set(BATH.seat.x+fx*4.5+Math.sin(t*.075)*.03,BATH.waterLevel+1.75+Math.sin(t*.10)*.015,BATH.seat.z+fz*4.5);desired.up.set(0,1,0);desired.lookAt(BATH.seat.x,BATH.waterLevel+.45,BATH.seat.z)}
     const k=Math.min(1,s.elapsed/1.25),ease=k*k*(3-2*k);
     camera.position.lerpVectors(s.cameraFrom,desired.position,ease);camera.quaternion.slerpQuaternions(s.cameraQuat,desired.quaternion,ease);camera.up.set(0,1,0);
   }
