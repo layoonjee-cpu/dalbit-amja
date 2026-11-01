@@ -2081,7 +2081,8 @@ const SB_DEF={p:0,roll:0,yaw:0,dy:0,dz:0,head:0,aL:[0,.12],aR:[0,.12],fL:[0,0,0]
 Object.keys(SB_POSES).forEach(k=>{SB_POSES[k]=Object.assign({},SB_DEF,SB_POSES[k])});
 SB_POSES.sleep=Object.assign({},SB_DEF,{n:'잠자기',s:'사바사나',i:'😴',p:-1.5,dy:.17,dz:.5,hide:1,aL:[0,.14],aR:[0,.14],head:.12,hidden:true});
 const SB_AUTO=['mountain','namaste','crescent','fold','halfFold','chair','warrior','triangle','tree','treeL','childs','cobra','twist','lotus','namaste'];
-function yogaApply(u,dt){const T=SB_POSES[u.yoga];if(!T)return;const C=u.yc||(u.yc=JSON.parse(JSON.stringify(Object.assign({},SB_DEF,{hide:0}))));
+function sbEyes(u){if(!u.eyes){u.eyes=u.head.children.filter(c=>c.isMesh&&Math.abs(c.position.z-.285)<.012&&Math.abs(c.position.x)>.1);u.hl=u.head.children.filter(c=>c.isMesh&&Math.abs(c.position.z-.318)<.012)}return u}
+function yogaApply(u,dt){const T=SB_POSES[u.yoga];if(!T)return;sbEyes(u);const ck=u.yoga==='sleep'?1:0;u.eyeK=(u.eyeK||0)+(ck-(u.eyeK||0))*Math.min(1,dt*4);u.eyes.forEach(e=>{e.scale.y=1.1*(1-.93*u.eyeK)});u.hl.forEach(h=>{h.visible=u.eyeK<.4});const C=u.yc||(u.yc=JSON.parse(JSON.stringify(Object.assign({},SB_DEF,{hide:0}))));
  const k=1-Math.exp(-dt*1.9);const L=(a,b)=>a+(b-a)*k;
  ['p','roll','yaw','dy','dz','head','hide'].forEach(q=>{C[q]=L(C[q],T[q])});
  ['aL','aR','fL','fR'].forEach(q=>{for(let i=0;i<C[q].length;i++)C[q][i]=L(C[q][i],T[q][i])});
@@ -2089,7 +2090,7 @@ function yogaApply(u,dt){const T=SB_POSES[u.yoga];if(!T)return;const C=u.yc||(u.
  u.arms.forEach((a,i)=>{const s=i?1:-1;const A=i?C.aR:C.aL;a.rotation.set(-A[0]-C.p,0,s*A[1])});
  u.feet.forEach((f,i)=>{const F=i?C.fR:C.fL;f.position.y=F[0]+(u.matLift||0);f.position.z=.06+F[1];f.rotation.x=F[2];f.visible=C.hide<.5});
  u.head.rotation.x=C.head}
-function yogaStop(u){u.yoga=null;u.yc=null;u.body.rotation.y=0;u.body.position.z=0;u.body.rotation.z=0}
+function yogaStop(u){sbEyes(u);u.eyes.forEach(e=>{e.scale.y=1.1});u.hl.forEach(h=>{h.visible=true});u.eyeK=0;u.yoga=null;u.yc=null;u.body.rotation.y=0;u.body.position.z=0;u.body.rotation.z=0}
 const YOGA_TALK=['우두둑… 아 힘들어','몸이 굳었나 왜 이래','우두둑 우두둑','으윽… 이게 되네','후… 조금만 더','아이고 허리야','이 정도면 선수지?','숨을 천천히… 후우'];
 function sbYogaTalk(who){setTimeout(()=>{try{say(who||player,YOGA_TALK[Math.random()*YOGA_TALK.length|0],3200)}catch(e){}},1400)}
 const sb={bed:null,sleep:false,sleepT:0,mat:null,in:false,bowl:-1,rub:null,prev:null,auto:false,autoI:0,autoT:0,rings:[],rip:[],flames:[],lights:[],npcs:[],mallet:null,bowlMesh:null,strikeT:-1,aud:{on:false,timer:0},mon:{t:0,acc:0},wasIn:false};
