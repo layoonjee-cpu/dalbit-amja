@@ -1578,9 +1578,9 @@ $('#mindSave').onclick=saveMind;$('#mindShare').onclick=async()=>{const b=await 
 const keys={};addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;keys[e.code]=true;if(e.code==='Space'&&bowState.active){bowOnce();e.preventDefault()}if(e.code==='Space'&&mokState.on){mokHit();e.preventDefault()}});addEventListener('keyup',e=>keys[e.code]=false);
 let drag=null;const joy={x:0,y:0,id:null};
 canvas.addEventListener('pointerdown',e=>{if(P.mode==='sit'){const v=new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(v,camera);const people=[...remotes.values(),...npcs];const h=ray.intersectObjects(people.map(s=>s.n),true)[0];if(h){let obj=h.object;while(obj&&!people.some(s=>s.n===obj))obj=obj.parent;const who=people.find(s=>s.n===obj);if(who){openChat(who);return}}standUp();return}drag={id:e.pointerId,x:e.clientX,y:e.clientY,moved:0,t:performance.now()};canvas.setPointerCapture(e.pointerId)});
-canvas.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved+=Math.abs(dx)+Math.abs(dy);cam.yaw-=dx*.005;cam.pitch=clamp(cam.pitch+dy*.003,.05,1.1);drag.x=e.clientX;drag.y=e.clientY});
+canvas.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved+=Math.abs(dx)+Math.abs(dy);if(curArea==='싱잉볼룸'&&P.mode==='sit'){drag.x=e.clientX;drag.y=e.clientY;return}cam.yaw-=dx*.005;cam.pitch=clamp(cam.pitch+dy*.003,.05,1.1);drag.x=e.clientX;drag.y=e.clientY});
 canvas.addEventListener('pointerup',e=>{if(drag&&drag.moved<8&&performance.now()-drag.t<400)tapMove(e);drag=null});
-canvas.addEventListener('wheel',e=>{cam.targetDist=clamp(cam.targetDist+e.deltaY*.005,2.5,14)},{passive:true});
+canvas.addEventListener('wheel',e=>{if(curArea==='싱잉볼룸'&&P.mode==='sit')return;cam.targetDist=clamp(cam.targetDist+e.deltaY*.005,2.5,14)},{passive:true});
 const ray=new THREE.Raycaster();let moveTarget=null;const groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 
 function showFoodIntro(f){
@@ -2073,23 +2073,26 @@ const SB_POSES={
  crescent:{n:'초승달 자세',s:'아르다 찬드라사나',i:'🌙',p:-.5,aL:[3.5,.25],aR:[3.5,.25],head:-.2},
  halfFold:{n:'반 전굴',s:'아르다 우타나사나',i:'📐',p:1.45,dy:.1,aL:[1.57,.05],aR:[1.57,.05],head:-.5},
  fold:{n:'서서 전굴',s:'우타나사나',i:'🍃',p:2.1,dy:.3,aL:[0,.05],aR:[0,.05],head:-.2},
- childs:{n:'아기 자세',s:'발라사나',i:'👶',p:1.4,dy:-.28,aL:[1.45,.1],aR:[1.45,.1],hide:1,head:-.3},
+ childs:{n:'아기 자세',s:'발라사나',i:'👶',p:1.4,dy:-.1,aL:[1.45,.1],aR:[1.45,.1],hide:1,head:-.3},
  cobra:{n:'코브라 자세',s:'부장가사나',i:'🐍',p:1.2,dy:0,aL:[0,.15],aR:[0,.15],head:-.45},
- twist:{n:'앉아 비틀기',s:'아르다 마첸드라사나',i:'🌀',dy:-.31,hide:1,yaw:.9,aL:[.9,-.1],aR:[.5,.9]},
- lotus:{n:'연화좌 명상',s:'파드마사나',i:'🪷',dy:-.31,hide:1,aL:[1.1,-.5],aR:[1.1,-.5],head:.05}};
+ twist:{n:'앉아 비틀기',s:'아르다 마첸드라사나',i:'🌀',dy:-.12,hide:1,yaw:.9,aL:[.9,-.1],aR:[.5,.9]},
+ lotus:{n:'연화좌 명상',s:'파드마사나',i:'🪷',dy:-.12,hide:1,aL:[1.1,-.5],aR:[1.1,-.5],head:.05}};
 const SB_DEF={p:0,roll:0,yaw:0,dy:0,dz:0,head:0,aL:[0,.12],aR:[0,.12],fL:[0,0,0],fR:[0,0,0],hide:0};
 Object.keys(SB_POSES).forEach(k=>{SB_POSES[k]=Object.assign({},SB_DEF,SB_POSES[k])});
+SB_POSES.sleep=Object.assign({},SB_DEF,{n:'잠자기',s:'사바사나',i:'😴',p:-1.5,dy:.17,dz:.5,hide:1,aL:[0,.14],aR:[0,.14],head:.12,hidden:true});
 const SB_AUTO=['mountain','namaste','crescent','fold','halfFold','chair','warrior','triangle','tree','treeL','childs','cobra','twist','lotus','namaste'];
 function yogaApply(u,dt){const T=SB_POSES[u.yoga];if(!T)return;const C=u.yc||(u.yc=JSON.parse(JSON.stringify(Object.assign({},SB_DEF,{hide:0}))));
  const k=1-Math.exp(-dt*1.9);const L=(a,b)=>a+(b-a)*k;
  ['p','roll','yaw','dy','dz','head','hide'].forEach(q=>{C[q]=L(C[q],T[q])});
  ['aL','aR','fL','fR'].forEach(q=>{for(let i=0;i<C[q].length;i++)C[q][i]=L(C[q][i],T[q][i])});
- u.body.rotation.set(C.p,C.yaw,C.roll);u.body.position.y+=C.dy;u.body.position.z=C.dz;
+ u.body.rotation.set(C.p,C.yaw,C.roll);u.body.position.y+=C.dy+(u.matLift||0);u.body.position.z=C.dz;
  u.arms.forEach((a,i)=>{const s=i?1:-1;const A=i?C.aR:C.aL;a.rotation.set(-A[0]-C.p,0,s*A[1])});
- u.feet.forEach((f,i)=>{const F=i?C.fR:C.fL;f.position.y=F[0];f.position.z=.06+F[1];f.rotation.x=F[2];f.visible=C.hide<.5});
+ u.feet.forEach((f,i)=>{const F=i?C.fR:C.fL;f.position.y=F[0]+(u.matLift||0);f.position.z=.06+F[1];f.rotation.x=F[2];f.visible=C.hide<.5});
  u.head.rotation.x=C.head}
 function yogaStop(u){u.yoga=null;u.yc=null;u.body.rotation.y=0;u.body.position.z=0;u.body.rotation.z=0}
-const sb={mat:null,in:false,bowl:-1,rub:null,prev:null,auto:false,autoI:0,autoT:0,rings:[],rip:[],flames:[],lights:[],npcs:[],mallet:null,bowlMesh:null,strikeT:-1,aud:{on:false,timer:0},mon:{t:0,acc:0},wasIn:false};
+const YOGA_TALK=['우두둑… 아 힘들어','몸이 굳었나 왜 이래','우두둑 우두둑','으윽… 이게 되네','후… 조금만 더','아이고 허리야','이 정도면 선수지?','숨을 천천히… 후우'];
+function sbYogaTalk(who){setTimeout(()=>{try{say(who||player,YOGA_TALK[Math.random()*YOGA_TALK.length|0],3200)}catch(e){}},1400)}
+const sb={bed:null,sleep:false,sleepT:0,mat:null,in:false,bowl:-1,rub:null,prev:null,auto:false,autoI:0,autoT:0,rings:[],rip:[],flames:[],lights:[],npcs:[],mallet:null,bowlMesh:null,strikeT:-1,aud:{on:false,timer:0},mon:{t:0,acc:0},wasIn:false};
 const sbG=new THREE.Group();sbG.position.set(SB.x,0,SB.z);scene.add(sbG);
 const sbWood=new THREE.MeshStandardMaterial({color:0x5a4130,roughness:.85});
 const sbWall=new THREE.MeshStandardMaterial({color:0x2c2733,roughness:.95});
@@ -2162,25 +2165,29 @@ function sbHudSet(btns){const w=sbEl('sbHud');w.innerHTML='';btns.forEach(([t,c,
 function sbRefresh(force){const room=curArea==='싱잉볼룸';const yoga=!!player.userData.yoga,seated=P.mode==='sit'&&!yoga;const key=[room,P.mode,seated,yoga,sb.auto,sb.bowl,!!sb.mat,yoga?player.userData.yoga:''].join('|');if(!force&&key===sb.hudKey)return;sb.hudKey=key;sb.barDirty=true;
  const ex=['🚪','나가기',sbExit];
  if(!room){sb.btns=[];return}
- if(yoga)sb.btns=[['🧘','자세',sbPosePick],[sb.auto?'⏸':'▶','자동요가',sbAutoToggle],['🟪',sb.mat?'매트치움':'매트',sbMatToggle],['✅','마치기',sbYogaEnd],ex];
+ if(yoga&&player.userData.yoga==='sleep')sb.btns=[['🔔','울려주기',sbSleepStrike],['🌅','일어나기',sbSleepEnd],ex];
+ else if(yoga)sb.btns=[['🧘','자세',sbPosePick],[sb.auto?'⏸':'▶','자동요가',sbAutoToggle],['🟪',sb.mat?'매트치움':'매트',sbMatToggle],['✅','마치기',sbYogaEnd],ex];
  else if(seated)sb.btns=[['🔔','싱잉볼',sbPick],...(sb.bowl>=0?[['🔔','치기',sbDoStrike],['🌀','울리기',{down:()=>sbRubStart(sb.bowl),up:sbRubStop}]]:[]),['🧎','일어나기',()=>{sbRubStop();standUp();sbRefresh(true)}],ex];
- else if(P.mode==='walk')sb.btns=[['🪷','방석',sbSit],['🧘','요가',sbYogaStart],ex];
+ else if(P.mode==='walk')sb.btns=[['🪷','방석',sbSit],['🧘','요가',sbYogaStart],['😴','잠자기',sbSleepStart],ex];
  else sb.btns=[ex];
  sbName()}
 function sbBarBuild(row1,row2,mk){sbRefresh();if(!sb.barDirty&&row1.childElementCount)return;sb.barDirty=false;row1.innerHTML='';row2.innerHTML='';row2.style.display='none';(sb.btns||[]).forEach(([ic,tx,fn])=>{const hold=typeof fn!=='function';const b=mk(ic,tx,hold?()=>{}:fn);if(hold){b.onclick=null;b.onpointerdown=e=>{e.preventDefault();fn.down()};const up=()=>fn.up();b.onpointerup=up;b.onpointerleave=up;b.onpointercancel=up;b.oncontextmenu=e=>e.preventDefault()}row1.appendChild(b)})}
-window.sbBarBuild=sbBarBuild;
+window.sbBarBuild=sbBarBuild;window.__sbDbg=()=>({btns:sb.btns&&sb.btns.map(b=>b[1]),key:sb.hudKey,dirty:sb.barDirty,mode:P.mode,yoga:player.userData.yoga,cush:!!P.sitCushion,area:curArea});
 function sbName(){const e=sbEl('sbName');let t='';if(player.userData.yoga)t=SB_POSES[player.userData.yoga].i+' '+SB_POSES[player.userData.yoga].n+' · '+SB_POSES[player.userData.yoga].s;else if(sb.bowl>=0&&P.mode==='sit')t='🔔 '+SB_BOWLS[sb.bowl].n;e.textContent=t;e.style.display=t?'block':'none'}
-function sbSit(){if(P.mode!=='walk')return;let best=null,bd=1e9;sbCush.forEach(c=>{if(c.taken)return;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c}});if(!best)return;P.x=best.x;P.z=best.z;P.y=best.y;P.sitCushion=best;best.taken=true;P.yaw=Math.PI;cam.yaw=.5;cam.pitch=.5;cam.targetDist=4.6;P.mode='sit';player.userData.sit=1;mediStart=performance.now();$('#sitBar').style.display='none';$('#medi').style.display='none';if(sb.bowl<0)sb.bowl=1;sbShowBowl();sbRefresh(true)}
-function sbShowBowl(){if(sb.bowlMesh){scene.remove(sb.bowlMesh);sb.bowlMesh=null}if(sb.mallet){scene.remove(sb.mallet);sb.mallet=null}if(sb.bowl<0)return;const b=SB_BOWLS[sb.bowl];const g=sbBowlMesh(b.c,1.3);const an=P.sitCushion||{x:P.x,z:P.z};g.position.set(an.x,.0,an.z-1.3);scene.add(g);sb.bowlMesh=g;
+function sbSit(){if(P.mode!=='walk')return;let best=null,bd=1e9;sbCush.forEach(c=>{if(c.taken)return;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c}});if(!best)return;P.x=best.x;P.z=best.z;P.y=best.y;P.sitCushion=best;best.taken=true;P.yaw=Math.PI;cam.yaw=0;cam.pitch=.68;cam.targetDist=4.4;P.mode='sit';player.userData.sit=1;mediStart=performance.now();$('#sitBar').style.display='none';$('#medi').style.display='none';if(sb.bowl<0)sb.bowl=1;sbShowBowl();sbRefresh(true)}
+function sbShowBowl(){if(sb.bowlMesh){scene.remove(sb.bowlMesh);sb.bowlMesh=null}if(sb.mallet){scene.remove(sb.mallet);sb.mallet=null}if(sb.bowl<0)return;const b=SB_BOWLS[sb.bowl];const g=sbBowlMesh(b.c,1.45);const an=P.sitCushion||{x:P.x,z:P.z};g.position.set(an.x,.0,an.z-1.9);scene.add(g);sb.bowlMesh=g;
  const m=new THREE.Group();const st=new THREE.Mesh(new THREE.CylinderGeometry(.016,.02,.3,8),new THREE.MeshStandardMaterial({color:0x6a4a2a,roughness:.8}));st.position.y=.15;m.add(st);const tip=new THREE.Mesh(new THREE.SphereGeometry(.04,12,10),new THREE.MeshStandardMaterial({color:0x8a2f3f,roughness:1}));m.add(tip);scene.add(m);sb.mallet=m;sb.strikeT=-1;sbMallet(0)}
 function sbMallet(k){if(!sb.mallet||!sb.bowlMesh)return;const h=k<0?0:Math.max(0,1-Math.abs(k-.35)/.35);const bp=sb.bowlMesh.position;sb.mallet.position.set(bp.x+.6-.265*h,.4-.14*h,bp.z+.02);sb.mallet.rotation.set(0,0,-1.0)}
 function sbPick(){if(P.mode!=='sit')return;sbEl('sbT').textContent='싱잉볼 고르기';const L=sbEl('sbL');L.innerHTML='';SB_BOWLS.forEach((b,i)=>{const bt=document.createElement('button');bt.className='btn ghost sbItem';bt.innerHTML='<i style="background:#'+b.c.toString(16).padStart(6,'0')+'"></i><span>'+b.n+'<small>'+b.d+'</small></span>';bt.onclick=()=>{sb.bowl=i;sbShowBowl();sbEl('mSB').classList.remove('on');sbRefresh()};L.appendChild(bt)});sbEl('mSB').classList.add('on')}
-function sbPosePick(){sbEl('sbT').textContent='요가 자세 고르기';const L=sbEl('sbL');L.innerHTML='';L.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0';Object.keys(SB_POSES).forEach(k=>{const P2=SB_POSES[k];const bt=document.createElement('button');bt.className='btn ghost sbItem';bt.innerHTML='<span style="font-size:20px">'+P2.i+'</span><span>'+P2.n+'<small>'+P2.s+'</small></span>';bt.onclick=()=>{sb.auto=false;player.userData.yoga=k;sbEl('mSB').classList.remove('on');sbRefresh()};L.appendChild(bt)});sbEl('mSB').classList.add('on')}
+function sbPosePick(){sbEl('sbT').textContent='요가 자세 고르기';const L=sbEl('sbL');L.innerHTML='';L.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0';Object.keys(SB_POSES).filter(k=>!SB_POSES[k].hidden).forEach(k=>{const P2=SB_POSES[k];const bt=document.createElement('button');bt.className='btn ghost sbItem';bt.innerHTML='<span style="font-size:20px">'+P2.i+'</span><span>'+P2.n+'<small>'+P2.s+'</small></span>';bt.onclick=()=>{sb.auto=false;player.userData.yoga=k;sbEl('mSB').classList.remove('on');sbRefresh();sbYogaTalk()};L.appendChild(bt)});sbEl('mSB').classList.add('on')}
 function sbYogaStart(){if(P.mode!=='walk')return;P.mode='sit';player.userData.sit=0;player.userData.yoga='mountain';cam.yaw=2.3;cam.pitch=.35;cam.targetDist=4.4;sb.auto=false;mediStart=performance.now();sbRefresh();setTimeout(sbPosePick,500)}
 function sbAutoToggle(){sb.auto=!sb.auto;sb.autoI=0;sb.autoT=0;if(sb.auto)player.userData.yoga=SB_AUTO[0];sbRefresh()}
 function sbMatToggle(){if(sb.mat){scene.remove(sb.mat);sb.mat=null}else{const m=new THREE.Mesh(new THREE.BoxGeometry(.85,.035,2.0),new THREE.MeshStandardMaterial({color:0x7a4f8f,roughness:.95}));m.position.set(P.x,.02,P.z);m.rotation.y=0;m.receiveShadow=true;scene.add(m);sb.mat=m}sb.hudKey='';sbRefresh(true)}
 function sbMatClear(){if(sb.mat){scene.remove(sb.mat);sb.mat=null}}
-function sbYogaEnd(){sbMatClear();sb.auto=false;yogaStop(player.userData);P.mode='walk';player.userData.sit=0;sbRefresh()}
+function sbSleepStart(){if(P.mode!=='walk')return;if(sb.bed){scene.remove(sb.bed);sb.bed=null}const b=new THREE.Mesh(new THREE.BoxGeometry(1.0,.06,2.3),new THREE.MeshStandardMaterial({color:0x8a7aa6,roughness:.95}));b.position.set(P.x,.03,P.z-.25);b.receiveShadow=true;scene.add(b);sb.bed=b;P.mode='sit';P.yaw=0;player.userData.sit=0;player.userData.yoga='sleep';cam.yaw=0;cam.pitch=.8;cam.targetDist=4.2;sb.auto=false;sb.sleep=true;sb.sleepT=3.5;mediStart=performance.now();sbRefresh(true);setTimeout(()=>{try{say(player,'스르르… 소리가 참 좋다 💤',3500)}catch(e){}},1500)}
+function sbSleepStrike(){const i=Math.random()*SB_BOWLS.length|0;const semi=[-5,-3,0,0,2,4,7,9][Math.random()*8|0];sbStrike(i,.05,semi);for(let k=0;k<3;k++)sb.rings.push({x:P.x,z:P.z,t:-k*.7,s:1});for(let k=0;k<2;k++)sb.rip.push({x:512+(Math.random()-.5)*160,y:400+(Math.random()-.5)*50,t:-k*.7,s:1})}
+function sbSleepEnd(){P.yaw=Math.PI;sb.sleep=false;if(sb.bed){scene.remove(sb.bed);sb.bed=null}yogaStop(player.userData);P.mode='walk';player.userData.sit=0;sbRefresh(true)}
+function sbYogaEnd(){if(sb.sleep)P.yaw=Math.PI;sb.sleep=false;if(sb.bed){scene.remove(sb.bed);sb.bed=null}sbMatClear();sb.auto=false;yogaStop(player.userData);P.mode='walk';player.userData.sit=0;sbRefresh()}
 function sbExit(){if(P.mode==='sit'&&P.sitCushion){sbRubStop();standUp()}if(player.userData.yoga)sbYogaEnd();const pv=sb.prev||{x:0,z:-6.5};teleport(pv.x,pv.z,Math.PI)}
 function openSB(){closeM('#mMore');if(P.mode==='sit')standUp();if(P.mode!=='walk'){status('지금 하던 쉼을 마친 뒤에 가주세요');return}if(curArea==='싱잉볼룸')return;
  info('🔔 싱잉볼룸 · 침묵의 방','<div style="line-height:1.7;font-size:14.5px"><b>싱잉볼이란?</b><br>금속 그릇을 부드럽게 치거나 문지르면 깊고 길게 이어지는 울림이 나는 악기예요. 히말라야와 티베트에서 오래전부터 명상과 기도에 써왔어요.<br><br><b>이런 점이 좋다고들 해요</b><br>🌿 소리를 따라가면 호흡이 저절로 느려져요<br>🌿 잡생각이 줄고 어깨와 턱의 힘이 풀려요<br>🌿 울림이 몸에 퍼지는 느낌이 긴장을 풀어줘요<br>🌿 잠들기 전 마음을 가라앉히기에 좋아요<br><small style="opacity:.7">(편안함을 돕는 쉼이에요. 치료를 대신하지는 않아요)</small><br><br>🤫 <b>이곳은 침묵의 방이에요.</b> 서로 대화(채팅)는 할 수 없고, 소리는 작게, 마음은 천천히 머물러 주세요.<br>🎧 이어폰을 끼고 소리를 켜면 더 좋아요.</div>',[['입장하기','pink',enterSB],['나중에 갈게요','ghost']])}
@@ -2194,17 +2201,19 @@ function sbDrawMon(t,dt){const ctx=sbCx;const cyc=16,k=t/cyc,i=Math.floor(k)%3,j
  for(let q=sb.rip.length-1;q>=0;q--){const r=sb.rip[q];r.t+=dt;if(r.t<0)continue;if(r.t>7){sb.rip.splice(q,1);continue}const a=(1-r.t/7)*.55*r.s;for(let w=0;w<3;w++){const rr=Math.max(0,r.t*70-w*22);if(rr<=0)continue;ctx.strokeStyle='rgba(200,235,255,'+(a*(1-w*.25))+')';ctx.lineWidth=2.2-w*.5;ctx.beginPath();ctx.ellipse(r.x,r.y,rr,rr*.3,0,0,7);ctx.stroke()}}
  ctx.drawImage(sbVig,0,0,1024,576);sbTex.needsUpdate=true}
 let sbWake=null;async function sbWakeOn(){try{if('wakeLock' in navigator&&!sbWake){sbWake=await navigator.wakeLock.request('screen');sbWake.addEventListener('release',()=>{sbWake=null})}}catch(e){}}function sbWakeOff(){try{if(sbWake){sbWake.release();sbWake=null}}catch(e){}}document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&curArea==='싱잉볼룸')sbWakeOn()});
-function updateSB(dt,t){if(!isFinite(cam.yaw)||!isFinite(cam.pitch)||!isFinite(cam.cd??0)||!isFinite(cam.targetDist)){cam.yaw=0;cam.pitch=.4;cam.targetDist=5;cam.cd=undefined}const inR=curArea==='싱잉볼룸';
- if(inR!==sb.in){sb.in=inR;if(inR)sbWakeOn();else sbWakeOff();document.body.classList.toggle('sbroom',inR);sbEl('sbRule').style.display=inR?'block':'none';if(inR){sbAmbStart();sbRefresh(true)}else{sbAmbStop();sbRubStop();sb.hudKey='';sbHudSet([]);sbEl('sbName').style.display='none';sbEl('mSB').classList.remove('on');if(sb.bowlMesh){scene.remove(sb.bowlMesh);sb.bowlMesh=null}if(sb.mallet){scene.remove(sb.mallet);sb.mallet=null}sbMatClear();if(player.userData.yoga)yogaStop(player.userData);sbCush.forEach(c=>c.taken=false)}}
+function updateSB(dt,t){if(!isFinite(cam.yaw)||!isFinite(cam.pitch)||!isFinite(cam.cd??0)||!isFinite(cam.targetDist)){cam.yaw=0;cam.pitch=.4;cam.targetDist=5;cam.cd=undefined}player.userData.matLift=sb.bed?.07:(sb.mat?.045:0);const inR=curArea==='싱잉볼룸';
+ if(inR&&P.mode==='sit'&&P.sitCushion&&!player.userData.yoga){cam.yaw=0;cam.pitch=.68;cam.targetDist=4.4}
+ if(inR!==sb.in){sb.in=inR;if(inR)sbWakeOn();else sbWakeOff();document.body.classList.toggle('sbroom',inR);sbEl('sbRule').style.display=inR?'block':'none';if(inR){sbAmbStart();sbRefresh(true)}else{sbAmbStop();sbRubStop();sb.hudKey='';sbHudSet([]);sbEl('sbName').style.display='none';sbEl('mSB').classList.remove('on');if(sb.bowlMesh){scene.remove(sb.bowlMesh);sb.bowlMesh=null}if(sb.mallet){scene.remove(sb.mallet);sb.mallet=null}sbMatClear();sb.sleep=false;if(sb.bed){scene.remove(sb.bed);sb.bed=null}if(player.userData.yoga)yogaStop(player.userData);sbCush.forEach(c=>c.taken=false)}}
  if(inR)sbRefresh();
  const near=inR||Math.abs(P.x-SB.x)<30;if(!near)return;
  sb.flames.forEach(o=>{const s=1+Math.sin(t*9+o.ph)*.12+Math.sin(t*5.3+o.ph*2)*.08;o.f.scale.set(s*.9,1.8*s,s*.9)});sb.lights.forEach(o=>{o.L.intensity=o.b*(1+Math.sin(t*7+o.ph)*.07)});
  if(inR){sbMonT+=dt;sb.mon.acc+=dt;if(sb.mon.acc>.083){sbDrawMon(sbMonT,sb.mon.acc);sb.mon.acc=0}}
- sb.npcs.forEach(o=>{const u=o.n.userData;o.t+=dt;if(o.t>=(o.hold||8)){o.t=0;o.hold=7+Math.random()*3;o.i=(o.i+1)%o.seq.length;u.yoga=o.seq[o.i]}animDali(o.n,dt,false,1)});
+ sb.npcs.forEach(o=>{const u=o.n.userData;o.t+=dt;if(o.t>=(o.hold||8)){o.t=0;o.hold=7+Math.random()*3;o.i=(o.i+1)%o.seq.length;u.yoga=o.seq[o.i];if(Math.random()<.3)sbYogaTalk(o.n)}animDali(o.n,dt,false,1)});
  for(let q=sb.rings.length-1;q>=0;q--){const r=sb.rings[q];r.t+=dt;if(r.t<0)continue;if(r.t>4.5){if(r.m){scene.remove(r.m);r.m.geometry.dispose()}sb.rings.splice(q,1);continue}if(!r.m){r.m=new THREE.Mesh(new THREE.RingGeometry(.28,.31,48),new THREE.MeshBasicMaterial({color:0xcfe9ff,transparent:true,opacity:.4,depthWrite:false,blending:THREE.AdditiveBlending}));r.m.rotation.x=-Math.PI/2;r.m.position.set(r.x,.03,r.z);scene.add(r.m)}const k=r.t/4.5;r.m.scale.setScalar(1+k*8);r.m.material.opacity=(1-k)*.38}
  if(sb.strikeT>=0){sb.strikeT+=dt;const k=sb.strikeT/.7;sbMallet(k);if(k>=1){sb.strikeT=-1;sbMallet(-1)}}
  if(player.userData.sbHit>0)player.userData.sbHit-=dt;
- if(sb.auto&&player.userData.yoga){sb.autoT+=dt;if(sb.autoT>7){sb.autoT=0;sb.autoI=(sb.autoI+1)%SB_AUTO.length;player.userData.yoga=SB_AUTO[sb.autoI];sbName()}}}
+ if(sb.sleep){sb.sleepT-=dt;if(sb.sleepT<=0){sb.sleepT=11+Math.random()*10;sbSleepStrike()}}
+ if(sb.auto&&player.userData.yoga){sb.autoT+=dt;if(sb.autoT>7){sb.autoT=0;sb.autoI=(sb.autoI+1)%SB_AUTO.length;player.userData.yoga=SB_AUTO[sb.autoI];sbName();sbYogaTalk()}}}
 
 
 /* ================= 연등 연못 (연등체험) ================= */
