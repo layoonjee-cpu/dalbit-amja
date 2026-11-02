@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /donate.html
+
+Sitemap: https://dalbit-amja.pages.dev/sitemap.xml
