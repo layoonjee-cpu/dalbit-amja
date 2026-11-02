@@ -1416,7 +1416,7 @@ function addRemote(p){if(!p||remotes.has(p.id)||p.id===myId)return;const n=makeD
 function removeRemote(id){const r=remotes.get(id);if(!r)return;scene.remove(r.n);if(r.pet)scene.remove(r.pet);r.lab.remove();remotes.delete(id);if(chatWith===r)addChatLine('sys','대화 상대가 암자를 떠났어요')}
 function updateLiveN(){const el=$('#people');if(el)el.textContent=roomName()+' · '+(myId?(serverPresence+'명'):liveState);$('#liveN').textContent='';}
 function liveSend(){if(!ws||ws.readyState!==1||!myId)return;const n=performance.now();const mode=P.mode;const moved=Math.hypot(P.x-lastSent.x,P.z-lastSent.z)>.08||Math.abs(P.yaw-lastSent.yaw)>.2||mode!==lastSent.mode;
-  if((moved&&n-lastSent.t>450)||n-lastSent.t>25000){ws.send(JSON.stringify({t:'pos',x:+P.x.toFixed(2),z:+P.z.toFixed(2),yaw:+P.yaw.toFixed(2),mode}));lastSent={x:P.x,z:P.z,yaw:P.yaw,mode,t:n}}}
+  if(document.hidden)return;if((moved&&n-lastSent.t>1100)||n-lastSent.t>30000){ws.send(JSON.stringify({t:'pos',x:+P.x.toFixed(2),z:+P.z.toFixed(2),yaw:+P.yaw.toFixed(2),mode}));lastSent={x:P.x,z:P.z,yaw:P.yaw,mode,t:n}}}
 function updateRemotes(dt){remotes.forEach(r=>{const dx=r.tx-r.x,dz=r.tz-r.z,d=Math.hypot(dx,dz);const mv=d>.05;if(d>6){r.x=r.tx;r.z=r.tz}else{r.x+=dx*Math.min(1,dt*3.5);r.z+=dz*Math.min(1,dt*3.5)}
   let dy=r.tyaw-r.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));r.yaw+=dy*Math.min(1,dt*6);const n=r.n,u=n.userData;u.sit=(r.mode==='sit'||r.mode==='eat')?1:0;u.lie=(r.mode==='sleep'||r.mode==='mat')?1:0;
   r.y+=(heightAtR(r.x,r.z)-r.y)*Math.min(1,dt*10);n.position.set(r.x,r.y+(u.lie?.3:0),r.z);n.rotation.y=u.lie?0:r.yaw;n.rotation.x=u.lie?-Math.PI/2:0;animDali(n,dt,mv&&!u.sit&&!u.lie,.62)})}
@@ -1568,7 +1568,7 @@ function jointLaunch(day){if(launchedDay===day)return;launchedDay=day;setTime('n
 function updateJoint(dt){jointMeshes.forEach((m,i)=>{if(m.userData.raise){m.position.y+=dt*(.28+i%7*.016);m.material.opacity=Math.max(0,m.material.opacity-dt*.018);if(m.material.opacity<=0){m.userData.raise=0;m.userData.done=true;m.visible=false}}});}
 $('#jointOpen').onclick=()=>{closeM('#mHealing');openM('#mJoint');if(sharedDay)applySharedStats(sharedDay)};
 $('#jointLight').onclick=()=>{if(!sharedDay?.window||sharedDay.launched)return;closeM('#mJoint');teleport(MOONSPOT.x+1.5,MOONSPOT.z-1,Math.atan2(moonDir.x,moonDir.z));setTimeout(()=>{setTime('night');releaseLantern('',true)},1000)};
-setInterval(()=>{if(ws?.readyState===1&&myId)ws.send(JSON.stringify({t:'state'}));else{$('#sharedStats').textContent=roomName()+' · 기록 연결 끊김';updateLiveN()}},30000);
+setInterval(()=>{if(document.hidden)return;if(ws?.readyState===1&&myId)ws.send(JSON.stringify({t:'state'}));else{$('#sharedStats').textContent=roomName()+' · 기록 연결 끊김';updateLiveN()}},90000);
 /* Capture only WebGL, no HTML nicknames or free-chat overlays */
 function paintMindCard(dataURL){const cv=$('#mindCv'),x=cv.getContext('2d');return new Promise((resolve,reject)=>{const im=new Image();im.onerror=reject;im.onload=()=>{x.fillStyle='#f6f0e3';x.fillRect(0,0,1080,1350);x.fillStyle='#263440';x.textAlign='center';x.font='bold 54px "Gowun Batang",serif';x.fillText('달빛암자 · 오늘의 마음',540,93);
  const h=900,w=1040,sc=Math.min(w/im.width,h/im.height);x.fillStyle='#0d1830';x.fillRect(20,145,w,h);x.drawImage(im,20+(w-im.width*sc)/2,145+(h-im.height*sc)/2,im.width*sc,im.height*sc);
