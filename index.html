@@ -1086,7 +1086,7 @@ let chorongOn=false;function setChorong(on){chorongOn=on;[player,...npcs.map(s=>
 
 /* ================= weather ================= */
 let weather='clear';
-const WX={clear:{ic:'🌤️',tx:'맑음'},rain:{ic:'🌧️',tx:'비'},snow:{ic:'❄️',tx:'함박눈'}};
+const WX={clear:{ic:'🌤️',tx:'맑음'},rain:{ic:'🌧️',tx:'비'},snow:{ic:'❄️',tx:'함박눈'},freeze:{ic:'🧊',tx:'영하 15도'}};
 // rain drops (instanced streaks) + ground ripples
 const RAIN_N=isTouch?1600:3400;
 function dropTex(){const c=document.createElement('canvas');c.width=8;c.height=128;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,128);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.65,'rgba(255,255,255,.45)');g.addColorStop(1,'rgba(255,255,255,1)');x.fillStyle=g;x.fillRect(0,0,8,128);return new THREE.CanvasTexture(c)}
@@ -1131,14 +1131,15 @@ const snowHill=(()=>{const g=new THREE.PlaneGeometry(700,700,120,120);g.rotateX(
   const m=new THREE.MeshStandardMaterial({color:0xeef1f6,roughness:.9,transparent:true,opacity:0,depthWrite:false,alphaMap:noiseAlpha(false)});m.alphaMap.wrapS=m.alphaMap.wrapT=THREE.RepeatWrapping;m.alphaMap.repeat.set(12,12);const mesh=new THREE.Mesh(g,m);mesh.receiveShadow=true;scene.add(mesh);return mesh})();
 const roofSnowMat=new THREE.MeshStandardMaterial({color:0xf2f4f8,roughness:.8,transparent:true,opacity:0,depthWrite:false,alphaMap:noiseAlpha(false)});roofSnowMat.alphaMap.wrapS=roofSnowMat.alphaMap.wrapT=THREE.RepeatWrapping;
 roofs.forEach(r=>{const top=r.grp.userData.mats[0];const m=new THREE.Mesh(top.geometry,roofSnowMat);m.position.y=.07;r.grp.add(m)});
-let snowAcc=0;
+let snowAcc=0,iceAcc=0,iceOn=false,ivx=0,ivz=0,ICE_SP=0;const iceMat=new THREE.MeshPhysicalMaterial({color:0xcfe6f5,roughness:.07,metalness:0,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:0,depthWrite:false,envMapIntensity:1.6,alphaMap:noiseAlpha(true)});const iceCourt=new THREE.Mesh(new THREE.CircleGeometry(COURT+5,96).rotateX(-Math.PI/2),iceMat);iceCourt.position.y=.046;iceCourt.receiveShadow=true;iceCourt.visible=false;scene.add(iceCourt);
 function setWeather(k){weather=k;$('#wIc').textContent=WX[k].ic;$('#wTx').textContent=WX[k].tx;rain.visible=k==='rain';snow.visible=k==='snow';setTime(timeKey);applyWeatherAudio()}
 function applyWeatherLight(){const s=TIMES[timeKey];
   if(weather==='rain'){sun.intensity=s.sunI*.25;hemi.intensity=s.hemiI*.85;scene.fog.color.lerp(new THREE.Color(0x6f7884),.6);scene.fog.density=s.fogD*2.2;
     if(sky.visible){sky.material.uniforms.turbidity.value=20;sky.material.uniforms.rayleigh.value=.4}
     [M.ground,M.granite,M.floor,M.stone].forEach(m=>{m.roughness=.45});panoMat.uniforms.tint.value.multiplyScalar(.6)}
   else{[M.ground,M.granite,M.floor,M.stone].forEach(m=>{m.roughness=1})}
-  if(weather==='snow'){sun.intensity=s.sunI*.55;hemi.intensity=s.hemiI*1.15;scene.fog.color.lerp(new THREE.Color(0xc9cfd8),s.night?.25:.6);scene.fog.density=s.fogD*1.9;panoMat.uniforms.tint.value.lerp(new THREE.Color(1,1,1.05),.4)}}
+  if(weather==='snow'){sun.intensity=s.sunI*.55;hemi.intensity=s.hemiI*1.15;scene.fog.color.lerp(new THREE.Color(0xc9cfd8),s.night?.25:.6);scene.fog.density=s.fogD*1.9;panoMat.uniforms.tint.value.lerp(new THREE.Color(1,1,1.05),.4)}
+  if(weather==='freeze'){sun.intensity=s.sunI*.95;hemi.intensity=s.hemiI*1.1;scene.fog.color.lerp(new THREE.Color(0xcfe3f2),s.night?.3:.55);scene.fog.density=s.fogD*1.5;panoMat.uniforms.tint.value.lerp(new THREE.Color(.92,1,1.1),.5);[M.ground,M.granite,M.floor,M.stone].forEach(m=>{m.roughness=.35})}}
 let rainNode=null,rainLoading=false;
 function xfLoop(ctx,buf,t0,t1,xf){const sr=buf.sampleRate;const s0=Math.floor(t0*sr),s1=Math.floor(Math.min(t1,buf.duration)*sr),X=Math.floor(xf*sr);const len=s1-s0-X;const out=ctx.createBuffer(buf.numberOfChannels,len,sr);
   for(let c=0;c<buf.numberOfChannels;c++){const src=buf.getChannelData(c),dst=out.getChannelData(c);for(let i=0;i<len;i++)dst[i]=src[s0+i];for(let i=0;i<X;i++){const a=i/X;dst[i]=src[s0+i]*Math.sqrt(a)+src[s0+len+i]*Math.sqrt(1-a)}}return out}
@@ -1159,9 +1160,9 @@ function updateWeather(dt,t){const cx=camera.position.x,cz=camera.position.z;con
   if(rain.visible){updateRain(dt,t);dropMat.opacity=inside?.16:.5;splMat.opacity=inside?0:.9}
   if(snow.visible){const p=snowGeo.attributes.position.array;for(let i=0;i<SNOW_N;i++){const k=i*3;p[k+1]-=dt*(.9+Math.sin(snowPh[i])*.3);p[k]+=Math.sin(t*.8+snowPh[i])*dt*.35;p[k+2]+=Math.cos(t*.6+snowPh[i])*dt*.25;
       if(p[k+1]<0||Math.abs(p[k]-cx)>30||Math.abs(p[k+2]-cz)>30){p[k+1]=rand(14,25);p[k]=cx+rand(-30,30);p[k+2]=cz+rand(-30,30)}}snowGeo.attributes.position.needsUpdate=true}
-  updateBigSnow(dt,t,cx,cz,snow.visible);snowAcc=clamp(snowAcc+(weather==='snow'?dt/9:-dt/14),0,1);const a=snowAcc;snowMat.opacity=a*.97;snowHill.material.opacity=a*.95;roofSnowMat.opacity=a*.95;
+  updateBigSnow(dt,t,cx,cz,snow.visible);{const tg=weather==='snow'?1:weather==='freeze'?.45:0;snowAcc=clamp(snowAcc+clamp(tg-snowAcc,-dt/14,dt/9),0,1)}iceAcc=clamp(iceAcc+(weather==='freeze'?dt/4:-dt/6),0,1);iceMat.opacity=iceAcc*.85;iceCourt.visible=iceAcc>.01;const a=snowAcc;snowMat.opacity=a*.97;snowHill.material.opacity=a*.95;roofSnowMat.opacity=a*.95;
   needleMat.color.setRGB(lerp(.72,.95,a),lerp(.78,.95,a),lerp(.63,.97,a))}
-$('#bWeather').onclick=()=>{const order=['clear','rain','snow'];const nk=order[(order.indexOf(weather)+1)%3];setWeather(nk);status({clear:'날이 개었어요 🌤️',rain:'산사에 비가 내려요. 커다란 호박잎을 머리에 썼어요 🍃',snow:'함박눈이 내려요. 천천히 쌓이는 눈을 밟아보세요'}[nk],3600)};
+$('#bWeather').onclick=()=>{const order=['clear','rain','snow','freeze'];const nk=order[(order.indexOf(weather)+1)%4];setWeather(nk);status({clear:'날이 개었어요 🌤️',rain:'산사에 비가 내려요. 커다란 호박잎을 머리에 썼어요 🍃',snow:'함박눈이 내려요. 천천히 쌓이는 눈을 밟아보세요',freeze:'영하 15도, 땅이 꽁꽁 얼었어요. 붉은 목도리에 비니를 썼어요. 스르르 미끄러지니 천천히 🧊'}[nk],4200)};
 
 
 /* ================= 목탁치기 ================= */
@@ -1304,6 +1305,17 @@ const leafGeo=(()=>{const g=new THREE.CircleGeometry(.62,48,0,Math.PI*2);const p
   g.rotateX(-Math.PI/2);for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);const r=Math.hypot(x,z);p.setY(i,-r*r*.55+Math.sin(x*9)*.012)}g.computeVertexNormals();return g})();
 function makeLeaf(){const g=new THREE.Group();const m=new THREE.Mesh(leafGeo,leafM);m.castShadow=true;g.add(m);const st=new THREE.Mesh(new THREE.CylinderGeometry(.018,.025,.32,6),new THREE.MeshStandardMaterial({color:0x6f8f3a,roughness:.7}));st.rotation.x=Math.PI/2.6;st.position.set(0,.06,-.62);g.add(st);g.position.set(0,.36,-.03);g.rotation.x=-.12;g.visible=false;return g}
 function leafFor(n){if(!n.userData.leaf){const l=makeLeaf();n.userData.head.add(l);n.userData.leaf=l}return n.userData.leaf}
+const SCARF_M=new THREE.MeshStandardMaterial({color:0xc2252e,roughness:.92}),BEANIE_M=(()=>{const c=document.createElement('canvas');c.width=128;c.height=64;const x=c.getContext('2d');x.fillStyle='#a1a4ab';x.fillRect(0,0,128,64);for(let i=0;i<128;i+=4){x.fillStyle='rgba(70,74,84,.32)';x.fillRect(i,0,1.6,64);x.fillStyle='rgba(255,255,255,.2)';x.fillRect(i+2,0,1.2,64)}for(let j=0;j<64;j+=6){x.fillStyle='rgba(60,64,74,.12)';x.fillRect(0,j,128,1)}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(5,3);return new THREE.MeshStandardMaterial({map:t,color:0xffffff,roughness:1,envMapIntensity:.1})})();
+function coldFor(n){if(n.userData.cold)return n.userData.cold;const body=n.userData.body,head=n.userData.head;if(!body||!head)return null;
+ const sg=new THREE.Group();[[.17,.54,.058],[.2,.47,.05]].forEach(([r,y,tb])=>{const t=new THREE.Mesh(new THREE.TorusGeometry(r,tb,10,28),SCARF_M);t.rotation.x=Math.PI/2;t.position.y=y;sg.add(t)});
+ [[.08,.3,.225,.1],[.16,.24,.215,-.12]].forEach(([x,y,z,rz],i)=>{const tl=new THREE.Mesh(new THREE.BoxGeometry(.085,i?.2:.3,.035),SCARF_M);tl.position.set(x,y,z);tl.rotation.z=rz;sg.add(tl)});body.add(sg);
+ const hg=new THREE.Group();const cap=new THREE.Mesh(new THREE.SphereGeometry(.352,44,30,0,Math.PI*2,0,1.45),BEANIE_M);cap.scale.set(1,1.3,.97);cap.position.y=.012;hg.add(cap);
+ const band=new THREE.Mesh(new THREE.CylinderGeometry(.362,.358,.15,44,1,true),BEANIE_M);band.position.y=.112;band.scale.set(1,1,.97);band.material=BEANIE_M;hg.add(band);
+ [.037,.187].forEach(y=>{const e=new THREE.Mesh(new THREE.TorusGeometry(.36,.02,8,44),BEANIE_M);e.rotation.x=Math.PI/2;e.position.y=y;e.scale.set(1,.97,1);hg.add(e)});
+ head.add(hg);
+ const cres=head.children.find(c=>c.material===M.gold);const c0=cres?cres.position.clone():null;n.userData.cold={sg,hg,cres,c0,on:false};sg.visible=hg.visible=false;return n.userData.cold}
+function coldSet(n,on){if(!on&&!n.userData.cold)return;const c=coldFor(n);if(!c||c.on===on)return;c.on=on;c.sg.visible=c.hg.visible=on;if(c.cres&&c.c0){if(on){c.cres.position.set(0,.115,.372);c.cres.rotation.set(0,0,-.9)}else{c.cres.position.copy(c.c0);c.cres.rotation.set(-.6,0,-.9)}}}
+function coldAll(){const on=weather==='freeze';coldSet(player,on);npcs.forEach(s=>coldSet(s.n,on));remotes.forEach(r=>coldSet(r.n,on))}
 
 /* 호흡 명상 · 싱잉볼 · 마음 한 줄 */
 let bowlSolo=null;function singingBowl(v=.07){let ctx=AU.ctx,dest=AU.bellBus;if(!ctx){if(!bowlSolo){try{bowlSolo=new (window.AudioContext||window.webkitAudioContext)()}catch(e){status('이 기기에서는 소리를 낼 수 없어요');return}}ctx=bowlSolo;dest=ctx.destination;v*=1.8}if(ctx.state!=='running')ctx.resume&&ctx.resume();const t=ctx.currentTime;const out=ctx.createGain();out.gain.value=v;out.connect(dest);
@@ -2007,11 +2019,12 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   if(ix||iz){const l=Math.min(1,Math.hypot(ix,iz));const nx=ix/(Math.hypot(ix,iz)||1),nz=iz/(Math.hypot(ix,iz)||1);mvx=(nx*cy+nz*sy)*l;mvz=(-nx*sy+nz*cy)*l}
   else if(autoDir&&P.mode==='walk'){mvx=autoDir.x;mvz=autoDir.z;lastAct=performance.now()}
   else if(moveTarget){const dx=moveTarget.x-P.x,dz=moveTarget.z-P.z,d=Math.hypot(dx,dz);if(d<.15)moveTarget=null;else{mvx=dx/d;mvz=dz/d}}
-  const speed=keys.ShiftLeft?2.4:1.3;const moving=(mvx||mvz)&&P.mode==='walk';
+  const speed=keys.ShiftLeft?2.4:1.3;let moving=(mvx||mvz)&&P.mode==='walk';iceOn=weather==='freeze'&&P.mode==='walk'&&!['달빛전','요사채','공양간','차담실','싱잉볼룸','식당'].includes(curArea)&&heightAt(P.x,P.z)<.2;
+  if(iceOn){const inp=(mvx||mvz);const k=Math.min(1,dt*(inp?1.1:.45));ivx+=(mvx*speed*1.25-ivx)*k;ivz+=(mvz*speed*1.25-ivz)*k;const sp=Math.hypot(ivx,ivz);if(sp>.1){mvx=ivx/sp;mvz=ivz/sp;ICE_SP=sp;moving=true}else if(inp){ICE_SP=.25;moving=true}else{ivx=ivz=0;ICE_SP=0;moving=false}}else{ivx=ivz=0}
   if(started&&P.mode==='walk'&&blocked(P.x,P.z)){unstick()}
-  if(moving){const nx=P.x+mvx*speed*dt,nz=P.z+mvz*speed*dt;const tryMove=(x,z)=>{if(blockedR(x,z))return false;{const dd=Math.hypot(x-D.x,z-D.z);if(dd<.5&&dd<Math.hypot(P.x-D.x,P.z-D.z))return false}{const hb=npcBlock(x,z);if(hb){bump(hb);return false}}const h=heightAtR(x,z);if(h-P.y>.38)return false;P.x=x;P.z=z;return true};
+  if(moving){const sp_=iceOn?ICE_SP:speed;const nx=P.x+mvx*sp_*dt,nz=P.z+mvz*sp_*dt;const tryMove=(x,z)=>{if(blockedR(x,z))return false;{const dd=Math.hypot(x-D.x,z-D.z);if(dd<.5&&dd<Math.hypot(P.x-D.x,P.z-D.z))return false}{const hb=npcBlock(x,z);if(hb){bump(hb);return false}}const h=heightAtR(x,z);if(h-P.y>.38)return false;P.x=x;P.z=z;return true};
     if(!tryMove(nx,nz)){if(!tryMove(nx,P.z))if(!tryMove(P.x,nz)){moveTarget=null;if(autoDir)stopAuto();stuckT+=dt;if(stuckT>1.2){stuckT=0;unstick()}}else stuckT=0}else stuckT=0
-    const ty=Math.atan2(mvx,mvz);let dyaw=ty-P.yaw;dyaw=Math.atan2(Math.sin(dyaw),Math.cos(dyaw));P.yaw+=dyaw*Math.min(1,dt*10);
+    const ty=Math.atan2(mvx,mvz);let dyaw=ty-P.yaw;dyaw=Math.atan2(Math.sin(dyaw),Math.cos(dyaw));P.yaw+=dyaw*Math.min(1,dt*(iceOn?3:10));
     }
   if(P.mode!=='bow'&&P.mode!=='sleep'&&P.mode!=='mat'){const th=P.sitRock?.66:heightAtR(P.x,P.z);P.y+=(th-P.y)*Math.min(1,dt*(th>P.y?14:10))}
   player.position.set(P.x,P.y,P.z);player.rotation.y=P.yaw;player.rotation.x=player.userData.lie?-Math.PI/2:0;updateEat(dt);
@@ -2064,7 +2077,7 @@ function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.
   updateWeather(dt,t);updateWisps(dt,t);updateMist(dt,t);updateBreath();updateIdle(dt);
   {const indoorP=heightAt(P.x,P.z)>.2||['달빛전','요사채','공양간','차담실','식당','싱잉볼룸'].includes(curArea);const pc=player.userData.chorong;if(pc)pc.visible=chorongOn&&!indoorP&&P.mode!=='bow'&&P.mode!=='mok'&&P.mode!=='sleep'&&P.mode!=='eat'&&P.mode!=='mat';
    npcs.forEach(s=>{const c=s.n.userData.chorong;if(c)c.visible=chorongOn&&heightAt(s.x,s.z)<.2})
-   const lr=weather==='rain';leafFor(player).visible=lr&&!indoorP&&P.mode!=='sleep'&&P.mode!=='bow';npcs.forEach(s=>{if(s.sit)return;leafFor(s.n).visible=lr&&heightAt(s.x,s.z)<.2})}
+   const lr=weather==='rain';leafFor(player).visible=lr&&!indoorP&&P.mode!=='sleep'&&P.mode!=='bow';npcs.forEach(s=>{if(s.sit)return;leafFor(s.n).visible=lr&&heightAt(s.x,s.z)<.2});coldAll()}
   [player,...npcs.map(s=>s.n)].forEach(n=>{const c=n.userData.chorong;if(c&&c.visible){c.userData.hang.rotation.x=Math.sin(t*3+n.id)*.12*(n===player&&moving?1.6:.6);c.userData.hang.rotation.z=Math.cos(t*2.3+n.id)*.08}});
   if(started)updateContext();updateListener();
   updateExtras(dt,t);updateBath(dt,t);updateEgg(dt,t);updateFortune(dt,t);updateTea(dt,t);updateCandles(dt,t);try{updateSB(dt,t)}catch(e){console.warn(e)}try{updatePond(dt,t)}catch(e){console.warn(e)}try{updatePrints(dt,t)}catch(e){console.warn(e)}try{updateMoonEvt(dt,t)}catch(e){console.warn(e)}if(!window.__pauseRender)composer.render()}
@@ -2316,20 +2329,20 @@ function sb2Close(){sb2.open=false;sbRubStop();sbAmbStop();sbWakeOff();window.__
 /* ===== 눈 위 발자국 (나, 백구, 반려견, 다른 방문객) ===== */
 const fpDummy=new THREE.Object3D();fpDummy.rotation.order='YXZ';const fpCol=new THREE.Color();
 function fpTex(kind){const c=document.createElement('canvas');const x=c.getContext('2d');x.fillStyle='#fff';
- if(kind==='shoe'){c.width=128;c.height=256;x.fillStyle='#fff';x.beginPath();x.ellipse(64,180,40,64,0,0,6.2832);x.ellipse(60,62,29,42,0,0,6.2832);x.rect(44,100,38,64);x.fill();x.globalCompositeOperation='destination-out';x.globalAlpha=.4;for(let y=150;y<236;y+=15)x.fillRect(34,y,60,4);for(let y=40;y<90;y+=15)x.fillRect(40,y,40,3)}
- else{c.width=128;c.height=160;x.fillStyle='#fff';const el=(cx,cy,rx,ry,rot)=>{x.beginPath();x.ellipse(cx,cy,rx,ry,rot||0,0,6.2832);x.fill()};el(64,56,27,22);el(26,102,11,16,-.4);el(50,130,11,16,-.12);el(78,130,11,16,.12);el(102,102,11,16,.4)}
+ if(kind==='shoe'){c.width=128;c.height=256;x.beginPath();x.ellipse(64,180,40,64,0,0,6.2832);x.ellipse(60,62,29,42,0,0,6.2832);x.rect(44,100,38,64);x.fill();x.globalCompositeOperation='destination-out';x.globalAlpha=.4;for(let y=150;y<236;y+=15)x.fillRect(34,y,60,4);for(let y=40;y<90;y+=15)x.fillRect(40,y,40,3)}
+ else{c.width=128;c.height=160;const el=(cx,cy,rx,ry,rot)=>{x.beginPath();x.ellipse(cx,cy,rx,ry,rot||0,0,6.2832);x.fill()};el(64,56,27,22);el(26,102,11,16,-.4);el(50,130,11,16,-.12);el(78,130,11,16,.12);el(102,102,11,16,.4)}
  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t}
-function mkFP(tex,N,gw,gh){const m=new THREE.InstancedMesh(new THREE.PlaneGeometry(gw,gh),new THREE.MeshBasicMaterial({map:tex,color:0xffffff,transparent:true,opacity:.85,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}),N);m.frustumCulled=false;m.renderOrder=20;scene.add(m);const z=new THREE.Matrix4().makeScale(0,0,0);for(let i=0;i<N;i++){m.setMatrixAt(i,z);m.setColorAt(i,fpCol.setRGB(1,1,1))}m.instanceMatrix.needsUpdate=true;m.instanceColor.needsUpdate=true;return {m,N,i:0,t0:new Float32Array(N).fill(-1e9)}}
+function mkFP(tex,N,gw,gh){const m=new THREE.InstancedMesh(new THREE.PlaneGeometry(gw,gh),new THREE.MeshBasicMaterial({map:tex,color:0xffffff,transparent:true,opacity:.85,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}),N);m.frustumCulled=false;scene.add(m);const z=new THREE.Matrix4().makeScale(0,0,0);for(let i=0;i<N;i++){m.setMatrixAt(i,z);m.setColorAt(i,fpCol.setRGB(1,1,1))}m.instanceMatrix.needsUpdate=true;m.instanceColor.needsUpdate=true;return {m,N,i:0,t0:new Float32Array(N).fill(-1e9)}}
 const FPS=mkFP(fpTex('shoe'),170,.24,.48),FPP=mkFP(fpTex('paw'),280,.16,.2);
-function fpAdd(x,z,yaw,kind,side){const L=kind==='foot'?FPS:FPP;const i=L.i;L.i=(L.i+1)%L.N;const lat=kind==='foot'?.1:.05;const px=x+Math.cos(yaw)*lat*side,pz=z-Math.sin(yaw)*lat*side;fpDummy.position.set(px,Math.min(heightAt(px,pz),.8)+.1,pz);fpDummy.rotation.set(-Math.PI/2,yaw,0);fpDummy.scale.set(kind==='foot'?side:1,1,1);fpDummy.updateMatrix();L.m.setMatrixAt(i,fpDummy.matrix);L.t0[i]=performance.now()/1000;L.m.setColorAt(i,fpCol.setRGB(.34,.43,.6));L.m.instanceMatrix.needsUpdate=true;L.m.instanceColor.needsUpdate=true}
+function fpAdd(x,z,yaw,kind,side){const L=kind==='foot'?FPS:FPP;const i=L.i;L.i=(L.i+1)%L.N;const lat=kind==='foot'?.1:.05;const px=x+Math.cos(yaw)*lat*side,pz=z-Math.sin(yaw)*lat*side;fpDummy.position.set(px,Math.min(heightAt(px,pz),.8)+.055,pz);fpDummy.rotation.set(-Math.PI/2,yaw,0);fpDummy.scale.set(kind==='foot'?side:1,1,1);fpDummy.updateMatrix();L.m.setMatrixAt(i,fpDummy.matrix);L.t0[i]=performance.now()/1000;L.m.setColorAt(i,fpCol.setRGB(.5,.58,.72));L.m.instanceMatrix.needsUpdate=true;L.m.instanceColor.needsUpdate=true}
 let fpAcc=0;const fpTrack=new Map();
 function fpWalker(key,x,z,kind,step,moving,indoors){let s=fpTrack.get(key);if(!s){s={x,z,d:0,side:1};fpTrack.set(key,s);return}const dx=x-s.x,dz=z-s.z,d=Math.hypot(dx,dz);if(d>3){s.x=x;s.z=z;s.d=0;return}if(d<.002)return;s.x=x;s.z=z;if(indoors||!moving)return;s.d+=d;if(s.d>=step){s.d=0;s.side=-s.side;fpAdd(x,z,Math.atan2(dx,dz),kind,s.side)}}
-function updatePrints(dt,t){const snowy=snowAcc>.3&&(weather==='snow'||snowAcc>.5);const out=!['달빛전','요사채','공양간','차담실','싱잉볼룸','식당'].includes(curArea);
+function updatePrints(dt,t){const snowy=weather!=='freeze'&&iceAcc<.2&&snowAcc>.3&&(weather==='snow'||snowAcc>.5);const out=!['달빛전','요사채','공양간','차담실','싱잉볼룸','식당'].includes(curArea);
  if(snowy){const ok=out&&P.mode==='walk';fpWalker('me',P.x,P.z,'foot',.5,ok,!out);
   if(typeof D!=='undefined'&&dog)fpWalker('dog',D.x,D.z,'paw',.34,true,!out&&false||(Math.hypot(D.x-P.x,D.z-P.z)>40));
   if(myCompanion)fpWalker('pet',myCompanion.position.x,myCompanion.position.z,'paw',.3,true,!out);
   remotes.forEach((r,id)=>{const ro=r.mode==='walk'&&r.x<300&&!['달빛전','요사채','공양간','차담실','식당'].includes(areaOf(r.x,r.z));fpWalker('r'+id,r.x,r.z,'foot',.5,ro,!ro)})}
- fpAcc+=dt;if(fpAcc>.4){fpAcc=0;const now=performance.now()/1000;[FPS,FPP].forEach(L=>{let ch=false;for(let i=0;i<L.N;i++){const a=now-L.t0[i];if(a<0||a>150)continue;if(a>=149){fpDummy.scale.set(0,0,0);fpDummy.updateMatrix();L.m.setMatrixAt(i,fpDummy.matrix);continue}const k=Math.min(1,Math.max(0,(a-10)/135));L.m.setColorAt(i,fpCol.setRGB(.34+k*.66,.43+k*.57,.6+k*.4));ch=true}if(ch){L.m.instanceColor.needsUpdate=true;L.m.instanceMatrix.needsUpdate=true}})}
+ fpAcc+=dt;if(fpAcc>.4){fpAcc=0;const now=performance.now()/1000;[FPS,FPP].forEach(L=>{let ch=false;for(let i=0;i<L.N;i++){const a=now-L.t0[i];if(a<0||a>150)continue;if(a>=149){fpDummy.scale.set(0,0,0);fpDummy.updateMatrix();L.m.setMatrixAt(i,fpDummy.matrix);continue}const k=Math.min(1,Math.max(0,(a-10)/135));L.m.setColorAt(i,fpCol.setRGB(.5+k*.5,.58+k*.42,.72+k*.28));ch=true}if(ch){L.m.instanceColor.needsUpdate=true;L.m.instanceMatrix.needsUpdate=true}})}
  if(!snowy&&snowAcc<.05){}}
 
 
@@ -2405,9 +2418,9 @@ function updateMoonEvt(dt,t){lcUpdate(t,evtOn()?1.25:.8);if(moonRit){const r=moo
 
 /* ===== 30분마다 바뀌는 날씨 (모두 같은 시간대엔 같은 날씨) ===== */
 function wxSlot(){return Math.floor(Date.now()/1800000)}
-function wxFor(slot){let x=(slot*2654435761)>>>0;x^=x>>>15;x=Math.imul(x,2246822519)>>>0;x^=x>>>13;const r=x%100;return r<50?'clear':r<75?'rain':'snow'}
+function wxFor(slot){let x=(slot*2654435761)>>>0;x^=x>>>15;x=Math.imul(x,2246822519)>>>0;x^=x>>>13;const r=x%100;const mo=new Date(slot*1800000+32400000).getUTCMonth();if(mo===11||mo<=1)return r<25?'clear':r<40?'rain':r<70?'snow':'freeze';return r<40?'clear':r<70?'rain':r<90?'snow':'freeze'}
 let wxLast=-1;
-function wxTick(first){const s=wxSlot();if(s===wxLast)return;const was=wxLast;wxLast=s;const k=evtOn()?'clear':wxFor(s);if(k!==weather){setWeather(k);if(!first)status({clear:'날이 개었어요 🌤️',rain:'산사에 비가 내려요 🌧️',snow:'함박눈이 내려요 ❄️'}[k],3800)}}
+function wxTick(first){const s=wxSlot();if(s===wxLast)return;const was=wxLast;wxLast=s;const k=evtOn()?'clear':wxFor(s);if(k!==weather){setWeather(k);if(!first)status({clear:'날이 개었어요 🌤️',rain:'산사에 비가 내려요 🌧️',snow:'함박눈이 내려요 ❄️',freeze:'영하 15도, 땅이 꽁꽁 얼었어요 🧊 스르르 미끄러워요'}[k],3800)}}
 {const iv=setInterval(()=>{if(!started)return;clearInterval(iv);wxTick(true);setTimeout(()=>{status('🌦️ 날씨는 30분마다 바뀌어요. 위쪽 날씨 버튼으로 원하는 날씨로 바꿀 수 있어요',5200);const b=$('#bWeather');b.classList.remove('blink');void b.offsetWidth;b.classList.add('blink');setTimeout(()=>b.classList.remove('blink'),4200)},11500);setInterval(()=>wxTick(false),15000)},500)}
 
 /* 달빛암자 · 산끝 노천탕
