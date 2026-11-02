@@ -1624,7 +1624,7 @@ function showFoodIntro(f){
   setTimeout(()=>n.classList.add('out'),6500);setTimeout(()=>n.remove(),7100);
 }
 function tapMove(e){const v0=new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(v0,camera);if(dineMeshes.length){const dh=ray.intersectObjects(dineMeshes,true)[0];if(dh){let o=dh.object;while(o.parent&&!o.userData.food)o=o.parent;if(o.userData.food){const f=o.userData.food;showFoodIntro(f);return}}}
-  if(P.mode==='bath'){const hit=ray.intersectObjects(bathNpcs.map(s=>s.n),true)[0];if(hit){let o=hit.object;while(o.parent&&!bathNpcs.some(s=>s.n===o))o=o.parent;const w=bathNpcs.find(s=>s.n===o);if(w)openChat(w)}return}
+  if(P.mode==='bath'){const bl=[...bathNpcs.filter(s=>s.n.visible),...[...remotes.values()].filter(q=>q.mode==='bath')];const hit=ray.intersectObjects(bl.map(s=>s.n),true)[0];if(hit){let o=hit.object;while(o.parent&&!bl.some(s=>s.n===o))o=o.parent;const w=bl.find(s=>s.n===o);if(w)openChat(w)}return}
   if(P.mode!=='walk')return;const v=new THREE.Vector2(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(v,camera);
   {const f=ray.intersectObjects(scene.children.filter(o=>o.userData?.fortuneCorner),true)[0];if(f){openFortune();return}}
   {const f=ray.intersectObjects(scene.children.filter(o=>o.userData?.candleShelf),true)[0];if(f){askCandle();return}}
@@ -2628,9 +2628,10 @@ function updateBath(dt,t){
   // Correct remote bath roots after the parent updateRemotes() floor-height calculation.
   if(typeof remotes!=='undefined')remotes.forEach(r=>{
     const active=r.mode==='bath';bathTowel(r.n,active);
-    if(active){r.y=BATH.waterLevel-.58;r.n.position.y=r.y;r.n.rotation.x=0;r.n.userData.sit=0;r.n.userData.lie=0;
+    if(active){const bl=[...remotes.values()].filter(q=>q.mode==='bath').sort((a,b2)=>String(a.id).localeCompare(String(b2.id)));const bi=Math.max(0,bl.indexOf(r));const sl=bathNpcs[bi%bathNpcs.length];if(sl){r.n.position.x=sl.x;r.n.position.z=sl.z;r.n.rotation.y=Math.atan2(BATH.seat.x-sl.x,BATH.seat.z-sl.z)}r.y=BATH.waterLevel-.58;r.n.position.y=r.y;r.n.rotation.x=0;r.n.userData.sit=0;r.n.userData.lie=0;
       if(r.n.userData.chorong)r.n.userData.chorong.visible=false;if(r.n.userData.leaf)r.n.userData.leaf.visible=false}
   });
+  {const nb=[...remotes.values()].filter(q=>q.mode==='bath').length;bathNpcs.forEach((q,i)=>{q.n.visible=i>=nb})}
   if(!bathCurrent())return;
   if(s.phase!=='entering'){
     // Ground-height smoothing in parent tick must not make the bath visitor float up.
@@ -2640,7 +2641,7 @@ function updateBath(dt,t){
     if(player.userData.chorong)player.userData.chorong.visible=false;if(player.userData.leaf)player.userData.leaf.visible=false;
     // View from behind and above the bather, out toward the mountain panorama, not faces.
     const desired=s.desiredCamera;
-    {const fx=Math.sin(BATH.yaw),fz=Math.cos(BATH.yaw);desired.position.set(BATH.seat.x+fx*4.5+Math.sin(t*.075)*.03,BATH.waterLevel+1.75+Math.sin(t*.10)*.015,BATH.seat.z+fz*4.5);desired.up.set(0,1,0);desired.lookAt(BATH.seat.x,BATH.waterLevel+.45,BATH.seat.z)}
+    {const fx=Math.sin(BATH.yaw),fz=Math.cos(BATH.yaw);const asp=innerWidth/innerHeight;const vt=Math.tan(camera.fov*Math.PI/360);const need=4.4/(vt*Math.min(asp,1.15));const d=Math.max(6.4,Math.min(13,need));const pit=.52;const tx=(BATH.seat.x*2+BATH.x)/3,tz=(BATH.seat.z*2+BATH.z)/3;desired.position.set(tx+fx*d*Math.cos(pit)+Math.sin(t*.075)*.03,BATH.waterLevel+.3+d*Math.sin(pit)+Math.sin(t*.10)*.015,tz+fz*d*Math.cos(pit));desired.up.set(0,1,0);desired.lookAt(tx,BATH.waterLevel+.15,tz)}
     const k=Math.min(1,s.elapsed/1.25),ease=k*k*(3-2*k);
     camera.position.lerpVectors(s.cameraFrom,desired.position,ease);camera.quaternion.slerpQuaternions(s.cameraQuat,desired.quaternion,ease);camera.up.set(0,1,0);
   }
@@ -2771,12 +2772,12 @@ addMoreButton('Language · 언어',()=>info('Language','',['ko','en','ja','zh','
  let inHall=null;function layout(){if(curArea==='싱잉볼룸'){inHall='room';if(window.sbBarBuild)window.sbBarBuild(row1,row2,mkBtn);return}const h=curArea==='달빛전';if(h===inHall)return;inHall=h;row1.innerHTML='';row2.innerHTML='';if(h){[B.greet,B.bow,B.sit,B.yard,B.more].forEach(b=>row1.appendChild(b));row2.style.display='none'}else{[B.sit,B.lantern,B.dine,B.tea,B.bath,B.mat,B.sb].forEach(b=>row1.appendChild(b));[B.draw,B.rice,B.tile,B.stone,B.yard,B.more].forEach(b=>row2.appendChild(b));row2.style.display='flex'}}
  [B.greet,B.bow].forEach(b=>b.remove());layout();setInterval(layout,300);
 /* ===== 체험 투어 제안 + 메뉴 토글 ===== */
-const TOUR_ORDER=['dine','bowl','bath','lantern','tea'];
+const TOUR_ORDER=['bowl','bath','dine','lantern','tea'];
 const tourS=(()=>{try{return JSON.parse(sessionStorage.getItem('dalbit_tour')||'{}')}catch(e){return{}}})();
 const tourSave=()=>{try{sessionStorage.setItem('dalbit_tour',JSON.stringify(tourS))}catch(e){}};
 const TOUR_MSG={dine:['🍲 법당 다녀오셨네요. 식당에서 절밥 한 끼 어때요?','식당 가기',()=>goDine()],
- bowl:['🔔 싱잉볼 체험이 요즘 핫해요. 같이 가볼까요?','싱잉볼룸 가기',()=>openSB()],
- bath:['♨️ 노천탕이랑 🥚 삶은 달걀 어때요?','노천탕 가기',run('노천탕 · 산을 보며 온천')],
+ bowl:['🔔 우리 절에서 가장 핫한 싱잉볼룸 안가볼래요?','싱잉볼룸 가기',()=>openSB()],
+ bath:['♨️ 노천탕도 인기 많아요. 따뜻한 물에 몸 담그고 🥚 삶은 달걀 어때요?','노천탕 가기',run('노천탕 · 산을 보며 온천')],
  lantern:['🏮 연못에 작은 연등 하나 띄워볼까요?','연등체험 가기',()=>goPond()],
  tea:['🍵 여러 체험 즐기셨네요. 이제 스님과 차담 한 잔 어때요?','차담 가기',run('차담')]};
 document.head.insertAdjacentHTML('beforeend','<style>#tourCard{position:fixed;left:0;right:0;margin:0 auto;width:min(92vw,360px);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);display:none;flex-direction:column;gap:10px;padding:14px 16px;z-index:40;text-align:center;font-size:15px;line-height:1.5;color:#fff}#tourCard .r{display:flex;gap:8px;justify-content:center}#tourCard .btn{margin:0;width:auto;padding:10px 16px;font-size:14px}#tourCard .btn.ghost{background:rgba(22,24,34,.55);color:#fff}#menuTgl{position:fixed;top:66px;right:14px;z-index:30;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(18,16,28,.55);color:#fff;font-size:12.5px;backdrop-filter:blur(8px);cursor:pointer}body.barc #bar{display:none!important}#bar .brow{flex-wrap:nowrap}#bar button{width:min(48px,calc((100vw - 36px)/7))!important;min-width:0!important}body.barc #menuTgl{background:rgba(232,180,196,.85);color:#3a2730}</style>');
