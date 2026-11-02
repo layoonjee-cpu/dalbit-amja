@@ -1115,10 +1115,15 @@ function flakeTex(){const c=document.createElement('canvas');c.width=c.height=64
 const SNOW_N=isTouch?2200:4000;const snowGeo=new THREE.BufferGeometry();const snowPos=new Float32Array(SNOW_N*3);const snowPh=new Float32Array(SNOW_N);
 for(let i=0;i<SNOW_N;i++){snowPos.set([rand(-30,30),rand(0,25),rand(-30,30)],i*3);snowPh[i]=rand(0,6.28)}
 snowGeo.setAttribute('position',new THREE.BufferAttribute(snowPos,3));
-const snow=new THREE.Points(snowGeo,new THREE.PointsMaterial({map:flakeTex(),size:.16,transparent:true,depthWrite:false,opacity:.95,color:0xffffff}));snow.visible=false;snow.frustumCulled=false;scene.add(snow);
+const snow=new THREE.Points(snowGeo,new THREE.PointsMaterial({map:flakeTex(),size:.16,transparent:true,depthWrite:false,opacity:.95,color:0xffffff}));snow.visible=false;snow.frustumCulled=false;scene.add(snow);snow.material.size=.2;
+function bigFlakeTex(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');const blobs=[[64,64,34],[44,58,22],[84,60,24],[58,86,22],[78,84,20],[50,40,18],[76,40,16]];blobs.forEach(([bx,by,r])=>{const g=x.createRadialGradient(bx,by,0,bx,by,r);g.addColorStop(0,'rgba(255,255,255,.95)');g.addColorStop(.55,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.beginPath();x.arc(bx,by,r,0,6.2832);x.fill()});return new THREE.CanvasTexture(c)}
+const bigTex=bigFlakeTex();
+function mkBig(n,size,spd,spread,hmax){const g=new THREE.BufferGeometry();const p=new Float32Array(n*3),ph=new Float32Array(n);for(let i=0;i<n;i++){p.set([rand(-spread,spread),rand(0,hmax),rand(-spread,spread)],i*3);ph[i]=rand(0,6.28)}g.setAttribute('position',new THREE.BufferAttribute(p,3));const m=new THREE.Points(g,new THREE.PointsMaterial({map:bigTex,size,transparent:true,depthWrite:false,opacity:.92,color:0xffffff}));m.visible=false;m.frustumCulled=false;scene.add(m);return {m,p,ph,n,spd,spread,hmax,g}}
+const BIGS=[mkBig(isTouch?130:260,.55,.55,18,13),mkBig(isTouch?26:55,1.05,.42,10,9)];
+function updateBigSnow(dt,t,cx,cz,on){BIGS.forEach(L=>{L.m.visible=on;if(!on)return;const p=L.p;for(let i=0;i<L.n;i++){const k=i*3;p[k+1]-=dt*(L.spd+Math.sin(L.ph[i])*.15);p[k]+=Math.sin(t*.5+L.ph[i])*dt*.5;p[k+2]+=Math.cos(t*.4+L.ph[i]*1.3)*dt*.35;if(p[k+1]<0||Math.abs(p[k]-cx)>L.spread||Math.abs(p[k+2]-cz)>L.spread){p[k+1]=L.hmax+rand(0,3);p[k]=cx+rand(-L.spread,L.spread);p[k+2]=cz+rand(-L.spread,L.spread)}}L.g.attributes.position.needsUpdate=true})}
 // accumulated snow layers
 function noiseAlpha(rad){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');const img=x.createImageData(512,512);
-  for(let j=0;j<512;j++)for(let i=0;i<512;i++){const n=fbm(i*.035,j*.035);let v=clamp((n-.25)*2.2,0,1);if(rad){const r=Math.hypot(i-256,j-256)/256;v*=clamp((1-r)*5,0,1)}const k=(j*512+i)*4;img.data[k]=img.data[k+1]=img.data[k+2]=v*255;img.data[k+3]=255}
+  for(let j=0;j<512;j++)for(let i=0;i<512;i++){const n=fbm(i*.035,j*.035);let v=rad?clamp((n+.12)*3,0,1):clamp((n-.25)*2.2,0,1);if(rad){const r=Math.hypot(i-256,j-256)/256;v*=clamp((1-r)*5,0,1)}const k=(j*512+i)*4;img.data[k]=img.data[k+1]=img.data[k+2]=v*255;img.data[k+3]=255}
   x.putImageData(img,0,0);return new THREE.CanvasTexture(c)}
 const snowMat=new THREE.MeshStandardMaterial({color:0xf4f6fa,roughness:.85,transparent:true,opacity:0,depthWrite:false,alphaMap:noiseAlpha(true),envMapIntensity:.5});
 const snowCourt=new THREE.Mesh(new THREE.CircleGeometry(COURT+5,96).rotateX(-Math.PI/2),snowMat);snowCourt.position.y=.04;snowCourt.receiveShadow=true;scene.add(snowCourt);
@@ -1154,7 +1159,7 @@ function updateWeather(dt,t){const cx=camera.position.x,cz=camera.position.z;con
   if(rain.visible){updateRain(dt,t);dropMat.opacity=inside?.16:.5;splMat.opacity=inside?0:.9}
   if(snow.visible){const p=snowGeo.attributes.position.array;for(let i=0;i<SNOW_N;i++){const k=i*3;p[k+1]-=dt*(.9+Math.sin(snowPh[i])*.3);p[k]+=Math.sin(t*.8+snowPh[i])*dt*.35;p[k+2]+=Math.cos(t*.6+snowPh[i])*dt*.25;
       if(p[k+1]<0||Math.abs(p[k]-cx)>30||Math.abs(p[k+2]-cz)>30){p[k+1]=rand(14,25);p[k]=cx+rand(-30,30);p[k+2]=cz+rand(-30,30)}}snowGeo.attributes.position.needsUpdate=true}
-  snowAcc=clamp(snowAcc+(weather==='snow'?dt/25:-dt/12),0,1);const a=snowAcc;snowMat.opacity=a*.97;snowHill.material.opacity=a*.95;roofSnowMat.opacity=a*.95;
+  updateBigSnow(dt,t,cx,cz,snow.visible);snowAcc=clamp(snowAcc+(weather==='snow'?dt/9:-dt/14),0,1);const a=snowAcc;snowMat.opacity=a*.97;snowHill.material.opacity=a*.95;roofSnowMat.opacity=a*.95;
   needleMat.color.setRGB(lerp(.72,.95,a),lerp(.78,.95,a),lerp(.63,.97,a))}
 $('#bWeather').onclick=()=>{const order=['clear','rain','snow'];const nk=order[(order.indexOf(weather)+1)%3];setWeather(nk);status({clear:'날이 개었어요 🌤️',rain:'산사에 비가 내려요. 커다란 호박잎을 머리에 썼어요 🍃',snow:'함박눈이 내려요. 천천히 쌓이는 눈을 밟아보세요'}[nk],3600)};
 
@@ -2309,22 +2314,22 @@ function sb2Close(){sb2.open=false;sbRubStop();sbAmbStop();sbWakeOff();window.__
 {const cv=renderer.domElement;let lostT=0;cv.addEventListener('webglcontextlost',e=>{e.preventDefault();clearTimeout(lostT);lostT=setTimeout(()=>location.reload(),2500)});cv.addEventListener('webglcontextrestored',()=>{clearTimeout(lostT)})}
 
 /* ===== 눈 위 발자국 (나, 백구, 반려견, 다른 방문객) ===== */
-const FP_N=260;
-const fpGeo=new THREE.CircleGeometry(.1,10);
-const fpMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
-const fpMesh=new THREE.InstancedMesh(fpGeo,fpMat,FP_N);fpMesh.frustumCulled=false;fpMesh.count=FP_N;scene.add(fpMesh);
-const fpDummy=new THREE.Object3D();fpDummy.rotation.order='YXZ';
-const fpT0=new Float32Array(FP_N).fill(-1e9);const fpCol=new THREE.Color();let fpI=0,fpAcc=0;
-{const z=new THREE.Matrix4().makeScale(0,0,0);for(let i=0;i<FP_N;i++){fpMesh.setMatrixAt(i,z);fpMesh.setColorAt(i,fpCol.setRGB(1,1,1))}fpMesh.instanceMatrix.needsUpdate=true;fpMesh.instanceColor.needsUpdate=true}
-function fpAdd(x,z,yaw,kind,side){const i=fpI;fpI=(fpI+1)%FP_N;const lat=kind==='foot'?.085:.05;const px=x+Math.cos(yaw)*lat*side,pz=z-Math.sin(yaw)*lat*side;fpDummy.position.set(px,Math.min(heightAt(px,pz),.8)+.05,pz);fpDummy.rotation.set(-Math.PI/2,yaw,0);if(kind==='foot')fpDummy.scale.set(.62,1.45,1);else fpDummy.scale.set(.5,.55,1);fpDummy.updateMatrix();fpMesh.setMatrixAt(i,fpDummy.matrix);fpT0[i]=performance.now()/1000;fpMesh.setColorAt(i,fpCol.setRGB(.56,.64,.76));fpMesh.instanceMatrix.needsUpdate=true;fpMesh.instanceColor.needsUpdate=true}
-const fpTrack=new Map();
+const fpDummy=new THREE.Object3D();fpDummy.rotation.order='YXZ';const fpCol=new THREE.Color();
+function fpTex(kind){const c=document.createElement('canvas');const x=c.getContext('2d');x.fillStyle='#fff';
+ if(kind==='shoe'){c.width=128;c.height=256;x.fillStyle='#fff';x.beginPath();x.ellipse(64,180,40,64,0,0,6.2832);x.ellipse(60,62,29,42,0,0,6.2832);x.rect(44,100,38,64);x.fill();x.globalCompositeOperation='destination-out';x.globalAlpha=.4;for(let y=150;y<236;y+=15)x.fillRect(34,y,60,4);for(let y=40;y<90;y+=15)x.fillRect(40,y,40,3)}
+ else{c.width=128;c.height=160;x.fillStyle='#fff';const el=(cx,cy,rx,ry,rot)=>{x.beginPath();x.ellipse(cx,cy,rx,ry,rot||0,0,6.2832);x.fill()};el(64,56,27,22);el(26,102,11,16,-.4);el(50,130,11,16,-.12);el(78,130,11,16,.12);el(102,102,11,16,.4)}
+ const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t}
+function mkFP(tex,N,gw,gh){const m=new THREE.InstancedMesh(new THREE.PlaneGeometry(gw,gh),new THREE.MeshBasicMaterial({map:tex,color:0xffffff,transparent:true,opacity:.85,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}),N);m.frustumCulled=false;m.renderOrder=20;scene.add(m);const z=new THREE.Matrix4().makeScale(0,0,0);for(let i=0;i<N;i++){m.setMatrixAt(i,z);m.setColorAt(i,fpCol.setRGB(1,1,1))}m.instanceMatrix.needsUpdate=true;m.instanceColor.needsUpdate=true;return {m,N,i:0,t0:new Float32Array(N).fill(-1e9)}}
+const FPS=mkFP(fpTex('shoe'),170,.24,.48),FPP=mkFP(fpTex('paw'),280,.16,.2);
+function fpAdd(x,z,yaw,kind,side){const L=kind==='foot'?FPS:FPP;const i=L.i;L.i=(L.i+1)%L.N;const lat=kind==='foot'?.1:.05;const px=x+Math.cos(yaw)*lat*side,pz=z-Math.sin(yaw)*lat*side;fpDummy.position.set(px,Math.min(heightAt(px,pz),.8)+.1,pz);fpDummy.rotation.set(-Math.PI/2,yaw,0);fpDummy.scale.set(kind==='foot'?side:1,1,1);fpDummy.updateMatrix();L.m.setMatrixAt(i,fpDummy.matrix);L.t0[i]=performance.now()/1000;L.m.setColorAt(i,fpCol.setRGB(.34,.43,.6));L.m.instanceMatrix.needsUpdate=true;L.m.instanceColor.needsUpdate=true}
+let fpAcc=0;const fpTrack=new Map();
 function fpWalker(key,x,z,kind,step,moving,indoors){let s=fpTrack.get(key);if(!s){s={x,z,d:0,side:1};fpTrack.set(key,s);return}const dx=x-s.x,dz=z-s.z,d=Math.hypot(dx,dz);if(d>3){s.x=x;s.z=z;s.d=0;return}if(d<.002)return;s.x=x;s.z=z;if(indoors||!moving)return;s.d+=d;if(s.d>=step){s.d=0;s.side=-s.side;fpAdd(x,z,Math.atan2(dx,dz),kind,s.side)}}
 function updatePrints(dt,t){const snowy=snowAcc>.3&&(weather==='snow'||snowAcc>.5);const out=!['달빛전','요사채','공양간','차담실','싱잉볼룸','식당'].includes(curArea);
  if(snowy){const ok=out&&P.mode==='walk';fpWalker('me',P.x,P.z,'foot',.5,ok,!out);
   if(typeof D!=='undefined'&&dog)fpWalker('dog',D.x,D.z,'paw',.34,true,!out&&false||(Math.hypot(D.x-P.x,D.z-P.z)>40));
   if(myCompanion)fpWalker('pet',myCompanion.position.x,myCompanion.position.z,'paw',.3,true,!out);
   remotes.forEach((r,id)=>{const ro=r.mode==='walk'&&r.x<300&&!['달빛전','요사채','공양간','차담실','식당'].includes(areaOf(r.x,r.z));fpWalker('r'+id,r.x,r.z,'foot',.5,ro,!ro)})}
- fpAcc+=dt;if(fpAcc>.4){fpAcc=0;const now=performance.now()/1000;let ch=false;for(let i=0;i<FP_N;i++){const a=now-fpT0[i];if(a<0||a>90)continue;if(a>=89){fpDummy.scale.set(0,0,0);fpDummy.updateMatrix();fpMesh.setMatrixAt(i,fpDummy.matrix);continue}const k=Math.min(1,Math.max(0,(a-8)/80));fpMesh.setColorAt(i,fpCol.setRGB(.56+k*.4,.64+k*.33,.76+k*.22));ch=true}if(ch){fpMesh.instanceColor.needsUpdate=true;fpMesh.instanceMatrix.needsUpdate=true}}
+ fpAcc+=dt;if(fpAcc>.4){fpAcc=0;const now=performance.now()/1000;[FPS,FPP].forEach(L=>{let ch=false;for(let i=0;i<L.N;i++){const a=now-L.t0[i];if(a<0||a>150)continue;if(a>=149){fpDummy.scale.set(0,0,0);fpDummy.updateMatrix();L.m.setMatrixAt(i,fpDummy.matrix);continue}const k=Math.min(1,Math.max(0,(a-10)/135));L.m.setColorAt(i,fpCol.setRGB(.34+k*.66,.43+k*.57,.6+k*.4));ch=true}if(ch){L.m.instanceColor.needsUpdate=true;L.m.instanceMatrix.needsUpdate=true}})}
  if(!snowy&&snowAcc<.05){}}
 
 
@@ -2792,5 +2797,5 @@ window.__d={bubbles,say,bathNpcs,askCandle,candleShelf,tapMove,scene,camera,get 
 // roof transparency for main hall when inside
 setInterval(()=>{const inside=curArea==='달빛전';const r=roofs[0].grp;r.userData.mats.forEach(m=>{if(inside&&!m.material.__cl){m.material=m.material.clone();m.material.__cl=true}m.material.transparent=inside;m.material.opacity=inside?.12:1;m.material.depthWrite=!inside})},200);
 </script>
-<!-- Cloudflare Pages Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "61734d4964f44643a270250af1f3502e"}'></script><!-- Cloudflare Pages Analytics --></body>
+<!-- Cloudflare Pages Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "61734d4964f44643a270250af1f3502e"}'></script><!-- Cloudflare Pages Analytics --><!-- Cloudflare Pages Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "61734d4964f44643a270250af1f3502e"}'></script><!-- Cloudflare Pages Analytics --></body>
 </html>
