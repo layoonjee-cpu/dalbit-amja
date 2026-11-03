@@ -225,6 +225,14 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
   <textarea id="wText" rows="2" maxlength="40" placeholder="예) 올해는 마음 편한 사람 만나게 해주세요"></textarea>
   <div class="row"><button class="btn ghost" data-close>닫기</button><button class="btn pink" id="wGo">시작하기</button></div>
 </div></div>
+<div class="modal" id="mMerit"><div class="sheet" style="text-align:center">
+  <img id="meritImg" src="assets/img/gift-lantern.jpg" alt="연등" style="width:58%;max-width:230px;border-radius:22px;box-shadow:0 0 30px rgba(255,200,120,.5);margin:2px auto 6px;display:block">
+  <h3 id="meritT">108배 공덕</h3>
+  <p class="s" id="meritS" style="line-height:1.7"></p>
+  <div style="height:10px;border-radius:99px;background:#eadfcf;overflow:hidden;margin:8px 6px 4px"><i id="meritFill" style="display:block;height:100%;width:0;background:linear-gradient(90deg,#f6c9cf,#e8c26a);transition:width .6s"></i></div>
+  <div id="meritN" style="font-size:13px;color:#8a8090;margin-bottom:12px"></div>
+  <div class="row"><button class="btn ghost" id="meritNo">나중에</button><button class="btn pink" id="meritGo">확인</button></div>
+</div></div>
 <div class="modal" id="mCard"><div class="sheet" style="text-align:center">
   <canvas id="cardCv" width="660" height="880" style="width:100%;border-radius:18px"></canvas>
   <div class="row"><button class="btn navy" id="cSave">카드 저장</button><button class="btn ghost" id="cShare">공유하기</button></div>
@@ -1238,7 +1246,7 @@ function teleport(x,z,yaw){$('#fade').style.opacity=1;setTimeout(()=>{P.x=x;P.z=
 
 /* 108배 */
 const bowState={active:false,n:0,auto:null,wish:'',done:false,cushion:null};
-function startWish(){$('#wGo').textContent='시작하기';$('#wTitle').textContent='108배 소원빌기';$('#wSub').textContent='소원을 하나 적고, 방석에 앉아 108배를 올려요.';$('#wText').value='';$('#wGo').onclick=beginBow;openM('#mWish')}
+function startWish(){if(meritIntro(startWish))return;$('#wGo').textContent='시작하기';$('#wTitle').textContent='108배 소원빌기';$('#wSub').textContent='소원을 하나 적고, 방석에 앉아 108배를 올려요.';$('#wText').value='';$('#wGo').onclick=beginBow;openM('#mWish')}
 function beginBow(){const w=$('#wText').value.trim();if(!w){$('#wText').focus();return}bowState.wish=w;closeM('#mWish');
   let best=null,bd=1e9;CUSHIONS.forEach(c=>{if(c.taken)return;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<bd){bd=d;best=c}});bowState.cushion=best;best.taken=true;
   $('#fade').style.opacity=1;setTimeout(()=>{P.x=best.x;P.z=best.z;P.y=best.y;P.yaw=Math.PI;cam.yaw=0;P.mode='bow';player.userData.sit=0;$('#fade').style.opacity=0;
@@ -1250,7 +1258,25 @@ $('#bowOne').onclick=bowOnce;
 $('#bowAuto').onclick=()=>{if(bowState.auto){clearInterval(bowState.auto);bowState.auto=null;$('#bowAuto').textContent='자동 절';return}bowState.auto=setInterval(bowOnce,3400);$('#bowAuto').textContent='멈추기'};
 $('#bowStop').onclick=()=>{clearInterval(bowState.auto);bowState.auto=null;endBow();status('언제든 다시 와서 이어가도 돼요')};
 function endBow(){bowState.active=false;$('#bowHud').style.display='none';$('#bar').style.display='flex';P.mode='walk';cam.targetDist=6.2;if(bowState.cushion){bowState.cushion.taken=false;P.z+=1.2}}
-function finishBow(){strikeBell(.8);status('108배를 모두 올렸어요. 연등이 환하게 켜졌어요 🪷',4000);bowState.done=true;endBow();drawCard(bowState.wish,'108배 소원 카드','108배 원만 회향');setTimeout(()=>openM('#mCard'),1400)}
+const MERIT_KEY='dalbit_merit';
+function meritGet(){try{return Math.max(0,+localStorage.getItem(MERIT_KEY)||0)}catch(e){return 0}}
+function meritSet(v){try{localStorage.setItem(MERIT_KEY,String(Math.max(0,v)))}catch(e){}}
+function meritFill(){const p=meritGet();$('#meritFill').style.width=Math.min(100,p)+'%';$('#meritN').textContent='내 공덕 '+p+' / 100점'}
+let meritIntroSeen=false;try{meritIntroSeen=sessionStorage.getItem('dalbit_merit_intro')==='1'}catch(e){}
+function meritIntro(cb){if(meritIntroSeen)return false;meritIntroSeen=true;try{sessionStorage.setItem('dalbit_merit_intro','1')}catch(e){}
+ $('#meritT').textContent='108배 공덕 선물';$('#meritS').innerHTML='108배를 마치면 <b>공덕 10점</b>을 드려요.<br>공덕 <b>100점</b>이 쌓이면 소원을 적어<br><b>하늘로 연등</b>을 날려드려요 🏮';meritFill();$('#meritNo').style.display='none';$('#meritGo').textContent='알겠어요';$('#meritGo').onclick=()=>{closeM('#mMerit');cb&&cb()};openM('#mMerit');return true}
+function meritShow(title,html,after){const p=meritGet();$('#meritT').textContent=title;$('#meritS').innerHTML=html;meritFill();
+ if(p>=100){$('#meritNo').style.display='';$('#meritNo').textContent='나중에';$('#meritNo').onclick=()=>{closeM('#mMerit');after&&after()};$('#meritGo').textContent='하늘 연등 날리기';$('#meritGo').onclick=()=>{closeM('#mMerit');meritSky()}}
+ else{$('#meritNo').style.display='none';$('#meritGo').textContent='확인';$('#meritGo').onclick=()=>{closeM('#mMerit');after&&after()}}openM('#mMerit')}
+function meritResult(after){const p=meritGet();meritShow('공덕 +10점',p>=100?'공덕 100점을 채웠어요 🎉<br>소원을 적고 하늘로 연등을 날려볼까요?':'108배 공덕이 쌓였어요.<br>100점이 되면 <b>하늘 연등</b> 선물이 열려요 🏮',after)}
+function meritView(){const p=meritGet();meritShow('내 공덕 연등',p>=100?'공덕 100점이 모였어요.<br>소원을 적고 하늘로 연등을 날려요 🏮':'108배를 마칠 때마다 공덕 10점.<br>100점이 되면 소원 적어 <b>하늘 연등</b>을 날려드려요 🏮')}
+function meritSky(){if(meritGet()<100){meritView();return}$('#wTitle').textContent='하늘로 연등 날리기';$('#wSub').textContent='공덕 100점 선물이에요. 소원을 한 줄 적으면 연등이 하늘로 올라가요 🏮';$('#wText').value='';$('#wGo').textContent='연등 날리기';$('#wGo').onclick=()=>{const w=$('#wText').value.trim();if(!w){$('#wText').focus();return}closeM('#mWish');meritSet(meritGet()-100);releaseSky(w)};openM('#mWish')}
+function releaseSky(text){sendRitual('lantern');const g=new THREE.Group();const paper=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.5,12,1,true),new THREE.MeshStandardMaterial({color:0xffd9b0,emissive:0xff9a5a,emissiveIntensity:2.8,side:THREE.DoubleSide,transparent:true,opacity:.95}));g.add(paper);
+ const fl=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex('255,185,110'),blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));fl.scale.setScalar(1.5);g.add(fl);g.scale.setScalar(1.3);
+ g.position.set(P.x+Math.sin(P.yaw)*1.8,P.y+1.8,P.z+Math.cos(P.yaw)*1.8);scene.add(g);lanterns.push({g,t:0,dir:new THREE.Vector3(rand(-.1,.1),0,rand(-.1,.1)),sway:rand(0,6)});
+ player.userData.greet=1.4;status('공덕 연등이 하늘로 올라가요 🏮',4200);windBell(new THREE.Vector3(P.x,3,P.z),.4);setTimeout(()=>{drawCard(text,'하늘 연등 소원','공덕 100점 선물');openM('#mCard')},6200)}
+function finishBow(){strikeBell(.8);status('108배를 모두 올렸어요. 연등이 환하게 켜졌어요 🪷',4000);bowState.done=true;endBow();meritSet(meritGet()+10);drawCard(bowState.wish,'108배 소원 카드','108배 원만 회향');setTimeout(()=>meritResult(()=>openM('#mCard')),1400)}
+window.__merit={get:meritGet,set:meritSet,intro:()=>{meritIntroSeen=false;return meritIntro(()=>{})},result:meritResult,view:meritView,sky:meritSky};
 let panoImg=null;{const im=new Image();im.src='assets/img/pano_night.jpg';im.onload=()=>panoImg=im}
 function wrapText(x,t,cx,y,maxW,lh){let line='',lines=[];for(const ch of t){if(x.measureText(line+ch).width>maxW){lines.push(line);line=ch}else line+=ch}lines.push(line);lines.forEach((l,i)=>x.fillText(l,cx,y+i*lh));return lines.length}
 function drawCard(wish,title,sub){const c=$('#cardCv'),x=c.getContext('2d');x.fillStyle='#0b1226';x.fillRect(0,0,660,880);
@@ -2801,7 +2827,7 @@ let tourPrev='';
 window.tourNext=tourNext;
 window.tourArea=a=>{const p=tourPrev;tourPrev=a;if(p==='달빛전'&&a!=='달빛전'&&!tourS.hall){tourNext('hall')}else if(p==='싱잉볼룸'&&a!=='싱잉볼룸'){tourNext('bowl')}else if(p==='연못'&&a!=='연못'&&tourS.pondUsed){tourNext('lantern')}if(a==='연못'&&!tourS.pondSeen){tourS.pondSeen=1;tourSave();status('연꽃 연못이에요. 연등을 띄워 소원을 빌어보세요 🏮',4200)}};
 
- const items=[['🍲','식당',goDine],['🍵','차담',run('차담')],['♨️','노천탕',run('노천탕 · 산을 보며 온천')],['🔔','싱잉볼룸',()=>openSB()],['🏮','연등체험',()=>goPond()],['🥚','달걀 할머니',run('노천탕 달걀 할머니')],['📷','사진 · 폴라로이드',run('사진 · 폴라로이드')],['🪨','돌쌓기 소원',goStone],['🎋','말씀뽑기',()=>openFortune()],[SACK,'공양미 보태기',()=>openDonate()],['👀','기와장 구경',goTile],['🖼️','내 기와 이미지 저장',()=>{const b=tileBook();if(!b.length){status('아직 올린 기와가 없어요');return}saveTileImage(tileLast||b[b.length-1])}],['🧺','하늘보기 · 돗자리',run('돗자리')],['🪵','목탁',run('목탁')],['👫','내 곁으로 친구 초대 · 카톡 공유',run('내 곁으로 친구 초대 · 카톡 공유')],['🤳','친구와 함께 기념사진 찍기',run('친구와 함께 기념사진 찍기')],['🐶','반려견 동반 / 변경',run('반려견 동반 / 변경')],['🌙','오늘의 일진 · 무료 한 줄',run('오늘의 일진 · 무료 한 줄')],['🛶','근심 흘려보내기',run('근심 흘려보내기')],['📖','나의 암자 기록',run('나의 암자 기록')],['🌍','Language · 언어',run('Language · 언어')],['📲','홈 화면에 추가',run('홈 화면에 추가')],['👝','말씀 주머니',run('말씀 주머니')]];
+ const items=[['🏮','공덕 연등 · 내 공덕',meritView],['🍲','식당',goDine],['🍵','차담',run('차담')],['♨️','노천탕',run('노천탕 · 산을 보며 온천')],['🔔','싱잉볼룸',()=>openSB()],['🏮','연등체험',()=>goPond()],['🥚','달걀 할머니',run('노천탕 달걀 할머니')],['📷','사진 · 폴라로이드',run('사진 · 폴라로이드')],['🪨','돌쌓기 소원',goStone],['🎋','말씀뽑기',()=>openFortune()],[SACK,'공양미 보태기',()=>openDonate()],['👀','기와장 구경',goTile],['🖼️','내 기와 이미지 저장',()=>{const b=tileBook();if(!b.length){status('아직 올린 기와가 없어요');return}saveTileImage(tileLast||b[b.length-1])}],['🧺','하늘보기 · 돗자리',run('돗자리')],['🪵','목탁',run('목탁')],['👫','내 곁으로 친구 초대 · 카톡 공유',run('내 곁으로 친구 초대 · 카톡 공유')],['🤳','친구와 함께 기념사진 찍기',run('친구와 함께 기념사진 찍기')],['🐶','반려견 동반 / 변경',run('반려견 동반 / 변경')],['🌙','오늘의 일진 · 무료 한 줄',run('오늘의 일진 · 무료 한 줄')],['🛶','근심 흘려보내기',run('근심 흘려보내기')],['📖','나의 암자 기록',run('나의 암자 기록')],['🌍','Language · 언어',run('Language · 언어')],['📲','홈 화면에 추가',run('홈 화면에 추가')],['👝','말씀 주머니',run('말씀 주머니')]];
  w.innerHTML='';items.forEach(([ic,tx,fn])=>{const b=document.createElement('button');b.className='btn ghost';b.innerHTML='<span class="mi">'+ic+'</span> '+tx;b.onclick=()=>{closeM('#mMore');fn()};w.appendChild(b)});
  document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on')}));
  document.head.insertAdjacentHTML('beforeend','<style>#bar{flex-direction:column!important;gap:3px!important;padding:5px 6px!important}#bar .brow{display:flex;gap:3px;justify-content:center}#bar button{width:48px!important;min-height:38px!important;font-size:10.5px!important;padding:3px 0!important}#bar button .i{font-size:17px!important}#bar .row2 button{min-height:36px!important}#moreActions{display:grid!important;grid-template-columns:1fr 1fr;gap:7px}#moreActions .btn{min-height:44px;font-size:13.5px;padding:6px 4px;margin:0!important;line-height:1.25;display:flex;align-items:center;justify-content:center;gap:5px}#moreActions .mi{font-size:18px;display:inline-flex;align-items:center}#chatSwitch{font-size:13.5px;min-height:42px;margin-bottom:8px}#chatSwitch::before{content:"💬 "}#mMore .sheet{max-height:86vh;overflow:auto}</style>')}
