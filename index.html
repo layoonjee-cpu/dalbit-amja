@@ -2052,7 +2052,7 @@ function tickBody(){if(!(Number.isFinite(P.x)&&Number.isFinite(P.z)&&Number.isFi
   if(ix||iz){const l=Math.min(1,Math.hypot(ix,iz));const nx=ix/(Math.hypot(ix,iz)||1),nz=iz/(Math.hypot(ix,iz)||1);mvx=(nx*cy+nz*sy)*l;mvz=(-nx*sy+nz*cy)*l}
   else if(autoDir&&P.mode==='walk'){mvx=autoDir.x;mvz=autoDir.z;lastAct=performance.now()}
   else if(moveTarget){const dx=moveTarget.x-P.x,dz=moveTarget.z-P.z,d=Math.hypot(dx,dz);if(d<.15)moveTarget=null;else{mvx=dx/d;mvz=dz/d}}
-  const speed=keys.ShiftLeft?3.5:2.0;let moving=(mvx||mvz)&&P.mode==='walk';iceOn=weather==='freeze'&&P.mode==='walk'&&!['달빛전','요사채','공양간','차담실','싱잉볼룸','식당'].includes(curArea)&&heightAt(P.x,P.z)<.2;
+  const speed=keys.ShiftLeft?3.2:1.8;let moving=(mvx||mvz)&&P.mode==='walk';iceOn=weather==='freeze'&&P.mode==='walk'&&!['달빛전','요사채','공양간','차담실','싱잉볼룸','식당'].includes(curArea)&&heightAt(P.x,P.z)<.2;
   if(iceOn){const inp=(mvx||mvz);const k=Math.min(1,dt*(inp?1.1:.45));ivx+=(mvx*speed*.8-ivx)*k;ivz+=(mvz*speed*.8-ivz)*k;const sp=Math.hypot(ivx,ivz);if(sp>.1){mvx=ivx/sp;mvz=ivz/sp;ICE_SP=sp;moving=true}else if(inp){ICE_SP=.25;moving=true}else{ivx=ivz=0;ICE_SP=0;moving=false}}else{ivx=ivz=0}
   if(started&&P.mode==='walk'&&blocked(P.x,P.z)){unstick()}
   if(moving){const sp_=iceOn?ICE_SP:speed;const nx=P.x+mvx*sp_*dt,nz=P.z+mvz*sp_*dt;const tryMove=(x,z)=>{if(blockedR(x,z))return false;{const dd=Math.hypot(x-D.x,z-D.z);if(dd<.5&&dd<Math.hypot(P.x-D.x,P.z-D.z))return false}{const hb=npcBlock(x,z);if(hb){bump(hb);return false}}const h=heightAtR(x,z);if(h-P.y>.38)return false;P.x=x;P.z=z;return true};
