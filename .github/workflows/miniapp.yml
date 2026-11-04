@@ -15,13 +15,22 @@ jobs:
       - name: Install
         working-directory: miniapp
         run: npm install
-      - name: Build
+      - name: Rewarded ad bridge tests
         working-directory: miniapp
+        run: node bridge-test.mjs
+      - name: Build test bundle
+        working-directory: miniapp
+        env:
+          AD_GROUP_ID: ait-ad-test-rewarded-id
         run: npm run build
       - name: List outputs
         run: find miniapp -maxdepth 2 -name "*.ait" -not -path "*/node_modules/*"
       - uses: actions/upload-artifact@v4
         with:
-          name: dalbit-amja-ait
-          path: miniapp/*.ait
+          name: unmyeongnonja-rewarded-test
+          path: |
+            miniapp/*.ait
+            miniapp/dist/**
+            miniapp/build-report.json
+            miniapp/bridge-test-results.json
           if-no-files-found: error
