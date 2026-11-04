@@ -1,0 +1,162 @@
+[
+  {
+    "path": "assets/drinks/americano.jpg",
+    "size": 110131
+  },
+  {
+    "path": "assets/drinks/boricha.jpg",
+    "size": 90301
+  },
+  {
+    "path": "assets/drinks/daechu.jpg",
+    "size": 103485
+  },
+  {
+    "path": "assets/drinks/latte.jpg",
+    "size": 107471
+  },
+  {
+    "path": "assets/drinks/omija.jpg",
+    "size": 105979
+  },
+  {
+    "path": "assets/drinks/sikhye.jpg",
+    "size": 97103
+  },
+  {
+    "path": "assets/drinks/ssanghwa.jpg",
+    "size": 95423
+  },
+  {
+    "path": "assets/drinks/sujeonggwa.jpg",
+    "size": 119108
+  },
+  {
+    "path": "assets/drinks/yuja.jpg",
+    "size": 103731
+  },
+  {
+    "path": "assets/goods/ice-earth.jpg",
+    "size": 55676
+  },
+  {
+    "path": "assets/goods/ice-fire.jpg",
+    "size": 69454
+  },
+  {
+    "path": "assets/goods/ice-metal.jpg",
+    "size": 43527
+  },
+  {
+    "path": "assets/goods/ice-water.jpg",
+    "size": 62961
+  },
+  {
+    "path": "assets/goods/ice-wood.jpg",
+    "size": 58749
+  },
+  {
+    "path": "assets/goods/myeongtae.jpg",
+    "size": 268735
+  },
+  {
+    "path": "assets/img/barista.jpg",
+    "size": 119190
+  },
+  {
+    "path": "assets/img/characters-4.png",
+    "size": 303629
+  },
+  {
+    "path": "assets/img/dessert-cake.jpg",
+    "size": 55689
+  },
+  {
+    "path": "assets/img/dessert-choco.jpg",
+    "size": 71805
+  },
+  {
+    "path": "assets/img/dessert-cookie.jpg",
+    "size": 81566
+  },
+  {
+    "path": "assets/img/dessert-tteok.jpg",
+    "size": 67643
+  },
+  {
+    "path": "assets/img/dessert-yakgwa.jpg",
+    "size": 68341
+  },
+  {
+    "path": "assets/img/model-desk.jpg",
+    "size": 206227
+  },
+  {
+    "path": "assets/img/moon-2027.jpg",
+    "size": 269830
+  },
+  {
+    "path": "assets/img/og-unmyeongnonja.jpg",
+    "size": 339663
+  },
+  {
+    "path": "assets/img/teacher-brush.jpg",
+    "size": 133642
+  },
+  {
+    "path": "assets/img/teacher-greet.jpg",
+    "size": 133614
+  },
+  {
+    "path": "assets/img/teacher-pray.jpg",
+    "size": 92622
+  },
+  {
+    "path": "assets/img/teacher-think.jpg",
+    "size": 125377
+  },
+  {
+    "path": "assets/music/t1.m4a",
+    "size": 4072275
+  },
+  {
+    "path": "assets/music/t2.m4a",
+    "size": 4948675
+  },
+  {
+    "path": "assets/music/t3.m4a",
+    "size": 4851233
+  },
+  {
+    "path": "assets/music/t4.m4a",
+    "size": 6679654
+  },
+  {
+    "path": "assets/music/t5.m4a",
+    "size": 6701697
+  },
+  {
+    "path": "assets/tex/beige_wall_001_diff.jpg",
+    "size": 20254
+  },
+  {
+    "path": "assets/tex/gravelly_sand_diff.jpg",
+    "size": 275808
+  },
+  {
+    "path": "assets/tex/grey_roof_tiles_diff.jpg",
+    "size": 224471
+  },
+  {
+    "path": "assets/tex/japanese_stone_wall_diff.jpg",
+    "size": 313747
+  },
+  {
+    "path": "assets/tex/old_wooden_floor_02_diff.jpg",
+    "size": 178166
+  },
+  {
+    "path": "assets/tex/weathered_planks_diff.jpg",
+    "size": 114219
+  }
+]
