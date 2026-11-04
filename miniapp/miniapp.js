@@ -12,7 +12,7 @@
       (root||document).querySelectorAll('button,a,.btn').forEach(function(el){
         var t=(el.textContent||'').trim(),a=el.getAttribute('aria-label')||'',title=el.getAttribute('title')||'';
         var h=el.getAttribute('href')||'';
-        if(el.tagName==='A'&&(/^(https?:|//)/i.test(h)||/(^|\/)(landing|donate|about)\.html(?:[?#]|$)/i.test(h))){hide(el);return}
+        if(el.tagName==='A'&&(h.indexOf('http:')===0||h.indexOf('https:')===0||h.indexOf('//')===0||['landing.html','donate.html','about.html'].indexOf(h.split(/[?#]/)[0].split('/').pop())>-1)){hide(el);return}
         for(var i=0;i<HIDE.length;i++){if((t.indexOf(HIDE[i])>-1&&t.length<70)||a.indexOf(HIDE[i])>-1||title.indexOf(HIDE[i])>-1){hide(el);break}}
       });
     }catch(e){}
