@@ -1687,7 +1687,7 @@ $('#enter').onclick=async()=>{nick=($('#nick').value.trim()||rndNick()).slice(0,
   try{await initAudio()}catch(e){console.warn(e)}
   setTimeout(()=>{strikeBell(.45);status('달빛암자에 오신 것을 환영해요 🌙',3800)},900);setTimeout(chimeTick,3000);setTimeout(mokAmbient,2500);
   setTimeout(()=>status('천천히 걸어 올라가 보세요. 법당과 범종각, 공양간, 요사채, 소원 돌탑이 있어요',4500),5200);setTimeout(()=>{status('🔊 모든 소리는 원하는 대로 조정하세요',4500);const sb=$('#bSound');sb.classList.remove('blink');void sb.offsetWidth;sb.classList.add('blink');setTimeout(()=>sb.classList.remove('blink'),4200)},2600);
-  started=true;setTimeout(liveConnect,1500)};
+  started=true;setTimeout(evtPre,1600);setTimeout(liveConnect,1500)};
 let started=false;
 
 /* ================= loop ================= */
@@ -2387,8 +2387,8 @@ const EVT_FORCE=(()=>{try{return /[?&]event=moon/.test(location.search)||localSt
 function evtOn(){if(EVT_FORCE)return true;const n=Date.now();return n>=EVT_START&&n<EVT_END}
 const moonBase={s:moon.scale.x,g:moonGlow.scale.x,o:moonGlow.material.opacity,p:moon.position.clone(),gp:moonGlow.position.clone()};
 let evtWas=false;
-document.head.insertAdjacentHTML('beforeend','<style>#evtBn{position:fixed;top:104px;left:0;right:0;margin:0 auto;width:max-content;max-width:92vw;display:none;align-items:center;gap:10px;z-index:26;padding:8px 8px 8px 14px;border-radius:999px;background:rgba(40,28,10,.62);color:#ffe9b0;font-size:13px;backdrop-filter:blur(8px);border:1px solid rgba(255,220,140,.5);box-shadow:0 0 22px rgba(255,200,100,.35)}#evtBn button{padding:7px 12px;border-radius:999px;border:0;background:#ffd36a;color:#3a2a08;font-weight:800;font-size:12.5px}#evtVeil{position:fixed;inset:0;pointer-events:none;z-index:9;background:radial-gradient(ellipse at 50% 18%,rgba(255,225,150,.16),rgba(255,200,120,0) 60%);display:none}</style>');
-document.body.insertAdjacentHTML('beforeend','<div id="evtVeil"></div><div id="evtBn" class="ui"><span>🌕 대보름 달맞이 · 연꽃초 소원 시간</span><button id="evtGo">달맞이터 가기</button></div><div class="modal" id="mMoon"><div class="sheet"><h3>🌕 대보름 연꽃초 소원</h3><p class="s">보름달을 바라보며 연꽃초를 두 손에 들고 소원을 빌어요.</p><input id="moonWish" maxlength="30" placeholder="소원 한 줄 (선택)" autocomplete="off" style="width:100%;box-sizing:border-box"><button class="btn pink" id="moonGo" style="margin-top:12px">연꽃초 들고 소원 빌기</button><button class="btn ghost" id="moonX">닫기</button></div></div>');
+document.head.insertAdjacentHTML('beforeend','<style>#evtBn{position:fixed;top:auto;bottom:calc(132px + env(safe-area-inset-bottom));left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100vw - 32px);display:none;align-items:center;gap:6px;z-index:26;padding:6px 7px 6px 11px;border-radius:12px;background:rgba(27,30,38,.82);color:rgba(247,242,229,.88);font-size:12px;line-height:1.4;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.12);box-shadow:none}#evtBn>span{flex:1;min-width:0}#evtBn button{flex:none;padding:4px 6px;min-height:28px;border-radius:7px;border:0;background:rgba(255,255,255,.08);color:inherit;font-weight:500;font-size:11.5px}#evtBn #evtClose{width:28px;padding:0;font-size:18px;background:transparent;color:rgba(247,242,229,.62)}#evtVeil{position:fixed;inset:0;pointer-events:none;z-index:9;background:radial-gradient(ellipse at 50% 18%,rgba(255,225,150,.16),rgba(255,200,120,0) 60%);display:none}</style>');
+document.body.insertAdjacentHTML('beforeend','<div id="evtVeil"></div><div id="evtBn" class="ui"><span>🌕 대보름 달맞이 · 연꽃초 소원 시간</span><button id="evtGo">달맞이터 가기</button><button id="evtClose" type="button" aria-label="닫기">×</button></div><div class="modal" id="mMoon"><div class="sheet"><h3>🌕 대보름 연꽃초 소원</h3><p class="s">보름달을 바라보며 연꽃초를 두 손에 들고 소원을 빌어요.</p><input id="moonWish" maxlength="30" placeholder="소원 한 줄 (선택)" autocomplete="off" style="width:100%;box-sizing:border-box"><button class="btn pink" id="moonGo" style="margin-top:12px">연꽃초 들고 소원 빌기</button><button class="btn ghost" id="moonX">닫기</button></div></div>');
 
 /* --- 연꽃초 (손에 드는 작은 연꽃 모양 초, 은은하게 일렁이는 빛) --- */
 const lcFlick=[];
@@ -2430,8 +2430,22 @@ function evtNotice(){info('🪷 대보름 연등·연꽃초 나눔','<div style=
 
 const evtSp=[];let moonRit=null;
 function evtMoon(on){if(on){moon.scale.setScalar(moonBase.s*1.9);moonGlow.scale.setScalar(moonBase.g*1.8);moonGlow.material.opacity=.95;const d=new THREE.Vector3(.32,.24,-1).normalize();moon.position.copy(d).multiplyScalar(900);moonGlow.position.copy(moon.position).multiplyScalar(.99);moon.material.color.set(0xffe3a0)}else{moon.scale.setScalar(moonBase.s);moonGlow.scale.setScalar(moonBase.g);moonGlow.material.opacity=moonBase.o;moon.position.copy(moonBase.p);moonGlow.position.copy(moonBase.gp);moon.material.color.set(0xfff6dd)}}
-function evtPre(){const bn=document.getElementById('evtBn');const pre=!evtOn()&&Date.now()<EVT_END&&!sessionStorage.getItem('dalbit_evtpre_x');if(pre){bn.style.display='flex';bn.firstElementChild.textContent='🌕 11/24(화) 밤 9~10시 · 연등·연꽃초 나눔';document.getElementById('evtGo').textContent='안내';document.getElementById('evtGo').onclick=evtNotice}else if(!evtOn())bn.style.display='none'}
-function evtApply(){evtPre();const on=evtOn();if(on!==evtWas){evtWas=on;evtMoon(on);document.getElementById('evtBn').style.display=on?'flex':'none';document.getElementById('evtVeil').style.display=on?'block':'none';if(on){evtGoRestore();try{if(timeKey!=='night')setTime('night');if(weather!=='clear')setWeather('clear')}catch(e){}status('🌕 오늘은 대보름이에요. 달맞이터에서 연꽃초 소원을 빌어보세요',5200)}}else if(on){if(weather!=='clear'){try{setWeather('clear')}catch(e){}}}}
+const EVT_NOTICE_START=Date.parse('2026-11-22T00:00:00+09:00');
+const EVT_NOTICE_KEY='dalbit_evt_notice_2026';
+let evtNoticeEntryDone=false,evtNoticeTimer=0;
+function evtNoticeWindow(now){return now>=EVT_NOTICE_START&&now<EVT_END}
+function evtNoticeHide(){clearTimeout(evtNoticeTimer);document.getElementById('evtBn').style.display='none'}
+function evtPre(now=Date.now()){
+  if(!started||evtNoticeEntryDone)return;
+  evtNoticeEntryDone=true;
+  if(!evtNoticeWindow(now))return;
+  try{if(sessionStorage.getItem(EVT_NOTICE_KEY))return;sessionStorage.setItem(EVT_NOTICE_KEY,'1')}catch(e){}
+  const bn=document.getElementById('evtBn'),go=document.getElementById('evtGo');
+  if(evtOn())evtGoRestore();else{bn.firstElementChild.textContent='🌕 11/24(화) 밤 9~10시 · 연등·연꽃초 나눔';go.textContent='안내';go.onclick=()=>{evtNoticeHide();evtNotice()}}
+  bn.style.display='flex';evtNoticeTimer=setTimeout(evtNoticeHide,6500);
+}
+document.getElementById('evtClose').onclick=evtNoticeHide;
+function evtApply(){const on=evtOn();if(on!==evtWas){evtWas=on;evtMoon(on);document.getElementById('evtVeil').style.display=on?'block':'none';if(on){evtGoRestore();try{if(timeKey!=='night')setTime('night');if(weather!=='clear')setWeather('clear')}catch(e){}status('🌕 오늘은 대보름이에요. 달맞이터에서 연꽃초 소원을 빌어보세요',5200)}}else if(on){if(weather!=='clear'){try{setWeather('clear')}catch(e){}}}}
 setTimeout(evtApply,1500);setInterval(evtApply,15000);
 const evtGoLive=()=>{if(P.mode==='sit')standUp();if(P.mode!=='walk'){status('지금 하던 쉼을 마친 뒤에 가주세요');return}teleport(MOONSPOT.x+1.6,MOONSPOT.z-1.4,Math.atan2(moonDir.x,moonDir.z));setTimeout(openMoonWish,1400)};
 function evtGoRestore(){const g=document.getElementById('evtGo');g.textContent='달맞이터 가기';g.onclick=evtGoLive;document.getElementById('evtBn').firstElementChild.textContent='🌕 대보름 달맞이 · 연꽃초 소원 시간'}
