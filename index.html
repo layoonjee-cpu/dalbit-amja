@@ -2706,7 +2706,7 @@ function updateBath(dt,t){
     if(player.userData.chorong)player.userData.chorong.visible=false;if(player.userData.leaf)player.userData.leaf.visible=false;
     // View from behind and above the bather, out toward the mountain panorama, not faces.
     const desired=s.desiredCamera;
-    {const fx=Math.sin(BATH.yaw),fz=Math.cos(BATH.yaw);const asp=innerWidth/innerHeight;const vt=Math.tan(camera.fov*Math.PI/360);const need=4.4/(vt*Math.min(asp,1.15));const d=Math.max(9,Math.min(13,need));const pit=.62;const tx=(BATH.seat.x*2+BATH.x)/3,tz=(BATH.seat.z*2+BATH.z)/3;desired.position.set(tx+fx*d*Math.cos(pit)+Math.sin(t*.075)*.03,BATH.waterLevel+.3+d*Math.sin(pit)+Math.sin(t*.10)*.015,tz+fz*d*Math.cos(pit));desired.up.set(0,1,0);desired.lookAt(tx,BATH.waterLevel+.15,tz)}
+    {const fx=Math.sin(BATH.yaw),fz=Math.cos(BATH.yaw);const asp=innerWidth/innerHeight;const vt=Math.tan(camera.fov*Math.PI/360);const need=4.4/(vt*Math.min(asp,1.15));const d=Math.max(14,Math.min(13,need));const pit=.75;const tx=(BATH.seat.x*2+BATH.x)/3,tz=(BATH.seat.z*2+BATH.z)/3;desired.position.set(tx+fx*d*Math.cos(pit)+Math.sin(t*.075)*.03,BATH.waterLevel+.3+d*Math.sin(pit)+Math.sin(t*.10)*.015,tz+fz*d*Math.cos(pit));desired.up.set(0,1,0);desired.lookAt(tx,BATH.waterLevel+.15,tz)}
     const k=Math.min(1,s.elapsed/1.25),ease=k*k*(3-2*k);
     camera.position.lerpVectors(s.cameraFrom,desired.position,ease);camera.quaternion.slerpQuaternions(s.cameraQuat,desired.quaternion,ease);camera.up.set(0,1,0);
   }
