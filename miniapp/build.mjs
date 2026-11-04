@@ -3,6 +3,20 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { build } from 'esbuild';
 
+// BEGIN_BRIDGE_RENDER
+const DEFAULT_AD_GROUP_ID='ait-ad-test-rewarded-id';
+const AD_ID_MARKER=/\/\*__AD_GROUP_ID_START__\*\/[\s\S]*?\/\*__AD_GROUP_ID_END__\*\//;
+function validateAdGroupId(raw){
+  const id=(typeof raw==='string'?raw.trim():'')||DEFAULT_AD_GROUP_ID;
+  if(!/^[A-Za-z0-9._:-]{1,128}$/.test(id))throw Error('Invalid AD_GROUP_ID (allowed: letters, digits, . _ : -; max 128 chars)');
+  return id;
+}
+function renderBridge(template,id){
+  if(!AD_ID_MARKER.test(template))throw Error('ad-bridge.js is missing the AD_GROUP_ID markers');
+  // function replacement: the replacement string is NOT interpreted (const here=, $1, ... are literal)
+  return template.replace(AD_ID_MARKER,()=>JSON.stringify(id));
+}
+// END_BRIDGE_RENDER
 const here=path.dirname(new URL(import.meta.url).pathname);
 const source=path.join(here,'.source');
 const dist=path.join(here,'dist');
@@ -28,9 +42,18 @@ async function worker(){
 }
 await Promise.all(Array.from({length:6},worker));
 await build({entryPoints:[path.join(source,'js/app.js')],bundle:true,format:'iife',minify:true,outfile:path.join(dist,'app.js'),platform:'browser',target:['es2020'],logLevel:'info'});
+const AD_ID=validateAdGroupId(process.env.AD_GROUP_ID);
+const AD_ID_FROM_ENV=!!(process.env.AD_GROUP_ID&&process.env.AD_GROUP_ID.trim());
+const AD_IS_TEST=AD_ID===DEFAULT_AD_GROUP_ID||AD_ID.startsWith('ait-ad-test-');
+if(AD_IS_TEST)console.warn('WARNING: rewarded ad is using a Toss TEST ad group id ('+AD_ID+'); set AD_GROUP_ID to the console-issued live id before release.');
+if(process.env.REQUIRE_LIVE_AD_ID==='1'&&AD_IS_TEST)throw Error('REQUIRE_LIVE_AD_ID=1 but a test ad group id is in use');
+const AD_TEMPLATE=fs.readFileSync(path.join(here,'ad-bridge.js'),'utf8');
+const AD_SNIPPET=renderBridge(AD_TEMPLATE,AD_ID);
+if(/fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|\beval\s*\(|new\s+Function|createElement\s*\(\s*['"]script/.test(AD_SNIPPET))throw Error('ad-bridge.js must not add network or dynamic-code calls');
 const bridgeSource=path.join(here,'.bridge.js');
-fs.writeFileSync(bridgeSource,`import { graniteEvent, closeView } from '@apps-in-toss/web-framework';
+fs.writeFileSync(bridgeSource,`import { graniteEvent, closeView, loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/web-framework';
 window.__TOSS__=true;
+${AD_SNIPPET}
 try { graniteEvent.addEventListener('backEvent',{onEvent:()=>{Promise.resolve(closeView()).catch(()=>{});},onError:()=>{}}); } catch(e) { console.info('Toss back bridge is available in the Toss app.'); }
 window.open=function(){return null;};
 document.addEventListener('click',function(e){const a=e.target&&e.target.closest&&e.target.closest('a[href]');if(a){const h=a.getAttribute('href')||'';if(h.startsWith('http:')||h.startsWith('https:')||h.startsWith('//')||h.startsWith('mailto:')||h.startsWith('tel:')){e.preventDefault();e.stopPropagation();}}},true);
@@ -47,6 +70,10 @@ fs.writeFileSync(path.join(dist,'index.html'),html);
 const appCode=fs.readFileSync(path.join(dist,'app.js'),'utf8');
 const forbidden=['https://unmyung.sajulab.kr/2026','https://www.sajulab.kr/js/embed.js','kakaopay-vip-500','kakaopay-3000','3333-35-5912880','3333355912880'];
 for(const token of forbidden)if(appCode.includes(token))throw Error('Forbidden payment or external integration remained: '+token);
-const report={appName:'unmyeongnonja',files:Object.keys(payload),assetCount:assets.length,assetBytes:downloaded,htmlSha256:crypto.createHash('sha256').update(html).digest('hex'),appSha256:crypto.createHash('sha256').update(appCode).digest('hex'),externalPaymentRemoved:true};
+const bridgeCode=fs.readFileSync(path.join(dist,'bridge.js'),'utf8');
+if(bridgeCode.includes('__AD_GROUP_ID_')||bridgeCode.includes('__AD_ID__'))throw Error('AD_GROUP_ID placeholder remained in bridge');
+if(!bridgeCode.includes(AD_ID))throw Error('AD_GROUP_ID missing from bundled bridge');
+if(!/<script src="\.\/bridge\.js"><\/script><script src="\.\/app\.js"><\/script><\/body>/.test(html))throw Error('bridge.js script tag missing');
+const report={appName:'unmyeongnonja',files:Object.keys(payload),assetCount:assets.length,assetBytes:downloaded,htmlSha256:crypto.createHash('sha256').update(html).digest('hex'),appSha256:crypto.createHash('sha256').update(appCode).digest('hex'),externalPaymentRemoved:true,rewardedAd:{adGroupId:AD_ID,isTestId:AD_IS_TEST,source:AD_ID_FROM_ENV?'env:AD_GROUP_ID':'default-test-id',bridgeTemplateSha256:crypto.createHash('sha256').update(AD_TEMPLATE).digest('hex'),bridgeSha256:crypto.createHash('sha256').update(bridgeCode).digest('hex'),sdkExports:['graniteEvent','closeView','loadFullScreenAd','showFullScreenAd']}};
 fs.writeFileSync(path.join(here,'build-report.json'),JSON.stringify(report,null,2));
 console.log('UNMYEONG MINIAPP READY',JSON.stringify(report));
