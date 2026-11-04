@@ -1176,7 +1176,7 @@ function updateWeather(dt,t){const cx=camera.position.x,cz=camera.position.z;con
       if(p[k+1]<0||Math.abs(p[k]-cx)>30||Math.abs(p[k+2]-cz)>30){p[k+1]=rand(14,25);p[k]=cx+rand(-30,30);p[k+2]=cz+rand(-30,30)}}snowGeo.attributes.position.needsUpdate=true}
   updateBigSnow(dt,t,cx,cz,snow.visible);{const tg=weather==='snow'?1:weather==='freeze'?.45:0;snowAcc=clamp(snowAcc+clamp(tg-snowAcc,-dt/14,dt/9),0,1)}iceAcc=clamp(iceAcc+(weather==='freeze'?dt/4:-dt/6),0,1);iceMat.opacity=iceAcc*.85;iceCourt.visible=iceAcc>.01;const a=snowAcc;snowMat.opacity=a*.97;snowHill.material.opacity=a*.95;roofSnowMat.opacity=a*.95;
   needleMat.color.setRGB(lerp(.72,.95,a),lerp(.78,.95,a),lerp(.63,.97,a))}
-$('#bWeather').onclick=()=>{const order=['clear','rain','snow','freeze'];const nk=order[(order.indexOf(weather)+1)%4];setWeather(nk);status({clear:'날이 개었어요 🌤️',rain:'산사에 비가 내려요. 커다란 호박잎을 머리에 썼어요 🍃',snow:'함박눈이 내려요. 천천히 쌓이는 눈을 밟아보세요',freeze:'영하 15도, 땅이 꽁꽁 얼었어요. 붉은 목도리에 비니를 썼어요. 스르르 미끄러지니 천천히 🧊'}[nk],4200)};
+$('#bWeather').onclick=()=>{const order=['clear','rain','snow','freeze'];const nk=order[(order.indexOf(weather)+1)%4];setWeather(nk);status({clear:'날이 개었어요 🌤️',rain:'산사에 비가 내려요. 커다란 호박잎을 머리에 썼어요 🍃',snow:'함박눈이 내려요. 천천히 쌓이는 눈을 밟아보세요',freeze:'영하 15도, 땅이 꽁꽁 얼었어요. 붉은 목도리에 비니를 썼어요. 스르르 미끄러지니 천천히 🧊'}[nk],4200,'weather')};
 
 
 /* ================= 목탁치기 ================= */
@@ -1203,7 +1203,7 @@ function animMok(dt){if(!mokState.on)return;mokState.hit=Math.max(0,mokState.hit
   const u=player.userData;u.arms[0].rotation.set(-1.1,0,-.35);u.arms[1].rotation.set(-1.2-k*.5,0,.2)}
 
 /* ================= UI helpers ================= */
-function status(t,ms=3200){if(['sit','bow'].includes(P.mode))return;const d=document.createElement('div');d.className='glass';d.textContent=t;$('#status').appendChild(d);setTimeout(()=>d.remove(),ms);while($('#status').children.length>2)$('#status').firstChild.remove()}
+function status(t,ms=3200,kind=''){if(kind!=='weather'||['sit','bow'].includes(P.mode))return;const d=document.createElement('div');d.className='glass weatherNote';d.textContent=t;$('#status').replaceChildren(d);setTimeout(()=>d.remove(),ms)}
 function openM(id){$(id).classList.add('on')}function closeM(id){$(id).classList.remove('on')}
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('on'));
 function info(title,body,btns){$('#iTitle').textContent=title;$('#iBody').innerHTML=body;const w=$('#iBtns');w.innerHTML='';btns.forEach(([t,cls,fn])=>{const b=document.createElement('button');b.className='btn '+cls;b.textContent=t;b.onclick=()=>{closeM('#mInfo');fn&&fn()};w.appendChild(b)});openM('#mInfo')}
@@ -1685,9 +1685,8 @@ setTimeout(()=>{if($('#enter').disabled){$('#enterSilent').disabled=false;$('#en
 $('#enter').onclick=async()=>{nick=($('#nick').value.trim()||rndNick()).slice(0,10);if(isBad(nick))nick=rndNick();localStorage.setItem('dalbit_nick',nick);meLab.innerHTML='<i>나</i>'+nick;
   $('#intro').style.transition='opacity 1.4s';$('#intro').style.opacity=0;setTimeout(()=>$('#intro').remove(),1500);
   try{await initAudio()}catch(e){console.warn(e)}
-  setTimeout(()=>{strikeBell(.45);status('달빛암자에 오신 것을 환영해요 🌙',3800)},900);setTimeout(chimeTick,3000);setTimeout(mokAmbient,2500);
-  setTimeout(()=>status('천천히 걸어 올라가 보세요. 법당과 범종각, 공양간, 요사채, 소원 돌탑이 있어요',4500),5200);setTimeout(()=>{status('🔊 모든 소리는 원하는 대로 조정하세요',4500);const sb=$('#bSound');sb.classList.remove('blink');void sb.offsetWidth;sb.classList.add('blink');setTimeout(()=>sb.classList.remove('blink'),4200)},2600);
-  started=true;setTimeout(evtPre,1600);setTimeout(liveConnect,1500)};
+  setTimeout(()=>strikeBell(.45),900);setTimeout(chimeTick,3000);setTimeout(mokAmbient,2500);
+  started=true;setTimeout(liveConnect,1500)};
 let started=false;
 
 /* ================= loop ================= */
@@ -2469,8 +2468,8 @@ function updateMoonEvt(dt,t){lcUpdate(t,evtOn()?1.25:.8);if(moonRit){const r=moo
 function wxSlot(){return Math.floor(Date.now()/1800000)}
 function wxFor(slot){let x=(slot*2654435761)>>>0;x^=x>>>15;x=Math.imul(x,2246822519)>>>0;x^=x>>>13;const r=x%100;const mo=new Date(slot*1800000+32400000).getUTCMonth();if(mo===11||mo<=1)return r<25?'clear':r<40?'rain':r<70?'snow':'freeze';return r<40?'clear':r<70?'rain':r<90?'snow':'freeze'}
 let wxLast=-1;
-function wxTick(first){const s=wxSlot();if(s===wxLast)return;const was=wxLast;wxLast=s;const k=evtOn()?'clear':wxFor(s);if(k!==weather){setWeather(k);if(!first)status({clear:'날이 개었어요 🌤️',rain:'산사에 비가 내려요 🌧️',snow:'함박눈이 내려요 ❄️',freeze:'영하 15도, 땅이 꽁꽁 얼었어요 🧊 스르르 미끄러워요'}[k],3800)}}
-{const iv=setInterval(()=>{if(!started)return;clearInterval(iv);wxTick(true);setTimeout(()=>{status('🌦️ 날씨는 30분마다 바뀌어요. 위쪽 날씨 버튼으로 원하는 날씨로 바꿀 수 있어요',5200);const b=$('#bWeather');b.classList.remove('blink');void b.offsetWidth;b.classList.add('blink');setTimeout(()=>b.classList.remove('blink'),4200)},11500);setInterval(()=>wxTick(false),15000)},500)}
+function wxTick(first){const s=wxSlot();if(s===wxLast)return;const was=wxLast;wxLast=s;const k=evtOn()?'clear':wxFor(s);if(k!==weather){setWeather(k);if(!first)status({clear:'날이 개었어요 🌤️',rain:'산사에 비가 내려요 🌧️',snow:'함박눈이 내려요 ❄️',freeze:'영하 15도, 땅이 꽁꽁 얼었어요 🧊 스르르 미끄러워요'}[k],3800,'weather')}}
+{const iv=setInterval(()=>{if(!started)return;clearInterval(iv);wxTick(true);setTimeout(()=>{status('🌦️ 날씨는 30분마다 바뀌어요. 위쪽 날씨 버튼으로 원하는 날씨로 바꿀 수 있어요',5200,'weather');const b=$('#bWeather');b.classList.remove('blink');void b.offsetWidth;b.classList.add('blink');setTimeout(()=>b.classList.remove('blink'),4200)},11500);setInterval(()=>wxTick(false),15000)},500)}
 
 /* 달빛암자 · 산끝 노천탕
  * Append inside the existing module script AFTER world/player/audio declarations.
@@ -2858,7 +2857,7 @@ document.body.insertAdjacentHTML('beforeend','<button id="riceTop" class="ui" ty
 {const rb=document.getElementById('riceTop');rb.onclick=e=>{e.stopPropagation();openDonate()};setInterval(()=>{const hide=curArea==='싱잉볼룸'||P.mode==='bath'||!!document.querySelector('.modal.on');rb.style.display=hide?'none':'flex'},400)}
 let tourTimer=0;
 function tourHide(){document.getElementById('tourCard').style.display='none';clearTimeout(tourTimer)}
-function tourShow(k,tries=0){if(P.mode!=='walk'){if(tries<8)setTimeout(()=>tourShow(k,tries+1),2500);return}const m=TOUR_MSG[k];if(!m)return;document.getElementById('tourTx').textContent=m[0];const go=document.getElementById('tourGo');go.textContent=m[1];go.onclick=()=>{tourHide();tourS[k]=1;tourSave();m[2]()};document.getElementById('tourNo').onclick=()=>{tourHide();tourS['skip_'+k]=1;tourSave()};document.getElementById('tourCard').style.display='flex';clearTimeout(tourTimer);tourTimer=setTimeout(tourHide,30000)}
+function tourShow(){tourHide()}
 function tourNext(from){if(from)tourS[from]=1;tourSave();const k=TOUR_ORDER.find(k=>!tourS[k]&&!tourS['skip_'+k]);if(k)setTimeout(()=>tourShow(k),1800)}
 let tourPrev='';
 window.tourNext=tourNext;
