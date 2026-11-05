@@ -1,5 +1,5 @@
 import { IAP, Share, Clipboard } from "@apps-in-toss/web-framework";
-const SKU="ait.0000094986.bba31e5c.084ade73b2.3465092764";
+const SKU="ait.0000097125.687ec35b.69afd1884f.3843171762";
 const API=(typeof __SAJU_API__!=="undefined"?__SAJU_API__:"https://www.unmyung.kr").replace(/\/$/,"");
 const PRICE="4,895원";
 const TIMES=[["","시간 모름"],["00:00","자시 (23:00~01:00)"],["02:00","축시 (01:00~03:00)"],["04:00","인시 (03:00~05:00)"],["06:00","묘시 (05:00~07:00)"],["08:00","진시 (07:00~09:00)"],["10:00","사시 (09:00~11:00)"],["12:00","오시 (11:00~13:00)"],["14:00","미시 (13:00~15:00)"],["16:00","신시 (15:00~17:00)"],["18:00","유시 (17:00~19:00)"],["20:00","술시 (19:00~21:00)"],["22:00","해시 (21:00~23:00)"]];
@@ -54,7 +54,7 @@ function startPay(){
 }
 function pillar(l,p){const s=p&&p.stem||"?",b=p&&p.branch||"?";return '<div><small>'+l+'</small><b>'+esc(s)+'</b><b>'+esc(b)+'</b></div>'}
 function luckyHtml(l){if(!l||typeof l!=="object")return"";return '<div class="tags">'+Object.entries(l).filter(([k,v])=>v&&typeof v!=="object").map(([k,v])=>'<span>'+esc(k)+' · '+esc(v)+'</span>').join("")+'</div>'}
-function resultText(prof,data,bodies){const p=(data.summary&&data.summary.pillars)||{};const pl=(l,x)=>l+" "+((x&&x.stem)||"?")+((x&&x.branch)||"?");let t="[달빛암자 사주풀이] "+prof.name+"님\n"+(data.headline||"")+"\n\n"+[pl("시주",p.hour),pl("일주",p.day),pl("월주",p.month),pl("연주",p.year)].join(" · ")+"\n";(data.sections||[]).forEach((s,i)=>{t+="\n■ "+s.title+"\n"+(bodies[i]||"")+"\n"});return t+"\n- 달빛암자 · 운명론자"}
+function resultText(prof,data,bodies){const p=(data.summary&&data.summary.pillars)||{};const pl=(l,x)=>l+" "+((x&&x.stem)||"?")+((x&&x.branch)||"?");let t="[운명론자 사주풀이] "+prof.name+"님\n"+(data.headline||"")+"\n\n"+[pl("시주",p.hour),pl("일주",p.day),pl("월주",p.month),pl("연주",p.year)].join(" · ")+"\n";(data.sections||[]).forEach((s,i)=>{t+="\n■ "+s.title+"\n"+(bodies[i]||"")+"\n"});return t+"\n- 운명론자 · 운명론자"}
 async function copyText(t){try{await Clipboard.setText(t);return true}catch(e){}try{await navigator.clipboard.writeText(t);return true}catch(e){}try{const ta=document.createElement("textarea");ta.value=t;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();return true}catch(e){return false}}
 function actsHtml(){return '<div class="acts"><button data-a="cp">📋 전체 복사하기</button><button data-a="sh">📤 카톡·메일로 보내기</button></div>'}
 function renderResult(prof,data,bodies,done){const p=(data.summary&&data.summary.pillars)||{};
