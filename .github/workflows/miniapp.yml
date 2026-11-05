@@ -1,6 +1,19 @@
 name: miniapp-build
 on:
   workflow_dispatch:
+    inputs:
+      ad_group_id:
+        description: 'Ad group ID (production or test)'
+        required: false
+        default: 'ait-ad-test-rewarded-id'
+      require_live_ad:
+        description: 'Require live ad ID (fail on test ID)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   push:
     paths:
       - 'miniapp/**'
@@ -18,19 +31,70 @@ jobs:
       - name: Rewarded ad bridge tests
         working-directory: miniapp
         run: node bridge-test.mjs
-      - name: Build test bundle
+      - name: Build bundle
         working-directory: miniapp
         env:
-          AD_GROUP_ID: ait-ad-test-rewarded-id
+          AD_GROUP_ID: ${{ github.event.inputs.ad_group_id || 'ait-ad-test-rewarded-id' }}
+          REQUIRE_LIVE_AD_ID: ${{ github.event.inputs.require_live_ad || 'false' }}
         run: npm run build
       - name: List outputs
         run: find miniapp -maxdepth 2 -name "*.ait" -not -path "*/node_modules/*"
       - uses: actions/upload-artifact@v4
         with:
-          name: unmyeongnonja-rewarded-test
+          name: unmyeongnonja-rewarded-${{ github.event.inputs.ad_group_id == 'ait-ad-test-rewarded-id' && 'test' || 'prod' }}
           path: |
             miniapp/*.ait
             miniapp/dist/**
             miniapp/build-report.json
             miniapp/bridge-test-results.json
           if-no-files-found: error
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
