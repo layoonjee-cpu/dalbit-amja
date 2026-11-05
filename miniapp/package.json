@@ -1,7 +1,7 @@
 {
   "name": "dalbit-amja-miniapp",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "build": "node build.mjs && ait build"
@@ -11,3 +11,14 @@
     "esbuild": "0.24.0"
   }
 }
+
+
+
+
+
+
+
+
+
+
+
