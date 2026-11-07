@@ -392,7 +392,7 @@ addEventListener('resize',()=>{if(P&&P.mode==='mat')setTimeout(drawBranches,50);
 /* ================= loading ================= */
 const manager=new THREE.LoadingManager();
 let loadedPct=0;
-manager.onProgress=(u,l,t)=>{loadedPct=Math.round(l/t*100);$('#enter').textContent='불러오는 중… '+loadedPct+'%'};
+manager.onProgress=(u,l,t)=>{loadedPct=Math.round(l/t*100);const el=$('#enter');if(el)el.textContent='불러오는 중… '+loadedPct+'%'};manager.onLoad
 const texLoader=new THREE.TextureLoader(manager);
 const maxAniso=renderer.capabilities.getMaxAnisotropy();
 function T(path,{rep=[1,1],srgb=false}={}){const t=texLoader.load(path);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1]);t.anisotropy=Math.min(8,maxAniso);if(srgb)t.colorSpace=THREE.SRGBColorSpace;return t}
