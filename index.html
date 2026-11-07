@@ -1680,7 +1680,7 @@ $('#bPeople').onclick=openRoomPicker;
 const ADJ=['고요한','포근한','맑은','다정한','은은한','따스한','조용한','느린','푸른','하얀'],NOUN=['달빛','구름','바람','연꽃','풍경','햇살','이슬','소나무','별','목련'];
 const rndNick=()=>ADJ[Math.random()*ADJ.length|0]+' '+NOUN[Math.random()*NOUN.length|0];
 let nick=localStorage.getItem('dalbit_nick')||rndNick();$('#nick').value=nick;$('#reNick').onclick=()=>{$('#nick').value=rndNick()};
-manager.onLoad=()=>{$('#enterSilent').disabled=false;$('#enter').disabled=false;$('#enter').textContent='암자로 들어가기'};
+manager.onLoad=()=>{const es=$('#enterSilent'),en=$('#enter');if(es)es.disabled=false;if(en){en.disabled=false;en.textContent='암자로 들어가기'}};
 setTimeout(()=>{if($('#enter').disabled){$('#enterSilent').disabled=false;$('#enter').disabled=false;$('#enter').textContent='암자로 들어가기'}},15000);
 $('#enter').onclick=async()=>{nick=($('#nick').value.trim()||rndNick()).slice(0,10);if(isBad(nick))nick=rndNick();localStorage.setItem('dalbit_nick',nick);meLab.innerHTML='<i>나</i>'+nick;
   $('#intro').style.transition='opacity 1.4s';$('#intro').style.opacity=0;setTimeout(()=>$('#intro').remove(),1500);
