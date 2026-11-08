@@ -177,6 +177,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
   <button id="bWeather"><span id="wIc">🌤️</span><span class="tx" id="wTx">맑음</span></button>
   <button id="bTime"><span id="timeIc">🌙</span><span class="tx" id="timeTx">밤</span></button>
   <button id="bSound">🔊</button>
+  <button id="bUnmyeong" onclick="window.open('https://unmyeongnonja.pages.dev/','_blank')" title="운명론자 사주상담소">🔮</button>
 </div>
 <div id="status" class="ui"></div>
 <button id="ctx" class="ui"></button>
@@ -1681,7 +1682,7 @@ const ADJ=['고요한','포근한','맑은','다정한','은은한','따스한',
 const rndNick=()=>ADJ[Math.random()*ADJ.length|0]+' '+NOUN[Math.random()*NOUN.length|0];
 let nick=localStorage.getItem('dalbit_nick')||rndNick();$('#nick').value=nick;$('#reNick').onclick=()=>{$('#nick').value=rndNick()};
 manager.onLoad=()=>{const es=$('#enterSilent'),en=$('#enter');if(es)es.disabled=false;if(en){en.disabled=false;en.textContent='암자로 들어가기'}};
-setTimeout(()=>{if($('#enter').disabled){$('#enterSilent').disabled=false;$('#enter').disabled=false;$('#enter').textContent='암자로 들어가기'}},15000);
+setTimeout(()=>{const en=$('#enter'),es=$('#enterSilent');if(en&&en.disabled){if(es)es.disabled=false;en.disabled=false;en.textContent='암자로 들어가기'}},15000);
 $('#enter').onclick=async()=>{nick=($('#nick').value.trim()||rndNick()).slice(0,10);if(isBad(nick))nick=rndNick();localStorage.setItem('dalbit_nick',nick);meLab.innerHTML='<i>나</i>'+nick;
   $('#intro').style.transition='opacity 1.4s';$('#intro').style.opacity=0;setTimeout(()=>$('#intro').remove(),1500);
   try{await initAudio()}catch(e){console.warn(e)}
@@ -1916,7 +1917,7 @@ $('#bellOpt').textContent=localStorage.getItem('dalbit_time_bell')==='on'?'05시
 let lastOptBell='',lastLocalTick=0,sessionSeconds=0;
 function koreaParts(){const d=new Date(Date.now()+9*3600000);return {day:d.toISOString().slice(0,10),minute:d.getUTCHours()*60+d.getUTCMinutes()}}
 function showExit(){if(P.mode==='sleep'||P.mode==='mat'){status('먼저 일어나신 뒤 나가기 메뉴를 열어주세요');return}$('#exitText').textContent='오늘 '+Math.floor(sessionSeconds/60)+'분 머물렀어요. 잠깐 쉬어가셨나요? 소리와 연결을 잠시 마칠 수 있어요.';openM('#mExit')}
-const onEnterOriginal=$('#enter').onclick;
+const enterBtnRef=$('#enter');const onEnterOriginal=enterBtnRef?enterBtnRef.onclick:null;
 $('#enterSilent').onclick=async()=>{VOL.mute=true;await onEnterOriginal();$('#vMute').textContent='소리 켜기';applyVolumes()};
 $('#enter').onclick=async()=>{VOL.mute=false;await onEnterOriginal();applyVolumes()};
 function endVisit(){exitMode=true;stopAuto();moveTarget=null;if(ws){ws.onclose=null;ws.close();ws=null}myId=null;serverPresence=0;liveState='연결 끊김';updateLiveN();if(AU.ctx)AU.master.gain.setTargetAtTime(0,AU.ctx.currentTime,.4);closeM('#mExit');openM('#mEnded');saveLocalBook()}
